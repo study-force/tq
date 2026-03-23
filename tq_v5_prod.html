@@ -668,7 +668,15 @@ details summary:hover{color:var(--tx2)}
       ← 새 학생
     </button>
     <div id="result-student-name" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)"></div>
-    <div style="margin-left:auto;display:flex;gap:8px" id="result-topbar-badges"></div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
+      <button id="btnB2" disabled
+        onclick="document.getElementById('btnB').click()"
+        style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.5;transition:all .2s"
+        onmouseover="if(!this.disabled)this.style.opacity='1'"
+        onmouseout="if(!this.disabled)this.style.opacity='0.9'">
+        ✦ 판독문 생성
+      </button>
+    </div>
   </div>
   <div id="resultView" style="padding:20px 22px"></div>
 </div></div>
@@ -1800,6 +1808,8 @@ gv("btnA").addEventListener("click",async function(){
       }
     }
     gv("btnB").disabled=false;
+    var btnB2=document.getElementById("btnB2");
+    if(btnB2){btnB2.disabled=false;btnB2.style.opacity="0.9";}
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
   finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
 });
@@ -3352,6 +3362,8 @@ function resetAll(){
   if(gv("emptyView"))gv("emptyView").style.display="flex";
   gv("btnB").disabled=true;
   gv("btnR").disabled=true;
+  var btnB2r=document.getElementById("btnB2");
+  if(btnB2r){btnB2r.disabled=true;btnB2r.style.opacity="0.5";}
   window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
   var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
   closeReport();
