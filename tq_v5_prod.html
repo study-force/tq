@@ -1410,13 +1410,13 @@ function renderResult(e,nm){
     return`<div class="ib"><div class="ib-row"><span style="color:#475569">${lb}${near?" <span style='font-size:9px;background:rgba(251,191,36,.15);color:#D97706;padding:1px 4px;border-radius:3px;margin-left:4px'>경계</span>":""}</span><span style="font-weight:700;color:${pct<=60?'#EF4444':'#1E293B'}">${pct}</span></div><div class="ib-bg" style="background:#E2E8F0"><div class="ib-f" style="width:${pct}%;background:${col}"></div></div></div>`;
   }).join("");
 
-  const defH=e.def.length===0
+  const defH=(!e.def||e.def.length===0)
     ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
-    :e.def.map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
+    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
 
-  const prescH=e.presc.length===0
+  const prescH=(!e.presc||e.presc.length===0)
     ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
-    :e.presc.slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
+    :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
 
   // ── 권장 프로그램 카드 (결과 화면용) ──
   var _recs = typeof recommendPrograms==="function" ? recommendPrograms(e) : [];
@@ -1441,20 +1441,20 @@ function renderResult(e,nm){
     }).join("")
     +'</div>';
 
-  const cauH=e.cau.length>0
-    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+e.cau.map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
+  const cauH=e.cau&&e.cau.length>0
+    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
 
   // 체크리스트 요약
-  var habSummary=e.habChecked.length>0
+  var habSummary=(e.habChecked||[]).length>0
     ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
-      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+e.habChecked.length+'/'+HAB_ITEMS.length+'개 문제)</div>'
-      +e.habChecked.map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
+      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+(e.habChecked||[]).length+'/'+HAB_ITEMS.length+'개 문제)</div>'
+      +(e.habChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
       +'</div>':""
   ;
-  var effSummary=e.effChecked.length>0
+  var effSummary=(e.effChecked||[]).length>0
     ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--amber)">'
-      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+e.effChecked.length+'/'+EFF_ITEMS.length+'개 문제)</div>'
-      +e.effChecked.map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
+      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+(e.effChecked||[]).length+'/'+EFF_ITEMS.length+'개 문제)</div>'
+      +(e.effChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
       +'</div>':""
   ;
 
@@ -1607,7 +1607,7 @@ function renderResult(e,nm){
               +'</div>';
           }).join('')}
           <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
-            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?e.habChecked.length:0}</span>개</span>
+            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?(e.habChecked||[]).length:0}</span>개</span>
           </div>
         </div>
         <div style="display:inline-flex;flex-direction:column">
@@ -1622,7 +1622,7 @@ function renderResult(e,nm){
               +'</div>';
           }).join('')}
           <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
-            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?e.effChecked.length:0}</span>개</span>
+            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?(e.effChecked||[]).length:0}</span>개</span>
           </div>
         </div>
       </div>
@@ -1712,7 +1712,7 @@ function renderResult(e,nm){
     +'<span style="display:inline-block;width:16px;height:16px;background:var(--surface2);border-radius:4px;text-align:center;line-height:16px;font-size:9px">▾</span>'
     +' 판단 근거 로그</summary>'
     +'<div style="margin-top:6px;background:var(--navy);border-radius:var(--radius);padding:12px 16px">'
-    +e.log.map(function(l){
+    +(e.log||[]).map(function(l){
       return '<div style="font-size:10px;color:rgba(255,255,255,.5);font-family:monospace;line-height:1.8;border-bottom:1px solid rgba(255,255,255,.04);padding:1px 0">'+l+'</div>';
     }).join('')
     +'</div></details>';
@@ -4820,7 +4820,7 @@ function parseCondExpr(varName, val, origKey) {
     return '';
   }
   if (origKey === 'effChecked수' || origKey === '독서량체크' || origKey.indexOf('eff.') === 0) {
-    if (val === '0') return 'e.effChecked.length === 0';
+    if (val === '0') return '(e.effChecked||[]).length === 0';
     if (val === '체크') return 'inp.effChecked.length > 0';
     if (val === '미체크') return 'inp.effChecked.length === 0';
     // 복잡한 값은 주석으로
