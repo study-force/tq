@@ -2488,7 +2488,7 @@ var SWOT_MAP = {
   "독서의양":     "ev-card-어휘력",
 };
 // 하단 텍스트 섹션 ID
-var BOTTOM_IDS = ["성적선행지수","독해속도","독해의질","학업상태"];
+var BOTTOM_IDS = ["성적선행지수","독해속도","독해의질","학교학업"];
 
 var dotColor = {"강점":"#34D399","보통":"#8896B3","주의":"#FBBF24","위험":"#F87171"};
 var tagStyle = {
@@ -2681,9 +2681,9 @@ function postRenderSWOT(eng, inp) {
     '독서의양':     'voc-left',
     '독해의질':     'doj-left',
     '추론능력':     'reasonCard-hero',
-    '학업상태':     'schoolCard-hero'
+    '학교학업':     'schoolCard-hero'
   };
-  var BELOW_IDS = ['워킹메모리','추론능력','정보처리습관','독해효율성','독서의양','독해의질','학업상태','성적선행지수','독해속도'];
+  var BELOW_IDS = ['워킹메모리','추론능력','정보처리습관','독해효율성','독서의양','독해의질','학교학업','성적선행지수','독해속도'];
 
   if (eng.evidence) {
     eng.evidence.forEach(function(item){
@@ -2712,29 +2712,25 @@ function postRenderSWOT(eng, inp) {
       rightY += el.offsetHeight + GAP;
     });
 
-    // 좌측 카드: ev-left-top (정보처리습관) — voc-left/doj-left 아래로 밀리도록 동적 배치
+    // 좌측 카드: ev-left-top (정보처리습관) — voc-left/doj-left 총 높이 + padding-top 고려
     var leftEl = document.getElementById('ev-left-top');
     if (leftEl && leftEl.innerHTML.trim()) {
-      // 요청: 위쪽으로 70px 이동 (기본 startY = -50px)
-      var startY = -50;
-      // voc-left / doj-left 가 존재하면 그 아래로 밀림
       var vocEl = document.getElementById('voc-left');
       var dojEl = document.getElementById('doj-left');
-      if (vocEl || dojEl) {
-        // ev-left-top의 부모(중앙 카드)와 voc-left의 부모(radarZone 좌측 컬럼) 위치 차이 계산
-        var centerCard = leftEl.parentElement;
-        var centerRect = centerCard ? centerCard.getBoundingClientRect() : null;
-        var lastLeftEl = (dojEl && dojEl.innerHTML.trim()) ? dojEl : (vocEl && vocEl.innerHTML.trim()) ? vocEl : null;
-        if (lastLeftEl && centerRect) {
-          var lastRect = lastLeftEl.getBoundingClientRect();
-          var lastBottom = lastRect.bottom - centerRect.top + GAP;
-          // startY에서 시작하되, voc/doj 카드 아래로 밀려야 하면 그 값으로
-          startY = Math.max(startY, lastBottom);
-        }
+      // voc-left 컬럼의 padding-top이 80px, 카드간 gap 16px
+      var vocColPaddingTop = 80;
+      var vocH = (vocEl && vocEl.offsetHeight) ? vocEl.offsetHeight : 0;
+      var dojH = (dojEl && dojEl.offsetHeight) ? dojEl.offsetHeight : 0;
+      var gapBetween = (vocH > 0 && dojH > 0) ? 16 : 0;
+      var totalLeftColH = vocColPaddingTop + vocH + gapBetween + dojH;
+      // 기본 위치: -50px (70px 위로). 겹치면 총 높이 + GAP으로 밀림
+      var startY = -50;
+      if (totalLeftColH > 0) {
+        startY = Math.max(startY, totalLeftColH + GAP);
       }
       leftEl.style.top = startY + 'px';
     }
-  }, 100);
+  }, 600);
 
 
   var evidenceEl = document.getElementById('evidenceCards');
@@ -2744,7 +2740,7 @@ function postRenderSWOT(eng, inp) {
       '워킹메모리':'#0EA5E9','추론능력':'#84CC16',
       '정보처리습관':'#22C55E','독해효율성':'#8B5CF6','독서의양':'#A78BFA',
       '성적선행지수':'#34D399','독해속도':'#60A5FA',
-      '독해의질':'#F472B6','학업상태':'#FBBF24'
+      '독해의질':'#F472B6','학교학업':'#FBBF24'
     };
     // 독서의양(3) + 독해의질(4) 병합 처리
     var mergedEvidence = [];
@@ -2763,7 +2759,7 @@ function postRenderSWOT(eng, inp) {
         bullets: [].concat(dok ? dok.bullets : [], doj ? doj.bullets : [])
       };
       // 학업상태 앞에 삽입
-      var insertIdx = mergedEvidence.findIndex(function(i){ return i.id === '학업상태'; });
+      var insertIdx = mergedEvidence.findIndex(function(i){ return i.id === '학교학업'; });
       if (insertIdx > -1) mergedEvidence.splice(insertIdx, 0, merged);
       else mergedEvidence.push(merged);
     }
@@ -2799,7 +2795,7 @@ function postRenderSWOT(eng, inp) {
 
     evidenceEl.innerHTML = mergedEvidence.map(function(item){
       // 학업상태 카드는 ibars와 나란히 2컬럼으로
-      if (item.id === '학업상태') { return buildEvCardHTML(item); }
+      if (item.id === '학교학업') { return buildEvCardHTML(item); }
       return renderEvCard(item);
     }).join('');
   }
