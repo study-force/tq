@@ -1507,7 +1507,16 @@ function renderResult(e,nm){
       <div style="height:1px;background:rgba(255,255,255,.35);margin-bottom:10px"></div>
 
       <!-- 이름 크게 -->
-      <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;margin-bottom:12px">${nm}</div>
+      <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;margin-bottom:10px">${nm}</div>
+
+      <!-- 유형 타이틀 배너 -->
+      <div id="type-title-banner" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;margin-bottom:12px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+          <div id="banner-bt" style="font-size:17px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.2">—</div>
+          <div id="banner-urg" style="font-size:10px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.1px"></div>
+        </div>
+        <div id="banner-st" style="font-size:11px;font-weight:600;color:#A78BFA;letter-spacing:-.1px;line-height:1.45"></div>
+      </div>
 
       <!-- 검사일 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
@@ -1538,20 +1547,8 @@ function renderResult(e,nm){
   <!-- ══ 메인 히어로 존 ══ -->
   <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
 
-    <!-- 중앙: 배너 + 카드 세로 묶음 -->
-    <div style="display:flex;flex-direction:column;align-items:stretch;width:500px;flex-shrink:0">
-
-      <!-- ══ 유형 타이틀 배너 (흰 카드 바깥 위) ══ -->
-      <div id="type-title-banner" style="background:#0B1829;border-radius:12px 12px 0 0;padding:16px 24px 14px;margin-bottom:0">
-        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:5px">
-          <div id="banner-bt" style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;line-height:1.25">—</div>
-          <div id="banner-urg" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.2px"></div>
-        </div>
-        <div id="banner-st" style="font-size:12px;font-weight:700;color:#A78BFA;letter-spacing:-.1px;line-height:1.4"></div>
-      </div>
-
     <!-- 중앙 카드 (position:relative 기준점) -->
-    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:0 0 16px 16px;padding:66px 36px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
       <!-- 좌측 카드: 정보처리습관 — 중앙 기준 absolute -->
       <!-- 학생 정보 카드 — 좌측 상단, 다른 슬롯보다 넓고 강조 -->
@@ -1692,7 +1689,7 @@ function renderResult(e,nm){
       <div id="vocCard2" style="display:none"></div>
       <div id="reasonCard" style="display:none"></div>
     </div>
-    </div><!-- /중앙 래퍼 -->
+
 
     <!-- 원인분석 카드 그리드 -->
     <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
@@ -1762,28 +1759,6 @@ gv("btnA").addEventListener("click",async function(){
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
     rv.innerHTML=renderResult(eng,inp.name);
-
-    // ── 유형 타이틀 배너 세팅 ──
-    (function(){
-      var bannerBt  = document.getElementById('banner-bt');
-      var bannerSt  = document.getElementById('banner-st');
-      var bannerUrg = document.getElementById('banner-urg');
-      if(!bannerBt) return;
-      var btName = (eng.btDisplay||eng.bt||'—');
-      var stName = (eng.stDisplay||eng.st||'');
-      var urgMap = {즉각:'즉각 개입 필요',조기:'조기 개입 권장',중장기:'중장기 관리'};
-      var urgLabel = urgMap[eng.urg]||eng.urg||'';
-      var TC_BANNER={"최상위 완성 역량형":"#34D399","고역량 잠재력 미개방형":"#34D399",
-        "성실한 암기 의존형":"#F87171","논리 두뇌 미발현형":"#60A5FA",
-        "조용한 학습 위기형":"#F87171","전반 역량 미완성형":"#FBBF24",
-        "기초 회복 가능 위기형":"#FB923C","심각한 학습 기능 마비형":"#F87171",
-        "전반 역량 공백형":"#94A3B8","역량 모순 붕괴 예고형":"#C084FC"};
-      var btColor = TC_BANNER[btName]||'#A78BFA';
-      bannerBt.textContent  = btName;
-      bannerBt.style.color  = btColor;
-      bannerSt.textContent  = stName;
-      bannerUrg.textContent = urgLabel ? '(' + urgLabel + ')' : '';
-    })();
 
     // 결과 페이지로 전환
     showResultPage(inp.name);
@@ -2868,6 +2843,24 @@ function postRenderSWOT(eng, inp) {
   if (srcCard && dstSlot) {
     dstSlot.innerHTML = srcCard.querySelector('div').outerHTML;
     srcCard.style.display = 'none';
+
+    // ── 유형 타이틀 배너 세팅 (dstSlot 복사 직후) ──
+    var TC_BANNER={"최상위 완성 역량형":"#34D399","고역량 잠재력 미개방형":"#34D399",
+      "성실한 암기 의존형":"#F87171","논리 두뇌 미발현형":"#60A5FA",
+      "조용한 학습 위기형":"#F87171","전반 역량 미완성형":"#FBBF24",
+      "기초 회복 가능 위기형":"#FB923C","심각한 학습 기능 마비형":"#F87171",
+      "전반 역량 공백형":"#94A3B8","역량 모순 붕괴 예고형":"#C084FC"};
+    var btName   = eng.btDisplay||eng.bt||'—';
+    var stName   = eng.stDisplay||eng.st||'';
+    var urgMap   = {즉각:'즉각 개입 필요',조기:'조기 개입 권장',중장기:'중장기 관리'};
+    var urgLabel = urgMap[eng.urg]||eng.urg||'';
+    var btColor  = TC_BANNER[btName]||'#A78BFA';
+    var bb = dstSlot.querySelector('#banner-bt');
+    var bs = dstSlot.querySelector('#banner-st');
+    var bu = dstSlot.querySelector('#banner-urg');
+    if(bb){ bb.textContent=btName; bb.style.color=btColor; }
+    if(bs){ bs.textContent=stName; }
+    if(bu){ bu.textContent=urgLabel?('('+urgLabel+')'):''; }
     // 플래그 배지: 학생 카드 바로 아래 추가
     var flagHtml = '';
     if (eng.flagC) flagHtml += '<span style="background:rgba(185,28,28,.25);color:#FCA5A5;border:1px solid rgba(252,165,165,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">⚠ 모순패턴</span>';
