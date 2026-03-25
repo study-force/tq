@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>TQ 판독 자동화 v5_editor</title>
+<title>스터디포스 TQ TEST 결과 분석 시스템</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -491,7 +491,7 @@ details summary:hover{color:var(--tx2)}
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:1px solid rgba(139,92,246,.15);position:fixed;top:0;left:0;right:0;z-index:200">
   <div style="display:flex;align-items:center;gap:8px;padding:0 16px">
     <div style="width:22px;height:22px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">TQ</div>
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">TQ 판독 자동화 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 TQ TEST 결과 분석 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
@@ -503,7 +503,7 @@ details summary:hover{color:var(--tx2)}
     <div class="hd">
       <div class="logo">TQ</div>
       <div>
-        <div class="logo-title">TQ 판독 자동화 시스템</div>
+        <div class="logo-title">스터디포스 TQ TEST 결과 분석 시스템</div>
         <div class="logo-sub">STUDYFORCE LANGUAGE RESEARCH INSTITUTE</div>
       </div>
     </div>
@@ -659,7 +659,7 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 
-<div id="page-result" style="display:none;height:calc(100vh - 40px);background:var(--bg);overflow-y:auto;position:relative">
+<div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative">
   <div style="position:sticky;top:0;z-index:50;padding:10px 22px;background:rgba(2,6,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1);display:flex;align-items:center;gap:12px">
     <button onclick="(window.showInputPage||function(){})();" style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#A78BFA;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(139,92,246,.22)'" onmouseout="this.style.background='rgba(139,92,246,.12)'">
       ← 새 학생
@@ -1538,8 +1538,20 @@ function renderResult(e,nm){
   <!-- ══ 메인 히어로 존 ══ -->
   <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
 
+    <!-- 중앙: 배너 + 카드 세로 묶음 -->
+    <div style="display:flex;flex-direction:column;align-items:stretch;width:500px;flex-shrink:0">
+
+      <!-- ══ 유형 타이틀 배너 (흰 카드 바깥 위) ══ -->
+      <div id="type-title-banner" style="background:#0B1829;border-radius:12px 12px 0 0;padding:16px 24px 14px;margin-bottom:0">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:5px">
+          <div id="banner-bt" style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-.5px;line-height:1.25">—</div>
+          <div id="banner-urg" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.2px"></div>
+        </div>
+        <div id="banner-st" style="font-size:12px;font-weight:700;color:#A78BFA;letter-spacing:-.1px;line-height:1.4"></div>
+      </div>
+
     <!-- 중앙 카드 (position:relative 기준점) -->
-    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:0 0 16px 16px;padding:66px 36px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
       <!-- 좌측 카드: 정보처리습관 — 중앙 기준 absolute -->
       <!-- 학생 정보 카드 — 좌측 상단, 다른 슬롯보다 넓고 강조 -->
@@ -1680,6 +1692,7 @@ function renderResult(e,nm){
       <div id="vocCard2" style="display:none"></div>
       <div id="reasonCard" style="display:none"></div>
     </div>
+    </div><!-- /중앙 래퍼 -->
 
     <!-- 원인분석 카드 그리드 -->
     <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
@@ -1749,6 +1762,29 @@ gv("btnA").addEventListener("click",async function(){
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
     rv.innerHTML=renderResult(eng,inp.name);
+
+    // ── 유형 타이틀 배너 세팅 ──
+    (function(){
+      var bannerBt  = document.getElementById('banner-bt');
+      var bannerSt  = document.getElementById('banner-st');
+      var bannerUrg = document.getElementById('banner-urg');
+      if(!bannerBt) return;
+      var btName = (eng.btDisplay||eng.bt||'—');
+      var stName = (eng.stDisplay||eng.st||'');
+      var urgMap = {즉각:'즉각 개입 필요',조기:'조기 개입 권장',중장기:'중장기 관리'};
+      var urgLabel = urgMap[eng.urg]||eng.urg||'';
+      var TC_BANNER={"최상위 완성 역량형":"#34D399","고역량 잠재력 미개방형":"#34D399",
+        "성실한 암기 의존형":"#F87171","논리 두뇌 미발현형":"#60A5FA",
+        "조용한 학습 위기형":"#F87171","전반 역량 미완성형":"#FBBF24",
+        "기초 회복 가능 위기형":"#FB923C","심각한 학습 기능 마비형":"#F87171",
+        "전반 역량 공백형":"#94A3B8","역량 모순 붕괴 예고형":"#C084FC"};
+      var btColor = TC_BANNER[btName]||'#A78BFA';
+      bannerBt.textContent  = btName;
+      bannerBt.style.color  = btColor;
+      bannerSt.textContent  = stName;
+      bannerUrg.textContent = urgLabel ? '(' + urgLabel + ')' : '';
+    })();
+
     // 결과 페이지로 전환
     showResultPage(inp.name);
     // 등장 애니메이션 실행
@@ -1830,7 +1866,13 @@ gv("btnB").addEventListener("click",async function(){
       headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
       body:JSON.stringify({action:"generate",inp:inp,name:nm,engineResult:eng})
     });
-    if(!resp.ok){const e=await resp.json();throw new Error(e.error||"서버 오류 "+resp.status);}
+    if(!resp.ok){
+      let errMsg="서버 오류 "+resp.status;
+      try{const e=await resp.json();errMsg=e.error||errMsg;}
+      catch(_){try{errMsg=await resp.text().then(t=>t.slice(0,200))||errMsg;}catch(_2){}}
+      console.error("[TQ API error]",resp.status,errMsg);
+      throw new Error(errMsg);
+    }
     let raw=await resp.text();
     raw=raw.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
     var _s=raw.indexOf("{"),_e=raw.lastIndexOf("}");
@@ -1894,7 +1936,11 @@ gv("btnB").addEventListener("click",async function(){
     gv("btnR").disabled=false;
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
-    for(var i=1;i<=4;i++){var el=gv("sl"+i);if(el)el.innerHTML='<span style="color:#A32D2D;font-size:11px">오류 발생</span>';}
+    console.error("[TQ generate error]", err);
+    for(var i=1;i<=4;i++){
+      var el=gv("sl"+i);
+      if(el)el.innerHTML='<span style="color:#A32D2D;font-size:11px">오류: '+err.message+'</span>';
+    }
   }finally{btnB.disabled=false;btnB.textContent="② 판독문 생성 — Claude AI";}
 });
 
