@@ -112,7 +112,7 @@ body{
 .L{
   background:#F7F9FC;
   overflow:hidden;
-  height:calc(100vh - 40px);
+  height:100vh;
   display:flex;flex-direction:column;
   box-shadow:2px 0 0 rgba(139,92,246,.1), 4px 0 24px rgba(0,0,0,.6);
   width:330px;min-width:180px;max-width:600px;flex-shrink:0;
@@ -126,7 +126,7 @@ body{
 .R{
   padding:20px 22px;
   overflow-y:auto;
-  height:calc(100vh - 40px);
+  height:100vh;
   background:var(--bg);
   flex:1;min-width:0;
   position:relative;
@@ -489,13 +489,10 @@ details summary:hover{color:var(--tx2)}
 </style>
 </head>
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:1px solid rgba(139,92,246,.15);position:fixed;top:0;left:0;right:0;z-index:200">
-  <div style="display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid rgba(139,92,246,.15);min-width:160px">
+  <div style="display:flex;align-items:center;gap:8px;padding:0 16px">
     <div style="width:22px;height:22px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">TQ</div>
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">판독 자동화 <span style="color:#8B5CF6">v5</span>_editor</span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">TQ 판독 자동화 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
   </div>
-  <button class="v5-tab active" onclick="v5Switch('판독')" id="v5tab_판독">판독</button>
-  <button class="v5-tab" onclick="v5Switch('편집')" id="v5tab_편집">의사결정 테이블</button>
-  <button class="v5-tab" onclick="v5Switch('인과')" id="v5tab_인과">인과분석 경로</button>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
 <div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
@@ -1851,6 +1848,49 @@ gv("btnB").addEventListener("click",async function(){
     }
     for(var i=1;i<=4;i++){var el=gv("sl"+i);if(el)el.textContent=slots["slot"+i]||"";}
     window.__TQ_SLOTS=slots;
+
+    // ── 베타 피드백 UI 삽입 ──
+    // 1) 각 슬롯 헤더에 🚩 버튼 추가
+    var SLOT_TITLES = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
+    for(var si=1;si<=4;si++){
+      (function(idx){
+        var slotEl = document.querySelector('.slot:nth-of-type('+idx+') .slot-h');
+        if(!slotEl) return;
+        if(slotEl.querySelector('.beta-flag-btn')) return; // 중복 방지
+        var flagBtn = document.createElement('button');
+        flagBtn.className = 'beta-flag-btn';
+        flagBtn.innerHTML = '🚩 오류 신고';
+        flagBtn.title = '슬롯'+idx+' 판독 내용이 부정확한 경우 신고';
+        flagBtn.onclick = function(){ openFlagModal(idx, SLOT_TITLES[idx-1], slots["slot"+idx]||""); };
+        slotEl.appendChild(flagBtn);
+      })(si);
+    }
+
+    // 2) 전체 의견 입력란 — 슬롯 섹션 아래에 한 번만 삽입
+    var feedbackArea = document.getElementById('beta-feedback-area');
+    if(!feedbackArea){
+      var slotsContainer = document.querySelector('[id^="sl1"]');
+      var parentSection = slotsContainer ? slotsContainer.closest('.slot')?.parentElement : null;
+      // slot들의 부모 찾기
+      var allSlots = document.querySelectorAll('.slot');
+      var lastSlot = allSlots[allSlots.length-1];
+      if(lastSlot && lastSlot.parentElement){
+        var fb = document.createElement('div');
+        fb.id = 'beta-feedback-area';
+        fb.innerHTML = '<div style="margin-top:16px;background:#FFF8F0;border:1.5px solid #FED7AA;border-radius:10px;padding:16px 20px">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+          + '<span style="background:#EA580C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:2px;letter-spacing:.5px">BETA</span>'
+          + '<span style="font-size:13px;font-weight:700;color:#9A3412">판독 품질 개선을 위한 의견을 남겨주세요</span>'
+          + '</div>'
+          + '<textarea id="beta-feedback-text" placeholder="전반적인 판독 결과에 대한 의견, 개선 사항 등을 자유롭게 입력해주세요." '
+          + 'style="width:100%;height:80px;padding:10px 12px;border:1px solid #FDBA74;border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;background:#fff;color:#1E293B;line-height:1.6;outline:none"></textarea>'
+          + '<div style="display:flex;justify-content:flex-end;margin-top:8px">'
+          + '<button onclick="submitFeedback()" style="background:#EA580C;color:#fff;border:none;padding:7px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s" onmouseover="this.style.background=\'#C2410C\'" onmouseout="this.style.background=\'#EA580C\'">의견 전송</button>'
+          + '</div>'
+          + '</div>';
+        lastSlot.parentElement.appendChild(fb);
+      }
+    }
     gv("btnR").disabled=false;
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
@@ -1859,6 +1899,192 @@ gv("btnB").addEventListener("click",async function(){
 });
 
 // ── 샘플 데이터 ──
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 베타 피드백 시스템
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// CSS 동적 삽입
+(function(){
+  var s = document.createElement('style');
+  s.textContent = `
+    .beta-flag-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid rgba(234,88,12,.35);
+      color: rgba(234,88,12,.7);
+      font-size: 10px; font-weight: 600;
+      padding: 3px 10px; border-radius: 4px;
+      cursor: pointer; font-family: inherit;
+      transition: all .15s; white-space: nowrap;
+    }
+    .beta-flag-btn:hover {
+      background: rgba(234,88,12,.08);
+      border-color: #EA580C; color: #EA580C;
+    }
+    #beta-flag-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 9999;
+      align-items: center; justify-content: center;
+    }
+    #beta-flag-overlay.open { display: flex; }
+    #beta-flag-modal {
+      background: #fff; border-radius: 12px;
+      padding: 28px 28px 24px; width: 480px; max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    #beta-flag-modal h3 {
+      font-size: 15px; font-weight: 700; color: #1E293B;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    #beta-flag-modal .modal-slot-preview {
+      background: #F8FAFC; border: 1px solid #E2E8F0;
+      border-radius: 6px; padding: 10px 12px;
+      font-size: 11px; color: #64748B; line-height: 1.6;
+      max-height: 80px; overflow-y: auto; margin: 12px 0;
+    }
+    #beta-flag-modal label {
+      font-size: 12px; font-weight: 600; color: #475569;
+      display: block; margin-bottom: 6px;
+    }
+    #beta-flag-comment {
+      width: 100%; height: 80px;
+      border: 1px solid #CBD5E1; border-radius: 6px;
+      padding: 9px 12px; font-size: 12px; font-family: inherit;
+      resize: vertical; outline: none; color: #1E293B;
+      line-height: 1.6;
+    }
+    #beta-flag-comment:focus { border-color: #8B5CF6; }
+    .modal-actions {
+      display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;
+    }
+    .modal-btn-cancel {
+      background: #F1F5F9; color: #64748B; border: none;
+      padding: 8px 18px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .modal-btn-cancel:hover { background: #E2E8F0; }
+    .modal-btn-submit {
+      background: #EA580C; color: #fff; border: none;
+      padding: 8px 22px; border-radius: 6px;
+      font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: background .15s;
+    }
+    .modal-btn-submit:hover { background: #C2410C; }
+    .modal-btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+  `;
+  document.head.appendChild(s);
+})();
+
+// 🚩 플래그 모달 HTML 동적 생성
+(function(){
+  var overlay = document.createElement('div');
+  overlay.id = 'beta-flag-overlay';
+  overlay.innerHTML = `
+    <div id="beta-flag-modal">
+      <h3>🚩 <span id="flag-slot-title">슬롯 오류 신고</span></h3>
+      <p style="font-size:11px;color:#94A3B8;margin-bottom:4px">판독 내용 미리보기</p>
+      <div class="modal-slot-preview" id="flag-slot-preview"></div>
+      <label>어떤 부분이 부정확한가요?</label>
+      <textarea id="beta-flag-comment" placeholder="예) 이 학생의 음독 습관 분석이 실제와 다릅니다. 속도가 느린 이유가 음독이 아닌 것 같습니다."></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" onclick="closeFlagModal()">취소</button>
+        <button class="modal-btn-submit" id="flag-submit-btn" onclick="submitFlag()">신고 전송</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeFlagModal(); });
+  document.body.appendChild(overlay);
+})();
+
+var _flagSlotIdx = 0;
+var _flagSlotContent = '';
+
+function openFlagModal(slotIdx, slotTitle, slotContent) {
+  _flagSlotIdx = slotIdx;
+  _flagSlotContent = slotContent;
+  document.getElementById('flag-slot-title').textContent = '슬롯' + slotIdx + ' — ' + slotTitle;
+  document.getElementById('flag-slot-preview').textContent = slotContent.slice(0, 150) + (slotContent.length > 150 ? '...' : '');
+  document.getElementById('beta-flag-comment').value = '';
+  document.getElementById('beta-flag-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('beta-flag-comment').focus(); }, 100);
+}
+
+function closeFlagModal() {
+  document.getElementById('beta-flag-overlay').classList.remove('open');
+}
+
+function submitFlag() {
+  var comment = document.getElementById('beta-flag-comment').value.trim();
+  var btn = document.getElementById('flag-submit-btn');
+  btn.disabled = true; btn.textContent = '전송 중...';
+
+  var payload = {
+    type: 'slot_flag',
+    slot_idx: _flagSlotIdx,
+    slot_content: _flagSlotContent.slice(0, 500),
+    comment: comment,
+    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
+    created_at: new Date().toISOString()
+  };
+
+  sendFeedbackToSupabase(payload, function(ok){
+    btn.disabled = false; btn.textContent = '신고 전송';
+    closeFlagModal();
+    if(ok) showFeedbackToast('신고가 접수됐습니다. 감사합니다 🙏');
+    else showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
+  });
+}
+
+function submitFeedback() {
+  var text = (document.getElementById('beta-feedback-text')||{}).value || '';
+  text = text.trim();
+  if(!text){ showFeedbackToast('의견을 입력해주세요.', true); return; }
+
+  var payload = {
+    type: 'overall_feedback',
+    comment: text,
+    slots: window.__TQ_SLOTS ? JSON.stringify(window.__TQ_SLOTS).slice(0, 2000) : '',
+    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
+    created_at: new Date().toISOString()
+  };
+
+  sendFeedbackToSupabase(payload, function(ok){
+    var el = document.getElementById('beta-feedback-text');
+    if(ok){
+      if(el) el.value = '';
+      showFeedbackToast('의견이 전송됐습니다. 감사합니다 🙏');
+    } else {
+      showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
+    }
+  });
+}
+
+function sendFeedbackToSupabase(payload, cb) {
+  // Edge Function을 통해 저장 — API 키 프론트엔드 노출 없음
+  fetch(TQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-academy-token': TQ_API_TOKEN || ''
+    },
+    body: JSON.stringify(Object.assign({ action: 'feedback' }, payload))
+  })
+  .then(function(r){ cb(r.ok); })
+  .catch(function(){ cb(false); });
+}
+
+function showFeedbackToast(msg, isErr) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
+    + 'background:' + (isErr ? '#DC2626' : '#059669') + ';color:#fff;'
+    + 'padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;'
+    + 'z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);'
+    + 'animation:tq-fadein .3s ease both';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3000);
+}
+
 var SAMPLES=[
   // 0. 진호윤 — 초고5 통합완성형, 음독+재처리 있지만 고역량
   {
@@ -4921,14 +5147,109 @@ document.addEventListener('DOMContentLoaded', function() {
   safeRenderNav();
   v5Switch('판독');
 
-  // 새로고침 시 랜덤 샘플로 결과 페이지 자동 표시
-  setTimeout(function(){
-    var idx = 1; // 이준혁(모순패턴) 고정 테스트
-    if (typeof loadSample === 'function') loadSample(idx);
-    // 분석 버튼 클릭
-    var btnA = document.getElementById('btnA');
-    if (btnA) btnA.click();
-  }, 300);
+  // URL 파라미터 ?tqdata=... 감지 → 자동 주입 후 바로 결과 페이지
+  var params = new URLSearchParams(window.location.search);
+  var tqRaw = params.get('tqdata');
+
+  if (tqRaw) {
+    // 파라미터 있음 → 폼 자동 채우고 분석 실행
+    setTimeout(function() {
+      try {
+        var d = JSON.parse(decodeURIComponent(tqRaw));
+
+        // 이름
+        if (d.name) { var el = document.getElementById('iName'); if(el) el.value = d.name; }
+
+        // 학제
+        if (d.level) {
+          var lvSel = document.getElementById('iLevel');
+          if (lvSel) {
+            for (var i=0; i<lvSel.options.length; i++) {
+              if (lvSel.options[i].value === d.level) { lvSel.selectedIndex=i; break; }
+            }
+            if(typeof onLevelChange==='function') onLevelChange();
+          }
+        }
+
+        // 학년
+        if (d.grade != null) {
+          setTimeout(function() {
+            var grSel = document.getElementById('iGrade');
+            if (grSel) {
+              for (var j=0; j<grSel.options.length; j++) {
+                if (String(grSel.options[j].value) === String(d.grade)) { grSel.selectedIndex=j; break; }
+              }
+            }
+          }, 50);
+        }
+
+        // 수치 슬라이더/입력
+        var fieldMap = {
+          fct:'sFct', str:'sStr', spd:'sSpd',
+          voc:'sVoc', wm:'sWm', inf:'sInf'
+        };
+        Object.keys(fieldMap).forEach(function(key) {
+          if (d[key] == null) return;
+          var el = document.getElementById(fieldMap[key]);
+          if (el) {
+            el.value = d[key];
+            el.dispatchEvent(new Event('input'));
+          }
+          // 수치 표시 span
+          var spanEl = document.getElementById(fieldMap[key]+'V');
+          if (spanEl) spanEl.textContent = d[key];
+        });
+
+        // 독해속도 직접 입력
+        if (d.spd != null) {
+          var spdEl = document.getElementById('sSpd');
+          if (spdEl) spdEl.value = d.spd;
+        }
+
+        // 성적 드롭다운 (국어/영어/수학)
+        var scoreMap = { kor_score:'sS0', eng_score:'sS1', math:'sS2' };
+        Object.keys(scoreMap).forEach(function(key) {
+          if (d[key] == null) return;
+          var sel = document.getElementById(scoreMap[key]);
+          if (sel) {
+            for (var k=0; k<sel.options.length; k++) {
+              if (sel.options[k].value === String(d[key])) { sel.selectedIndex=k; break; }
+            }
+          }
+        });
+
+        // 독해습관 체크리스트
+        if (Array.isArray(d.hab_checks)) {
+          d.hab_checks.forEach(function(v, i) {
+            var el = document.getElementById('h'+i);
+            if (el) el.checked = !!v;
+          });
+          if(typeof updateChkScore==='function') updateChkScore();
+        }
+
+        // 독해효율성 체크리스트
+        if (Array.isArray(d.eff_checks)) {
+          d.eff_checks.forEach(function(v, i) {
+            var el = document.getElementById('e'+i);
+            if (el) el.checked = !!v;
+          });
+          if(typeof updateChkScore==='function') updateChkScore();
+        }
+
+        // 분석 실행 → 바로 결과 페이지
+        setTimeout(function() {
+          var btnA = document.getElementById('btnA');
+          if (btnA) btnA.click();
+        }, 150);
+
+      } catch(err) {
+        console.warn('tqdata 파싱 실패:', err);
+        // 파싱 실패 시 그냥 입력 페이지 표시 (아무것도 안 함)
+      }
+    }, 300);
+
+  }
+  // tqdata 없음 → 그냥 입력 페이지 (기존 동작)
 });
 
 </script>
