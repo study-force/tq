@@ -112,7 +112,7 @@ body{
 .L{
   background:#F7F9FC;
   overflow:hidden;
-  height:100vh;
+  height:calc(100vh - 40px);
   display:flex;flex-direction:column;
   box-shadow:2px 0 0 rgba(139,92,246,.1), 4px 0 24px rgba(0,0,0,.6);
   width:330px;min-width:180px;max-width:600px;flex-shrink:0;
@@ -126,7 +126,7 @@ body{
 .R{
   padding:20px 22px;
   overflow-y:auto;
-  height:100vh;
+  height:calc(100vh - 40px);
   background:var(--bg);
   flex:1;min-width:0;
   position:relative;
@@ -489,10 +489,13 @@ details summary:hover{color:var(--tx2)}
 </style>
 </head>
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:1px solid rgba(139,92,246,.15);position:fixed;top:0;left:0;right:0;z-index:200">
-  <div style="display:flex;align-items:center;gap:8px;padding:0 16px">
+  <div style="display:flex;align-items:center;gap:8px;padding:0 16px;border-right:1px solid rgba(139,92,246,.15);min-width:160px">
     <div style="width:22px;height:22px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">TQ</div>
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">TQ 판독 자동화 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">판독 자동화 <span style="color:#8B5CF6">v5</span>_editor</span>
   </div>
+  <button class="v5-tab active" onclick="v5Switch('판독')" id="v5tab_판독">판독</button>
+  <button class="v5-tab" onclick="v5Switch('편집')" id="v5tab_편집">의사결정 테이블</button>
+  <button class="v5-tab" onclick="v5Switch('인과')" id="v5tab_인과">인과분석 경로</button>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
 <div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
@@ -668,10 +671,18 @@ details summary:hover{color:var(--tx2)}
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
       <button id="btnB2" disabled
         onclick="document.getElementById('btnB').click()"
-        style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.5;transition:all .2s"
-        onmouseover="if(!this.disabled)this.style.opacity='1'"
-        onmouseout="if(!this.disabled)this.style.opacity='0.9'">
+        style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.4;transition:all .2s">
         ✦ 판독문 생성
+      </button>
+      <button id="btnR3" disabled
+        onclick="openReport()"
+        style="background:linear-gradient(135deg,#0BA98E,#0E7CC0);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.4;transition:all .2s">
+        📄 리포트 출력
+      </button>
+      <button
+        onclick="previewReportWithSample()"
+        style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);padding:7px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">
+        🎨 디자인 미리보기
       </button>
     </div>
   </div>
@@ -722,28 +733,33 @@ details summary:hover{color:var(--tx2)}
 <div id="imgPreviewWrap" style="display:none"><img id="imgPreview" src="" alt=""><button onclick="clearImg()" style="display:none">✕</button></div>
 
 <script>
+// ── API 키 관리 (내부 편집용) ──
+var TQ_EDITOR_API_KEY = localStorage.getItem('tq_editor_api_key') || '';
 
-// ══════════════════════════════════════════════════════
-// ★ 배포 설정 — 이 두 줄만 수정하면 됩니다 ★
-// ══════════════════════════════════════════════════════
-var TQ_API_URL   = "https://dtktaemqssvglwgvttqq.supabase.co/functions/v1/tq-engine";
-var TQ_API_TOKEN = "sf_internal_2024";
+function getApiKey() {
+  return localStorage.getItem('tq_editor_api_key') || '';
+}
 
-// ── 설정 검증 ──
-(function() {
-  if(TQ_API_URL.indexOf("YOUR_PROJECT") > -1 || TQ_API_TOKEN === "YOUR_ACADEMY_TOKEN") {
-    document.addEventListener("DOMContentLoaded", function() {
-      var overlay = document.createElement("div");
-      overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:'Noto Sans KR',sans-serif";
-      overlay.innerHTML = '<div style="width:48px;height:48px;background:linear-gradient(135deg,#8B5CF6,#0BA98E);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">TQ</div>'
-        + '<div style="font-size:18px;font-weight:700;color:#fff">설정이 필요합니다</div>'
-        + '<div style="font-size:13px;color:#94A3B8;text-align:center;line-height:1.8">tq_v5_prod.html 파일을 열어<br><span style="color:#A78BFA;font-weight:600">TQ_API_URL</span> 과 <span style="color:#A78BFA;font-weight:600">TQ_API_TOKEN</span> 을<br>본사에서 발급받은 값으로 수정해주세요.</div>'
-        + '<div style="font-size:11px;color:#475569;background:#0c1427;padding:10px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">배포 가이드 문서 참조 → 724번째 줄 수정</div>';
-      document.body.appendChild(overlay);
-    });
+function setApiKey(key) {
+  localStorage.setItem('tq_editor_api_key', key.trim());
+  TQ_EDITOR_API_KEY = key.trim();
+}
+
+function showApiKeyDialog() {
+  var cur = getApiKey();
+  var key = prompt('Anthropic API 키를 입력하세요\n(sk-ant-...)', cur ? cur.slice(0,20)+'...' : '');
+  if (key === null) return;
+  if (key.trim().startsWith('sk-')) {
+    setApiKey(key.trim());
+    alert('API 키가 저장됐습니다. 이 브라우저에서는 다시 입력하지 않아도 됩니다.');
+  } else if (key.trim() === '') {
+    localStorage.removeItem('tq_editor_api_key');
+    TQ_EDITOR_API_KEY = '';
+    alert('API 키가 삭제됐습니다.');
+  } else {
+    alert('올바른 API 키 형식이 아닙니다. sk-ant-... 형태로 입력하세요.');
   }
-})();
-// ══════════════════════════════════════════════════════
+}
 
 
 // ── 프로그램 데이터 ──
@@ -1152,14 +1168,33 @@ async function processOcrFile(file){
       r.onerror=rej;
       r.readAsDataURL(file);
     });
-        const resp=await fetch(TQ_API_URL,{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
-      body:JSON.stringify({action:"ocr",imageBase64:b64,imageType:file.type})
+      headers:{"Content-Type":"application/json","x-api-key":getApiKey(),"anthropic-version":"2023-06-01"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:800,
+        messages:[{role:"user",content:[
+          {type:"image",source:{type:"base64",media_type:file.type,data:b64}},
+          {type:"text",text:"이 TQ테스트 결과지 이미지에서 정보를 추출해 JSON만 반환하세요.\n\n"
+          +"[수치] fact_understand(사실적이해 바그래프 좌측 숫자), struct_understand(우측 숫자), speed(독해속도 숫자), vocabulary(어휘능력), working_memory(워킹메모리폭), inference(추론능력), student_name(이름 정확히), school_level(초등/중등/고등/일반), grade(학년 숫자), kor_score\n\n"
+          +"[체크리스트]\n"
+          +"● 빨간 채워진 원=true, ○ 빈 원=false. 각 항목을 위→아래 순서로 정확히 판독하세요.\n"
+          +"이미지 하단에 '잘못된 독해습관 N', '독해효율성 결함 증상 N' 숫자가 있습니다. 그 숫자만큼만 true가 있어야 합니다.\n\n"
+          +"독해습관(위→아래 순서, 정확히 "+HAB_ITEMS.length+"개):\n"
+          +HAB_ITEMS.map(function(t,i){return i+". "+t;}).join("\n")+"\n"
+          +"hab_checks: 위 순서대로 boolean "+HAB_ITEMS.length+"개 배열\n\n"
+          +"독해효율성(위→아래 순서, 정확히 "+EFF_ITEMS.length+"개):\n"
+          +EFF_ITEMS.map(function(t,i){return i+". "+t;}).join("\n")+"\n"
+          +"eff_checks: 위 순서대로 boolean "+EFF_ITEMS.length+"개 배열\n\n"
+          +"※ hab_checks에서 true 개수 = 이미지의 '잘못된 독해습관' 숫자와 일치해야 함\n"
+          +"※ eff_checks에서 true 개수 = 이미지의 '독해효율성 결함 증상' 숫자와 일치해야 함\n\n"
+          +"JSON: {fact_understand,struct_understand,speed,vocabulary,working_memory,inference,student_name,school_level,grade,kor_score,hab_count(이미지의 잘못된독해습관 숫자),eff_count(이미지의 독해효율성결함증상 숫자),hab_checks:[],eff_checks:[]}\nJSON만 출력."}
+        ]}]
+      })
     });
-    if(!resp.ok)throw new Error("OCR 서버 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
-    let raw=await resp.text();
-    raw=raw.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
+    if(!resp.ok)throw new Error("API "+resp.status);
+    const data=await resp.json();
+    let raw=data.content[0].text.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
     const parsed=JSON.parse(raw);
     // 폼에 값 적용
     if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
@@ -1267,8 +1302,690 @@ function mpush(bullets, id, fallbackT, fallbackS) {
   if (m) bullets.push(m);
   else bullets.push({ t: fallbackT, s: fallbackS });
 }
-// collectEvidence는 서버에서 실행됩니다 (보안)
-function collectEvidence(){ return []; }
+function collectEvidence(inp, kv, flagC, flagO, habClass) {
+  const spd = inp.spd, acc = inp.acc, fct = inp.fct, str_ = inp.str;
+  const voc = inp.voc, wm = inp.wm, inf = inp.inf;
+  const hab = inp.hab, eff = inp.eff;
+  const gap = fct - str_;
+  const spdGrade = grSpd(spd, inp.level);
+  const ev = []; // 8개 항목
+
+  // ──────────────────────────────────────────────
+  // 1) 성적선행지수
+  // 정확도와 성적의 관계 + 속도 교차 → 공부 소양·습관 판단
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    // 속도 등급 (item1에서 직접 계산)
+    const _spdG1 = spdGrade;  // collectEvidence 인자로 전달된 spdGrade 사용
+    const _highSpd1 = (_spdG1 === "빠름" || _spdG1 === "보통이상");
+    const _lowSpd1  = (_spdG1 === "느림" || _spdG1 === "보통이하");
+    if (flagC) {
+      mpush(bullets,"1_1","위험","성적은 역량이 아닌 반복암기와 노력의 결과임");
+      mpush(bullets,"1_2","위험","역량 대비 성적이 과도하게 높은 모순 상태 — 붕괴 임박");
+      mpush(bullets,"1_3","위험","스스로는 문제점을 자각하지 못하고 있을 가능성 높음");
+    } else if (acc >= 90) {
+      mpush(bullets,"1_4","강점","최상위권 독해역량");
+      if(spd>=500&&voc>=80&&wm>=40&&inf>=80){
+        mpush(bullets,"1_new_teukmok","강점","특목자사고 진학 설계 권장");
+      }
+      if(voc<=60&&wm<=30&&inf<=60){
+        mpush(bullets,"1_new_unstable_top","보통","불안정 최상위권");
+      }
+      if (kv !== null && kv >= 85) mpush(bullets,"1_6_kv","강점","역량과 성적 완전 일치 — 실력 기반 최상위권");
+    } else if (acc >= 70) {
+      mpush(bullets,"1_6","강점","공부를 잘 할 수 있는 우수한 소양을 지닌 아이 — 상위권 역량");
+      if (kv !== null && kv >= 85) mpush(bullets,"1_7","강점","역량과 성적이 일치 — 실력 기반 상위권");
+      else if (kv !== null && kv < 70) mpush(bullets,"1_8","주의","역량에 비해 성적이 낮음 — 학습 환경·방법 점검 필요");
+    } else if (acc >= 50) {
+      mpush(bullets,"1_9","보통","기본 공부역량은 갖추고 있으나 개선 여지 있음");
+      if (_highSpd1 && acc < 65) mpush(bullets,"1_10","주의","빠르게 읽으려 하기보다 정확하게 이해하는 훈련이 필요 — 속도보다 이해의 질이 우선");
+    } else if (acc >= 30) {
+      mpush(bullets,"1_11","주의","공부역량 부족으로 공부에 어려움을 겪고 있음");
+      // 속도 × 정확도 교차 — 의지와 습관의 방향이 다름
+      if (_highSpd1) {
+        // 저정확 + 고속 → 빠르게 읽지만 깊이 없는 처리
+        mpush(bullets,"1_12","주의","빠르게 읽고 넘기는 습관으로 인해 내용이 정확히 처리되지 않음");
+      } else if (_lowSpd1) {
+        // 저정확 + 저속 → 이해하려고 시도하지만 역량 부족
+        mpush(bullets,"1_13","주의","정확히 이해하고 기억하려는 의지는 있으나 역량이 따라주지 않는 상태");
+      } else {
+        mpush(bullets,"1_14","주의","독해 정확도가 기준에 미치지 못하는 상태 — 역량 개선이 필요함");
+      }
+    } else {
+      mpush(bullets,"1_15","위험","공부역량이 형성되지 않은 심각한 상태");
+      if (_highSpd1) {
+        // 저정확 + 고속 → 글자만 보고 지나가는 패턴
+        mpush(bullets,"1_16","위험","글자를 빠르게 훑지만 내용이 처리되지 않는 상태 — 이해 없이 읽는 습관이 굳어진 상태");
+      } else {
+        // 저정확 + 저속 → 읽어도 안 되는 상태
+        mpush(bullets,"1_17","위험","반복해서 읽어도 이해되지 않고 기억되지 않는 상태");
+      }
+    }
+    if (acc <= 10 && inp.level !== "초저") mpush(bullets,"1_18","위험","하위 난이도 재검사 권고");
+    if (acc >= 90) mpush(bullets,"1_5","강점","상위 난이도 재검사로 더 정밀한 분석 권고");
+    ev.push({ id: "성적선행지수", title: "1) 성적선행지수", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 2) 독해속도
+  // 성실도·지적욕구·정보처리 방식 판단
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    // 속도 × 정확도 교차 분석 (핵심)
+    if (spdGrade === "느림") {
+      if (acc >= 70) {
+        mpush(bullets,"eng_5_2","주의","음독습관 또는 재처리 습관으로 속도가 저하된 것으로 추정");
+      } else if (acc >= 40) {
+        mpush(bullets,"eng_5_5","주의","반복 재처리 습관이 속도 저하의 원인으로 추정");
+      } else {
+      }
+    } else if (spdGrade === "보통이하") {
+      // 속도 단독 메시지 → 2번으로 이관
+    } else if (spdGrade === "보통이상") {
+      // 속도 단독 메시지 → 2번으로 이관
+    } else { // 빠름
+      // 속도 단독 메시지 → 2번으로 이관
+    }
+    // 음독 체크와 교차
+    if (habClass.음독습관 >= 1 && spdGrade === "느림") {
+      mpush(bullets,"eng_5_15","위험","음독습관이 독해속도 저하의 직접 원인으로 확인됨");
+    }
+    // ── 속도×정확도 교차 (5번에서 이관) ──
+    if (spdGrade === "느림") {
+      mpush(bullets,"eng_5_1","강점","집요하고 꼼꼼하게 읽으려는 성실한 습관");
+      mpush(bullets,"eng_5_3","주의","시험에서 시간 부족 현상 발생 가능성 높음");
+      if (acc >= 40) {
+        mpush(bullets,"eng_5_4","보통","성실하게 읽으려 노력하고 있으나 역량 부족으로 반복 처리");
+      } else {
+        mpush(bullets,"eng_5_6","위험","글자를 읽지만 정보처리가 되지 않는 상태");
+        mpush(bullets,"eng_5_7","위험","여러 번 읽어도 이해·기억이 안 되는 상태");
+      }
+      mpush(bullets,"eng_5_26","주의","독해속도 느림을 스스로 인지 — 시험 시간 부족 자각, 측정 결과와 일치");
+    } else if (spdGrade === "보통이하") {
+      mpush(bullets,"eng_5_8","보통","글 읽는 속도는 보통 수준 — 성실하게 읽는 편");
+      if (acc < 50) mpush(bullets,"eng_5_9","주의","속도 대비 정확도가 낮음 — 피상적 독해 가능성");
+    } else if (spdGrade === "보통이상") {
+      mpush(bullets,"eng_5_10","강점","정보처리 속도 양호 — 지적 호기심과 독서 경험 반영");
+      if (acc < 50) mpush(bullets,"eng_5_11","주의","빠른 속도에 비해 정확도 낮음 — 대충 읽는 습관 가능성");
+    } else { // 빠름
+      if (acc >= 70) {
+        mpush(bullets,"eng_5_12","강점","우수한 정보처리 속도 — 지적 호기심과 역량 모두 높음");
+      } else {
+        mpush(bullets,"eng_5_13","주의","속도가 매우 빠르나 정확도가 낮음 — 스킬 위주 읽기 또는 대충 읽기");
+        mpush(bullets,"eng_5_14","위험","지문을 제대로 읽지 않고 답을 찾는 방식일 가능성");
+      }
+    }
+    // 5_1, 5_2 (acc <50 빠름/보통 패턴)
+    if (acc < 50 && (spdGrade === "빠름" || spdGrade === "보통이상")) {
+      mpush(bullets,"5_1","위험","빠른 속도로 글자를 넘기고 있어 내용이 실제로 처리되지 않는 상태");
+    }
+    if (acc < 50 && spdGrade === "보통이하") {
+      mpush(bullets,"5_2","주의","속도에 비해 정확도가 낮음 — 내용을 충분히 처리하지 않고 넘기는 패턴");
+    }
+    ev.push({ id: "독해속도", title: "2) 독해속도", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 3) 독서의 양 여부 (어휘능력으로 추정)
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    if (voc >= 75) {
+      mpush(bullets,"eng_3_1","강점","비문학 독서 경험이 풍부한 것으로 추정");
+      mpush(bullets,"eng_3_2","강점","충분한 독서량이 어휘력 형성에 기여");
+    } else if (voc >= 60) {
+      mpush(bullets,"eng_3_3","보통","적정 수준의 독서 경험 — 비문학 독서 이력 있음");
+    } else if (voc >= 50) {
+      if (acc >= 70) {
+        // 독해는 잘하는데 어휘가 낮음 → 편식형
+        mpush(bullets,"eng_3_4","주의","독해정확도에 비해 어휘력이 충분히 발달하지 않음 — 익숙한 분야 위주의 독서로 인한 어휘 편중 가능성");
+      } else {
+        // 독서량 부족을 스스로 인식하는 경우 → "본인은 느낄 수 있으나" 표현 제외
+        var 독서량자각 = inp.effChecked.some(function(c){ return c.includes("독서량이 많이 부족"); });
+        if (독서량자각) {
+          mpush(bullets,"eng_3_5","주의","어휘력이 낮아 비문학·다양한 분야의 독서 경험이 충분하지 않음 — 독서의 질과 범위를 넓히는 것이 필요");
+        } else {
+          mpush(bullets,"eng_3_6","주의","본인은 독서량이 충분하다고 느낄 수 있으나, 어휘력 수준으로 보아 양질의 독서(비문학·깊이 있는 독서)가 충분하지 않음");
+        }
+      }
+    } else if (voc >= 35) {
+      if (acc >= 70) {
+        mpush(bullets,"eng_3_7","주의","독해정확도는 형성되어 있으나 어휘력이 낮음 — 읽기 능력보다 독서 범위가 좁았던 것으로 추정, 비문학·다양한 영역으로 독서 확장 필요");
+      } else {
+        var 독서량자각2 = inp.effChecked.some(function(c){ return c.includes("독서량이 많이 부족"); });
+        if (독서량자각2) {
+          mpush(bullets,"eng_3_8","주의","독서 훈련 경험이 충분하지 않음 — 스토리북 위주의 가벼운 독서에 머물렀을 가능성");
+        } else {
+          mpush(bullets,"3_7","주의","독서 훈련 경험이 부족한 아이로 추정");
+          mpush(bullets,"3_8","주의","스토리북 정도의 독서 경험만 있을 가능성");
+        }
+      }
+    } else {
+      mpush(bullets,"eng_3_9","위험","독서 경험이 거의 없는 것으로 추정");
+      mpush(bullets,"eng_3_10","위험","스토리북조차 읽지 않은 것으로 추정 — 어휘력 미발달");
+    }
+    // 어휘 高이지만 정확도 低 — 독서는 했으나 처리 능력 문제
+    if (voc >= 60 && acc < 40) {
+      mpush(bullets,"eng_3_11","주의","독서량에 비해 독해 처리 능력이 부족 — 읽기 방식의 문제");
+    }
+    // ── 독서 편식형 패턴 감지 ──
+    // acc 높음 + 습관/효율성 높음 + 어휘/추론/WM 낮음
+    // → 읽는 기술은 있으나 독서 영역이 편협한 상태
+    if (acc >= 70 && hab >= 70 && eff >= 70 && voc < 60 && inf < 60) {
+      mpush(bullets,"eng_extra_19","주의","독해정확도와 독해습관은 양호하나 어휘·추론이 낮음 — 독서량 부족보다 독서 영역의 편중이 원인으로 추정됨. 익숙한 장르·주제 위주로만 읽어온 것으로 보임");
+      mpush(bullets,"eng_extra_20","주의","비문학·논설·다양한 분야의 독서 경험을 넓히는 것이 어휘와 추론능력 향상의 핵심 과제");
+    }
+
+    ev.push({ id: "독서의양", title: "3) 독서의 양 여부", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 4) 독해의 질 여부 (사실 × 구조 교차)
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    if (acc >= 70) {
+      if (gap >= 30) {
+        mpush(bullets,"eng_4_1","강점","세부 사실 정보 파악 능력 우수");
+        mpush(bullets,"eng_4_2","주의","구조적 이해 부족 — 글의 핵심과 흐름 파악에 어려움");
+        mpush(bullets,"eng_4_3","주의","세부정보에 집착하다 큰 틀을 놓치는 패턴");
+      } else if (gap <= -20) {
+        mpush(bullets,"eng_4_4","강점","글의 구조와 흐름 파악 능력 양호");
+        mpush(bullets,"eng_4_5","주의","세부 사실 정보 처리는 상대적으로 부족");
+      } else {
+        mpush(bullets,"eng_4_6","강점","사실적·구조적 이해 모두 양호 — 균형 잡힌 독해");
+        mpush(bullets,"eng_4_7","강점","지문 내용을 정확히 이해하고 기억하려고 노력함");
+      }
+      // 고정확인데 어휘가 상대적으로 낮은 경우 → 빠른 처리 방식 기인
+      if (acc >= 70 && voc < acc - 20) {
+        mpush(bullets,"eng_4_8","주의","독해역량 대비 어휘력이 상대적으로 낮음 — 글을 빠르게 처리하는 과정에서 어휘 정보를 정교하게 처리하지 않는 습관에서 기인한 것으로, 독서량 부족보다는 읽기 방식의 문제");
+      }
+    } else if (acc >= 50) {
+      if (gap >= 20) {
+        mpush(bullets,"eng_4_9","보통","사실 정보 파악은 되나 핵심 파악이 어려운 상태");
+        mpush(bullets,"eng_4_10","주의","글의 구조를 통해 글쓴이의 의도 파악이 부족함");
+      } else {
+        mpush(bullets,"eng_4_11","보통","기본적 정보 파악은 가능하나 깊이 있는 이해는 어려움");
+      }
+    } else {
+      mpush(bullets,"eng_4_12","위험","지문의 사실 정보 파악 자체가 어려운 상태");
+      if (fct < 30) mpush(bullets,"eng_4_13","위험","글을 읽어도 내용을 기억하거나 이해하지 못함");
+      if (str_ < 20) mpush(bullets,"eng_4_14","위험","글의 구조와 흐름 파악 불가 — 글쓴이의 의도 파악 어려움");
+    }
+    ev.push({ id: "독해의질", title: "4) 독해의 질 여부", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 5) 정보처리 습관 문제점 (독해습관 체크리스트)
+  // ──────────────────────────────────────────────
+  // 핵심: 음독 해석은 정확도+속도를 반드시 교차해야 함
+  //  - 고정확+고속도 → 부분음독은 자연 현상, 결손 아님
+  //  - 고정확+저속도 → 음독이 속도 저하 원인
+  //  - 저정확+저속도 → 음독이 핵심 문제
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    const highAcc = acc >= 70;
+    const highSpd = spdGrade === "빠름" || spdGrade === "보통이상";
+    const lowSpd  = spdGrade === "느림" || spdGrade === "보통이하";
+
+    if (inp.habChecked.length === 0) {
+      mpush(bullets,"eng_5_16","강점","잘못된 독해습관이 발견되지 않음 — 정보처리 방식 양호");
+    } else {
+
+      // ── 음독 심각도 기반 통합 해석 ──
+      // 체크된 모든 항목은 음독(표면·내재)에서 파생된 미숙한 독해 습관의 발현
+      // 표면음독: 소리내어읽기, 또박또박 → 가장 직접적 음독
+      // 내재음독-재처리: 이미읽은곳, 글줄놓침, 짚어읽기 → 음독으로 인한 재처리
+      // 내재음독-이해결손: 긴문장이해, 훑어읽기, 내용기억, 모르는단어 → 처리한계
+
+      const sev = habClass.심각도;
+
+      // ── 훑어읽기 패턴 최우선 판단 ──
+      // 저정확 + 고속 조합 = 이해 없이 빠르게 넘기는 훑어읽기
+      // 속도가 높을수록 심각도 증가
+      if (!highAcc && highSpd) {
+        if (spdGrade === "빠름") {
+          mpush(bullets,"2_3","위험","빠른 속도로 글자를 넘기고 있어 내용이 실제로 처리되지 않는 상태 — 정확하게 이해하며 읽는 훈련이 필요함");
+        } else {
+          mpush(bullets,"eng_extra_21","주의","속도에 비해 정확도가 낮음 — 내용을 충분히 처리하지 않고 넘기는 패턴으로, 정확하게 이해하며 읽는 습관 형성이 필요함");
+        }
+      }
+
+      // 표면음독 여부 먼저 해석
+      if (habClass.표면음독 >= 1) {
+        const 소리냄 = inp.habChecked.some(c => c.includes("소리 내어"));
+        const 또박 = inp.habChecked.some(c => c.includes("또박또박"));
+        if (highAcc && highSpd) {
+          if (소리냄) mpush(bullets,"eng_5_17","보통","이해가 어려운 구간에서 소리 내어 확인하는 부분음독 경향 — 역량이 높은 학습자에게서 나타나는 자연스러운 현상이며 전체 속도에 거의 영향 없음");
+          if (또박) mpush(bullets,"eng_5_18","보통","단어 단위로 또박또박 읽는 경향(내재음독) — 현재 역량과 속도를 고려하면 학습 지장은 없으나 고등 수준 지문에서 부하가 생길 수 있음");
+        } else if (highAcc && lowSpd) {
+          mpush(bullets,"eng_5_19","주의","음독습관(표면음독·내재음독)이 독해속도를 제한하고 있음 — 눈이 글자를 처리하는 속도보다 발음 속도가 느려 속도 병목 발생");
+          mpush(bullets,"eng_5_20","주의","역량 대비 속도 개선 여지가 충분함 — 음독 교정 훈련을 통해 속도 향상 가능");
+        } else if (!highAcc && highSpd) {
+          // 저정확 + 고속 + 음독 → 훑어읽기+음독 충돌
+          mpush(bullets,"eng_extra_22","위험","빠르게 훑어 읽으면서 음독을 시도하는 상태 — 정확하게 이해하며 읽으려면 현재 속도에서는 시간이 절대적으로 부족함");
+        } else {
+          bullets.push({ t: sev==="심함"?"위험":"주의",
+            s: "음독습관이 " + (sev==="심함"?"심각한 수준":"확인됨") + " — 눈이 글자를 인식하는 속도보다 발음 속도가 느려 독해속도 제한, 시험 시간 부족으로 직결" });
+        }
+      }
+
+      // 내재음독-재처리 해석
+      if (habClass.내재음독재처리 >= 1) {
+        const 항목들 = inp.habChecked.filter(c => ["이미 읽은 곳","글줄을 자주","짚어가며"].some(k=>c.includes(k)));
+        if (highAcc && highSpd) {
+          mpush(bullets,"eng_5_21","보통","재독·짚어읽기 경향(내재음독의 흔적) — 꼼꼼하게 확인하려는 습관으로 현재 역량에서는 속도에 큰 영향 없음");
+        } else {
+          bullets.push({ t: "주의", s: 항목들.length + "개 재처리 습관 확인 — 음독으로 인한 불완전한 처리를 반복 독해로 보완하는 패턴, 독해 효율 저하" });
+        }
+      }
+
+      // 내재음독-이해결손 해석
+      if (habClass.내재음독이해 >= 2) {
+        if (highAcc) {
+          mpush(bullets,"eng_5_22","보통","긴 문장·복잡한 내용에서 처리 부하 자각 — 내재음독으로 인한 워킹메모리 과부하가 간헐적으로 나타남");
+        } else {
+          mpush(bullets,"eng_5_23","위험","음독으로 인한 정보처리 한계 명확 — 긴 문장 이해 어려움·내용 기억 안 됨·모르는 단어에서 막힘이 복합적으로 발생");
+        }
+      } else if (habClass.내재음독이해 === 1 && !highAcc) {
+        mpush(bullets,"eng_5_24","주의","음독으로 인한 처리 한계 일부 자각 — 이해 어려움 간헐적 발생");
+      }
+
+      // 속도 자각
+      if (habClass.속도문제 >= 1) {
+        if (highSpd) {
+          mpush(bullets,"eng_5_25","보통","속도가 느리다고 스스로 인지하나 실제 측정 속도는 양호 — 자기인식과 실제 능력의 괴리");
+        } else {
+        }
+      }
+
+      // 전체 종합
+      if (inp.habChecked.length === 0) {
+        // 해당 없음
+      } else if (highAcc && highSpd && sev !== "심함") {
+        mpush(bullets,"eng_5_27","보통","체크된 습관들은 현재 역량 수준에서 큰 학습 지장을 주지 않으나, 고등·수능 난이도 지문에서는 음독 교정이 필요해질 수 있음");
+      } else if (sev === "심함") {
+        mpush(bullets,"eng_5_28","위험","음독에서 파생된 복합 독해습관 문제 — 표면음독·내재음독·이해결손이 동시에 나타나는 상태로 체계적 교정 훈련 필요");
+      }
+    }
+
+    if (hab >= 80 && inp.habChecked.length === 0) {
+      mpush(bullets,"eng_5_29","강점","독해 효율성에 긍정적 영향을 주는 습관 상태");
+    }
+    ev.push({ id: "정보처리습관", title: "5) 정보처리 습관 문제점", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 6) 워킹메모리 상태
+  // ※ 평균 수준이어도 학습 문제의 주요 원인
+  //   학습의 단순화(떠먹여주는 식 지식습득), 스토리북·학습만화 위주 독서 환경으로 전반적 저하
+  //   WM은 60 이상만 학습에 충분한 수준으로 판단
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    if (wm >= 70) {
+      mpush(bullets,"eng_6_1","강점","워킹메모리 역량 우수 — 복잡한 정보를 처리하며 동시에 기억 가능한 상태");
+      mpush(bullets,"6_2","강점","이해 중심 공부가 가능하여 암기에 의존하지 않아도 됨");
+    } else if (wm >= 60) {
+      mpush(bullets,"eng_6_2","강점","워킹메모리 학습 적정 수준 — 기본적인 이해 중심 학습 가능");
+      mpush(bullets,"eng_6_3","보통","심화 과정에서는 정보 처리 한계가 나타날 수 있음");
+    } else if (wm >= 50) {
+      mpush(bullets,"eng_6_4","주의","워킹메모리가 학습 적정 수준에 미치지 못함");
+      mpush(bullets,"eng_6_5","주의","단순화된 학습 환경과 스토리북·학습만화 위주 독서 경험이 워킹메모리 발달을 저해했을 가능성");
+      mpush(bullets,"eng_6_6","주의","긴 문장·복잡한 개념 처리 시 반복 재처리 발생 가능");
+    } else if (wm >= 40) {
+      // 40~59: 부족 (주의 수준)
+      mpush(bullets,"6_4","주의","워킹메모리 부족 — 정보를 한 번에 처리하지 못하고 반복 재처리하는 경향");
+      mpush(bullets,"eng_6_7","주의","학습만화·스토리북 위주 독서 환경이 워킹메모리 발달을 저해했을 가능성");
+      mpush(bullets,"6_5","주의","음독습관 또는 짚어읽기 습관의 원인이 워킹메모리 부족일 가능성 높음");
+    } else if (wm >= 30) {
+      // 30~39: 심각 부족 (위험 수준)
+      mpush(bullets,"6_6","위험","워킹메모리 심각 부족 — 읽은 내용이 바로 증발하는 상태");
+      mpush(bullets,"6_7","위험","글의 앞 내용을 기억하지 못한 채 뒷부분을 읽게 되어 전체 맥락 파악이 어려움");
+      mpush(bullets,"6_8","위험","독서·학습 경험이 워킹메모리 발달로 이어지지 않은 상태");
+      mpush(bullets,"6_9","위험","암기식 공부에도 한계 — 외워도 금방 잊어버리는 악순환");
+    } else { // 20
+      mpush(bullets,"6_10","위험","워킹메모리가 거의 발달되지 않은 상태 — 글자를 읽지만 내용을 처리하지 못함");
+      mpush(bullets,"6_11","위험","단기 기억 처리 자체가 안 되므로 암기식 공부마저 효과 없음 — 외운 즉시 휘발되는 상태");
+      mpush(bullets,"eng_6_8","위험","모든 공부방식이 효과 없는 근본 원인 — 즉각적 개선 개입 필요");
+    }
+    // 고역량(acc>=70) + WM 40~59 → 독해 훈련 1차 목표, WM은 보조적 언급만 (LLM 전달용 메타 힌트)
+    if (acc >= 70 && wm >= 40 && wm < 60) {
+      mpush(bullets,"eng_6_9","_meta","acc70+_wm50: 이 학생은 최상위 독해역량 보유자로 WM은 상대적으로 낮지만 독해력 훈련이 1차 목표. 슬롯④에서 반드시: (1) 고등 수준 독해력 형성 훈련을 핵심 처방으로 서술, (2) WM 보완은 독해 훈련의 자연스러운 부산물로만 언급, 독립 과제로 강조 금지, (3) 중학 시절 고등 수준 독해력 도달 시 민사고·특목자사고 진학 후 학업 수행 가능하다는 전망으로 마무리");
+    }
+    // WM × 속도 교차 (기준 상향)
+    if (wm < 50 && spdGrade === "느림") {
+      mpush(bullets,"eng_6_10","위험","워킹메모리 부족 → 정보 재처리 반복 → 독해속도 저하 인과관계 확인됨");
+    }
+    if (wm < 60 && acc < 50) {
+      mpush(bullets,"eng_6_11","위험","워킹메모리 부족이 독해정확도 저하의 직접 원인 중 하나로 추정");
+    }
+    ev.push({ id: "워킹메모리", title: "6) 워킹메모리 상태", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 7) 추론의지와 능력
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    if (inf >= 75) {
+      mpush(bullets,"eng_7_1","강점","추론능력 우수 — 수학·과학 개념이해 능력 높음");
+      mpush(bullets,"eng_7_2","강점","글의 사실적 관계 파악과 숨겨진 의미 유추 능력 우수");
+      mpush(bullets,"eng_7_3","강점","논리적 사고력 기반이 갖춰진 상태");
+    } else if (inf >= 60) {
+      mpush(bullets,"eng_7_4","강점","추론능력 양호 — 논리적 사고력 보유");
+      if (acc < 50) mpush(bullets,"eng_7_5","주의","추론의지는 있으나 정확도 부족으로 능력 발휘 어려움");
+    } else if (inf >= 50) {
+      mpush(bullets,"eng_7_6","보통","추론능력 보통 — 기본적 논리 처리 가능하나 심화 어려움");
+    } else if (inf >= 35) {
+      mpush(bullets,"eng_7_7","주의","추론능력 부족 — 수학·과학 개념이해에 어려움");
+      mpush(bullets,"7_4","주의","추론의지는 있으나 역량이 따라주지 않는 상태");
+      mpush(bullets,"eng_7_8","주의","언어 재처리 습관이 수학 풀이에도 악영향 가능");
+    } else {
+      mpush(bullets,"eng_7_9","위험","추론의지도 추론역량도 부족한 상태");
+      mpush(bullets,"eng_7_10","위험","수학·과학에서 개념이해가 불가능하여 공식 암기에만 의존");
+      mpush(bullets,"eng_7_11","위험","이과적 사고 자체가 어려운 상태");
+    }
+    ev.push({ id: "추론능력", title: "7) 추론의지와 능력", bullets });
+  }
+
+  // ──────────────────────────────────────────────
+  // 8) 독해효율성 상태 (자기인식 + 체크리스트)
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    // 독해효율성 점수
+    if (eff >= 90) {
+      mpush(bullets,"8_1","강점","공부 전반에 대해 긍정적 자기인식 상태");
+      mpush(bullets,"8_2","강점","자신의 독해 방식에 대한 자신감 있음");
+    } else if (eff >= 60) {
+      mpush(bullets,"8_4","보통","독해효율성 보통 — 일부 공부 방식에 회의감 있음");
+    } else if (eff >= 40) {
+      mpush(bullets,"8_5","주의","자신의 공부방법 전반에 대해 회의감 느끼는 상태");
+    } else {
+      mpush(bullets,"8_6","위험","공부 효율성에 심각한 문제를 자각하는 상태");
+    }
+    // 효율성 체크리스트 교차
+    // 실전 영향 항목만 선별 (밤새워/두꺼운은 독서성향 정보이므로 제외)
+    const effSeriousItems = inp.effChecked.filter(c =>
+      c.includes("시험에서") || c.includes("점수가") || c.includes("어렵다") || c.includes("이해력")
+    );
+    if (effSeriousItems.length >= 2) {
+      mpush(bullets,"8_7","위험","시험 실전에서 효율성 결함이 직접 점수에 영향을 주고 있음");
+    }
+    // 모순패턴 시 — 효율성 자각 못함
+    if (flagC && eff >= 70) {
+      mpush(bullets,"8_8","위험","성적이 좋아 자신의 문제점을 인지하지 못하고 있음 — 위험 요소");
+    }
+    if (flagO) {
+      mpush(bullets,"8_9","주의","선행·학원 과부하로 인한 피동적 학습이 효율성 저하의 원인");
+    }
+
+    // ── 자기 인식 부족 패턴 감지 ──
+    // 핵심: acc 심각도 대비 기대 체크 수보다 실제 체크 수가 적으면 자기인식 부족
+    // acc가 낮을수록 더 많은 항목에 문제가 있어야 정상 → 적게 체크할수록 괴리 심각
+    const 총체크수 = inp.effChecked.length;  // 효율성 항목만 카운트
+
+    // acc 구간별 '기대 최소 체크 수' (이보다 적으면 자기인식 부족 의심)
+    // acc 0~29:  최소 6개 이상 체크해야 현실 반영
+    // acc 30~49: 최소 4개 이상
+    // acc 50~69: 최소 2개 이상
+    // acc 70~:   체크 0도 자연스러울 수 있음 (초·중등), 고등은 1개 이상 기대
+    let 기대체크수, 자기인식부족;
+    const isHS = (inp.uiLevel === "고등");
+    const isMS = (inp.uiLevel === "중등");
+
+    // 기대 체크 수: acc가 낮을수록 습관+효율 합계 더 많아야 현실 반영
+    // acc 0~29:  8개 이상 (매우 심각 → 거의 모든 항목 해당 정상)
+    // acc 30~49: 6개 이상 (심각 → 절반 이상 해당 정상)
+    // acc 50~69: 4개 이상 (보통 이하 → 습관+효율 각 2개씩은 있어야)
+    // acc 70+:   고등 1개, 초·중등 0개
+    if (acc < 30) {
+      기대체크수 = 4;
+      자기인식부족 = 총체크수 <= 기대체크수;
+    } else if (acc < 50) {
+      기대체크수 = 4;
+      자기인식부족 = 총체크수 <= 기대체크수;
+    } else if (acc < 70) {
+      기대체크수 = 3;
+      자기인식부족 = 총체크수 <= 기대체크수;
+    } else {
+      // acc 70+ : 학제별 기준
+      기대체크수 = 0;
+      자기인식부족 = false;
+    }
+
+    const 괴리정도 = 기대체크수 - 총체크수;  // 양수일수록 괴리 심각
+
+    if (자기인식부족) {
+      if (괴리정도 >= 4) {
+        // 심각한 괴리 (acc 매우 낮은데 체크 거의 없음)
+        mpush(bullets,"eng_extra_23","위험","역량 수준에 비해 체크 항목이 현저히 적음 — 자신의 학습 상태를 심각하게 과대평가하고 있거나 문제를 전혀 인지하지 못하는 상태");
+        mpush(bullets,"eng_extra_24","위험","자기 인식이 부족한 학습자의 전형적 패턴 — 객관적 역량과 자기 평가 간의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
+      } else if (괴리정도 >= 3) {
+        mpush(bullets,"eng_extra_25","위험","자신의 공부 문제를 충분히 인지하지 못하고 있거나 스스로에게 관대한 편");
+        mpush(bullets,"eng_extra_26","주의","자기 인식과 실제역량의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
+      } else {
+        mpush(bullets,"eng_extra_27","주의","자신에 대한 평가가 관대한 편 — 스스로 문제없다고 여기지만 실제 역량과 괴리가 있는 상태");
+      }
+    } else if (acc >= 70 && acc < 80 && 총체크수 === 0 && !isHS) {
+      mpush(bullets,"eng_extra_28","보통","현재는 학습에 큰 어려움을 느끼지 않는 상태");
+    }
+
+    // 밤새워/두꺼운 항목 — 독서 성향 정보
+    ev.push({ id: "독해효율성", title: "8) 독해효율성 상태", bullets });
+  }
+
+
+  // ──────────────────────────────────────────────
+  // 9) 학교 학업 상태 (성적 3과목 교차 분석)
+  // 입력된 국어·영어·수학 성적을 TQ 역량과 교차
+  // ──────────────────────────────────────────────
+  {
+    const bullets = [];
+    const engVal = SMAP[inp.eng] ?? null;
+    const mathVal = SMAP[inp.math] ?? null;
+
+    // 성적 입력 여부 확인
+    const hasKor  = kv !== null;
+    const hasEng  = engVal !== null;
+    const hasMath = mathVal !== null;
+
+    if (!hasKor && !hasEng && !hasMath) {
+      mpush(bullets,"9_no_score","보통","성적 정보 미입력 — 학교학업 교차 분석 불가");
+    } else {
+
+      // 국어 성적 × 독해역량 교차 분석
+      // 초등 기준: 잘함(80)=상위권, 매우잘함(93)=최상위
+      var isElem = (inp.uiLevel==="초등");
+      if (hasKor) {
+        var korTop  = 89;  // 초과 = 최상위 (초등:매우잘함93 / 중고:90점이상93)
+        var korHigh = 74;  // 초과 = 상위 (초등:잘함80 / 중고:80~89점85)
+
+        if (kv > korTop) {
+          // 국어 최상위
+          if (acc < 50) {
+            // 역량 낮음 → 암기·스킬 의존 + 성적 유지 한계
+            mpush(bullets,"eng_extra_43","위험","국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음");
+          } else if (acc < 70) {
+            // 역량 보통 → 과도한 노력으로 유지
+            mpush(bullets,"eng_extra_44","주의","국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음");
+          } else {
+            // 역량도 높음 → 강점
+            mpush(bullets,"8_6_강점","강점","국어 성적 최상위 — 독해역량과 성적이 일치하는 안정적 상태");
+          }
+
+        } else if (kv > korHigh) {
+          // 국어 상위권
+          if (acc < 50) {
+            mpush(bullets,"eng_extra_45","주의","국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책");
+          } else if (acc < 70) {
+            mpush(bullets,"eng_extra_46","보통","국어 성적 상위권 — 역량 대비 성적이 다소 높은 편으로, 역량을 더 키우면 성적도 안정적으로 따라옴");
+          } else {
+            mpush(bullets,"8_7_강점","강점","국어 성적 상위권 — 독해역량이 성적을 뒷받침하는 균형 잡힌 상태");
+          }
+
+        } else if (kv >= 70) {
+          // 중상위 (70~74점)
+          mpush(bullets,"8_9_성적","보통","국어 성적 중상위권 — 독해역량 강화 시 상위권 진입 여지 있음");
+          if (acc < 50) mpush(bullets,"8_10_성적","주의","독해역량이 성적을 온전히 받쳐주지 못하는 상태 — 역량 개선이 성적 향상의 근본 해결책");
+        } else if (kv >= 60) {
+          // 중위 (60~69점 / 초등 보통)
+          mpush(bullets,"8_11_성적","보통","국어 성적 중위권 — 독해역량 결손이 성적 정체의 주요 원인으로 작용");
+          mpush(bullets,"eng_8_1","주의","독해역량 개선 시 성적 향상 여지 있음");
+        } else if (kv >= 50) {
+          // 하위 (60점미만 / 초등 노력요함)
+          mpush(bullets,"eng_8_2","주의","국어 성적 하위권");
+          if (acc < 50) mpush(bullets,"eng_8_3","위험","독해역량 결손이 국어 성적에 직접 영향");
+        } else {
+          // 최하위
+          mpush(bullets,"eng_8_4","위험","국어 성적 최하위 — 독해역량 결손이 성적에 직접 영향");
+        }
+      }
+
+      // 영어 성적 분석 — 역량 교차
+      var engTop = 89;  // 초과 = 최상위
+      if (hasEng) {
+        if (engVal > engTop) {
+          // 영어 최상위 (초등:매우잘함 / 중고:90점이상)
+          if (acc < 50 || voc < 50) {
+            mpush(bullets,"eng_8_5","주의","영어 성적 최상위이나 독해·어휘 역량이 낮음 — 암기나 학원 의존으로 유지되고 있을 가능성 있음");
+          } else {
+            mpush(bullets,"9_6","강점","영어 성적 최상위 — 독해·어휘 역량이 영어 학습에도 긍정적으로 작용");
+          }
+        } else if (engVal >= 80) {
+          // 영어 상위 (잘함=80 / 80~89점=85 모두 포함)
+          if (acc < 50 || voc < 50) {
+            mpush(bullets,"eng_8_6","주의","영어 성적 상위권이나 독해·어휘 역량이 낮음 — 단순 암기나 학원 의존으로 유지되고 있을 가능성 있음");
+          } else if (acc < 70) {
+            mpush(bullets,"eng_8_7","보통","영어 성적 상위권 — 독해역량이 온전히 받쳐주는 수준은 아니나 학습 노력이 반영된 결과");
+          } else {
+            mpush(bullets,"eng_8_8","강점","영어 성적 상위권 — 독해·어휘 역량이 영어 학습에도 긍정적으로 작용");
+          }
+        } else if (engVal >= 70) {
+          // 중상위 (70~79점)
+          mpush(bullets,"eng_8_9","보통","영어 성적 중상위권");
+        } else if (engVal >= 60) {
+          // 중위 (60~69점)
+          mpush(bullets,"eng_8_10","보통","영어 성적 중위권");
+          mpush(bullets,"eng_8_11","주의","어휘·독해 역량 개선 시 영어 성적 향상 여지 있음");
+        } else if (engVal >= 50) {
+          // 하위
+          mpush(bullets,"eng_8_12","주의","영어 성적 하위권 — 어휘·독해 역량 부족이 영어에도 연결");
+          if (voc < 50) mpush(bullets,"eng_8_15","위험","어휘능력 결손이 국어·영어 동시 부진의 공통 원인으로 추정");
+        } else {
+          // 최하위
+          mpush(bullets,"eng_8_14","위험","영어 성적 최하위 — 어휘·독해 역량 결손이 직접 영향");
+          if (voc < 50) mpush(bullets,"eng_extra_15","위험","어휘능력 결손이 국어·영어 동시 부진의 공통 원인으로 추정");
+        }
+      }
+
+      // 수학 성적 분석 (초등은 잘함=80도 상위권)
+      if (hasMath) {
+        // 초등(SE) 기준선: 잘함=80 → 상위권으로 판단
+        var mathTop   = 89;  // 초과 = 최상위
+        var mathThresh = 74;  // 초과 = 상위 (잘함80/80~89점85)
+        if (mathVal > mathTop) {
+          // 수학 최상위
+          if (inf < 50 && acc < 60) {
+            mpush(bullets,"eng_8_16","주의","수학 성적 최상위이나 추론능력과 독해역량이 낮음 — 공식 암기와 유형 반복으로 유지되는 성적으로 심화 과정에서 한계 예상");
+          } else if (inf < 50) {
+            mpush(bullets,"eng_8_17","주의","수학 성적 최상위이나 추론능력이 낮음 — 암기·유형 반복 의존 가능성, 고등 수학에서 어려움 예상");
+          } else {
+            bullets.push({ t: "강점", s: inf >= 60 ? "수학 성적 최상위 — 높은 추론능력이 수학 실력으로 이어지고 있음" : "수학 성적 최상위" });
+            if (acc < 60) mpush(bullets,"eng_8_18","주의","수학 성적은 최상위이나 독해정확도가 낮아 서술형·지문형 문제에서 어려움이 예상됨");
+          }
+        } else if (mathVal > mathThresh) {
+          // 수학 상위
+          if (inf < 50 && acc < 60) {
+            mpush(bullets,"eng_8_19","주의","수학 성적 우수이나 추론능력과 독해역량이 낮음 — 공식 암기와 유형 반복으로 유지되는 성적으로 심화 과정에서 한계 예상");
+          } else if (inf < 50) {
+            mpush(bullets,"eng_8_20","주의","수학 성적 우수이나 추론능력이 낮음 — 암기·유형 반복 의존 가능성, 고등 수학에서 어려움 예상");
+          } else {
+            bullets.push({ t: "강점", s: inf >= 60 ? "수학 성적 우수 — 높은 추론능력이 수학 실력으로 이어지고 있음" : "수학 성적 우수" });
+            if (acc < 60) mpush(bullets,"eng_8_21","주의","수학 성적은 우수하나 독해정확도가 낮아 서술형·지문형 문제에서 어려움이 예상됨");
+          }
+        } else if (mathVal >= 70) {
+          // 중상위 (70~74점)
+          mpush(bullets,"eng_8_22","보통","수학 성적 중상위권");
+          if (inf < 50) mpush(bullets,"eng_8_23","주의","추론능력을 강화하면 수학 성적 향상 여지 있음");
+        } else if (mathVal >= 60) {
+          // 중위 (60~69점)
+          mpush(bullets,"eng_8_24","보통","수학 성적 중위권");
+          if (inf < 50) mpush(bullets,"eng_8_25","주의","추론능력 결손이 수학 성적 향상의 걸림돌");
+        } else if (mathVal >= 50) {
+          // 하위
+          mpush(bullets,"eng_8_26","주의","수학 성적 하위권");
+          if (inf < 50) mpush(bullets,"eng_8_29","위험","추론능력 결손이 수학 부진의 주요 원인 — 개념이해 훈련 필요");
+        } else {
+          // 최하위
+          mpush(bullets,"eng_8_28","위험","수학 성적 최하위");
+          if (inf < 50) mpush(bullets,"eng_extra_16","위험","추론능력 결손이 수학 부진의 주요 원인 — 개념이해 훈련 필요");
+        }
+      }
+
+      // 3과목 종합 패턴 분석
+      if (hasKor && hasEng && hasMath) {
+        const avg = Math.round((kv + engVal + mathVal) / 3);
+        if (avg > 89) {
+          // 전 과목 최상위
+          if (acc < 50) {
+            mpush(bullets,"9_12","위험","전 과목 최상위이나 독해역량 낮음 — 고등 진학 시 성적 급락 위험");
+          } else if (acc < 70) {
+            mpush(bullets,"eng_8_30","주의","전 과목 최상위이나 독해역량이 이를 온전히 지지하지 못함 — 현재 성적은 노력으로 유지되는 측면이 있으며 역량 강화가 필요한 시점");
+          } else {
+            mpush(bullets,"9_11","강점","전 과목 최상위 — 역량과 성적이 안정적으로 연결된 상태");
+          }
+        } else if (avg > 74) {
+          // 전 과목 상위권
+          if (acc < 50) {
+            mpush(bullets,"eng_8_31","위험","전 과목 상위권이나 독해역량 낮음 — 고등 진학 시 성적 급락 위험");
+          } else if (acc < 70) {
+            mpush(bullets,"eng_8_32","주의","전 과목 상위권이나 독해역량이 이를 온전히 지지하지 못함 — 역량 강화가 필요한 시점");
+          } else {
+            mpush(bullets,"eng_8_33","강점","전 과목 상위권 — 역량과 성적이 안정적으로 연결된 상태");
+          }
+        } else if (avg >= 65) {
+          mpush(bullets,"eng_8_34","보통","전 과목 중상위권");
+        } else if (avg >= 64) {
+          mpush(bullets,"eng_8_35","보통","전 과목 중위권");
+        } else if (avg < 60) {
+          mpush(bullets,"eng_8_36","위험","전 과목 부진 — 독해·추론 역량 회복이 전 과목 성적 향상의 근본 해결책");
+        }
+
+        // 과목 간 편차 분석
+        const scores = [kv, engVal, mathVal];
+        const maxS = Math.max(...scores);
+        const minS = Math.min(...scores);
+        if (maxS - minS >= 30) {
+          const subjectNames = ["국어", "영어", "수학"];
+          const maxIdx = scores.indexOf(maxS);
+          const minIdx = scores.indexOf(minS);
+          bullets.push({ t: "주의",
+            s: `과목 간 편차 큼 (${subjectNames[maxIdx]} 강세 / ${subjectNames[minIdx]} 약세) — 역량 불균형 또는 학습 집중 편차` });
+        }
+      }
+
+      // 선행과부하 패턴
+      if (flagO) {
+        mpush(bullets,"eng_8_37","주의","성적 대비 독해효율성 낮음 — 학원 과부하로 인한 피동적 학습 환경 가능성");
+      }
+    }
+
+    // 타이틀에 성적 요약 포함
+    const scoreLabels=[];
+    if(hasKor) scoreLabels.push("국어 "+inp.kor);
+    if(hasEng) scoreLabels.push("영어 "+inp.eng);
+    if(hasMath) scoreLabels.push("수학 "+inp.math);
+    const scoreSummary=scoreLabels.length>0?" ("+scoreLabels.join(" / ")+")":"";
+    ev.push({ id: "학업상태", title: "9) 학교 학업 상태"+scoreSummary, bullets });
+  }
+
+  return ev;
+}
 
 function toI(v,t){if(v>=t)return 0;const g=t-v,r=g/t;return Math.round((g<=10?r*.5:Math.min(r,1))*100)/100;}
 function nbnd(v,t){return Math.abs(v-t)<=10;}
@@ -1334,8 +2051,128 @@ function classifyHabits(checked){
   };
 }
 
-// runEngine은 서버에서 실행됩니다 (보안)
-function runEngine(inp){ return {}; }
+function runEngine(inp){
+  const kv=SMAP[inp.kor]??null;
+  const log=["성적정규화: "+inp.kor+" → "+kv];
+  log.push("독해정확도 자동산출: (사실"+inp.fct+"+구조"+inp.str+")/2 = "+inp.acc);
+  const invSpd=inp.spd>(SPDLIM[inp.level]||5000)||inp.spd<50;
+  const retest=inp.acc>=90?"상위레벨":(inp.acc<=10&&inp.level!=="초저"?"하위레벨":"");
+  if(invSpd)log.push("⚠ 속도이상값: "+inp.spd+"자/분");
+  if(retest)log.push("⚠ 재검사권고: "+retest);
+  const flagC=kv!==null&&inp.acc<=30&&kv>=80;
+  const flagO=inp.acc>=60&&inp.eff<=40;
+  if(flagC)log.push("🚨 모순패턴: 정확도="+inp.acc+", 국어="+kv);
+  if(flagO)log.push("⚡ 선행과부하: 정확도="+inp.acc+", 효율성="+inp.eff);
+
+  const aI=toI(inp.acc,50),iI=toI(inp.inf,50),vI=toI(inp.voc,50),wI=toI(inp.wm,60),hI=toI(inp.hab,50),eI=toI(inp.eff,50),conI=cInt(inp.acc,kv);
+  let ov=Math.round((aI*.35+iI*.25+vI*.20+wI*.20)*100)/100;
+  if(conI>.5)ov=Math.min(Math.round((ov+conI*.3)*100)/100,1);
+  const inten={acc:aI,inf:iI,voc:vI,wm:wI,hab:hI,eff:eI,con:conI,ov,ex:exLb(ov),aN:nbnd(inp.acc,50),iN:nbnd(inp.inf,50)};
+  log.push("강도: acc="+aI+" inf="+iI+" ov="+ov+" ex="+exLb(ov));
+
+  const aH=inp.acc>=50,iH=inp.inf>=50;
+  const bt=aH&&iH?"통합완성형":aH&&!iH?"사실강점형":!aH&&iH?"추론잠재형":"기초개발형";
+  const lc=inp.voc>=50&&inp.wm>=60?"상":"하",wl=inp.wm>=60?"상":"하";
+  const gap=inp.fct-inp.str;
+  let st=bt+"_어휘"+lc+"_WM"+wl;
+  if(gap>=30)st+="_부분이해";else if(gap<=-20)st+="_구조편향";
+  log.push("유형: "+bt+" → "+st);
+
+  let urg="중장기";
+  if(flagC||inp.acc<=20)urg="즉각";
+  else if(inp.acc<=40||(inp.acc<=50&&inp.inf<=40))urg="조기";
+  else if(ov>=.6&&inp.acc<60)urg="조기";
+  const tone=(flagC||urg==="즉각")?"경각심_강점병행":bt==="통합완성형"?"격려확인":["추론잠재형","사실강점형"].includes(bt)?"강점발굴":"성취경험우선";
+  log.push("긴급도="+urg+" 톤="+tone);
+
+  const def=[],cau=[];
+  if(grA(inp.acc)==="하"||grA(inp.acc)==="최하")def.push("정확도결손");
+  if(gap>=30)cau.push("사실이해>구조이해 → 핵심파악어려움");else if(gap<=-20)cau.push("구조이해>사실이해 → 세부정보부족");
+  if(inp.voc<40){def.push("어휘결손");cau.push("어휘결손 → 비문학독서부족");}
+  // WM: 50 미만은 모두 학습 지장 수준으로 분류 (평균=문제 있음)
+  if(inp.wm<40){
+    def.push("워킹메모리부족(심각)");
+    cau.push("WM심각부족 → 내용처리불가 → 암기의존");
+  } else if(inp.wm<50){
+    def.push("워킹메모리부족");
+    cau.push("WM부족 → 재처리반복 → 독해속도저하");
+  } else if(inp.wm<60){
+    def.push("워킹메모리미흡");
+    cau.push("WM미흡 → 복잡정보처리한계 → 심화학습어려움");
+  }
+
+  // 체크리스트 기반 진단 — 정확도·속도 교차 분석
+  const habClass=classifyHabits(inp.habChecked);
+  const spdGradeNow=grSpd(inp.spd,inp.level);
+  const highAcc=inp.acc>=70;
+  const highSpdNow=(spdGradeNow==="빠름"||spdGradeNow==="보통이상");
+
+  // 음독 심각도 기반 통합 분류
+  if(habClass.심각도==="심함"){
+    def.push("음독습관(심함)");
+    if(highAcc&&highSpdNow){
+      cau.push("표면·내재음독 복합 — 고역량이나 고등수준 지문에서 부하 가능성");
+    } else {
+      cau.push("음독(표면+내재) 복합 → 독해속도저하+이해결손 → 시험시간부족");
+    }
+  } else if(habClass.심각도==="보통"){
+    if(highAcc&&highSpdNow){
+      cau.push("부분음독·내재음독 경향 — 현재 역량에서는 자연현상 수준");
+    } else if(highAcc&&!highSpdNow){
+      def.push("음독습관(속도저하원인)");
+      cau.push("음독 → 역량대비 속도저하 → 교정시 속도개선 여지");
+    } else {
+      def.push("음독습관");
+      cau.push("음독 → 독해속도저하 → 시험시간부족");
+    }
+  } else if(habClass.심각도==="경미"&&!(highAcc&&highSpdNow)){
+    cau.push("미숙한 독해습관 경향 → 속도·효율 저하 주의");
+  }
+  if(habClass.내재음독이해>=2&&!highAcc){
+    def.push("이해처리결손");
+    cau.push("내재음독 → 워킹메모리 과부하 → 긴문장이해·기억 어려움");
+  }
+  if(habClass.속도문제>=1&&!highSpdNow){
+    cau.push("독해속도 느림 자각 → 시험시간부족 직결");
+  }
+
+  if(inp.inf<40){def.push("추론결손");cau.push("추론결손 → 수학과학어려움");}
+  if(flagC)cau.push("저역량고성적 → 암기의존 → 붕괴위험");
+  if(flagO)cau.push("고역량효율저하 → 학원과부하환경");
+
+  // 독해효율성 체크 기반
+  const effCritical=["시험에서 시간이 부족하다","읽고 나서 핵심이 잘 안 잡힌다","글 전체의 내용 흐름 파악이 힘들다"];
+  const effHit=inp.effChecked.filter(c=>effCritical.some(k=>c.includes(k.slice(0,6)))).length;
+  if(effHit>=2){cau.push("독해효율성 복합결손 → 실전 시험 직접 영향");}
+  else if(grF(inp.eff)==="중하"||grF(inp.eff)==="하"){cau.push("독해효율저하 → 자신감영향");}
+  if(grSpd(inp.spd,inp.level)==="느림")cau.push("저속독해 → 시험시간부족");
+
+  const presc=[];
+  if(flagC)presc.push({p:1,c:"독해훈련 즉시"});
+  if(inp.acc<=30)presc.push({p:2,c:"기초독해 정확도훈련"});
+  if(def.includes("어휘결손"))presc.push({p:inp.acc>30?3:4,c:"비문학독서 어휘확충"});
+  if(def.includes("추론결손"))presc.push({p:inp.acc>=50?3:5,c:"추론훈련 개념이해형수학"});
+  if(def.includes("워킹메모리부족(심각)")||def.includes("워킹메모리부족")||def.includes("워킹메모리미흡")){
+    // 고역량(acc>=70)이면 WM 처방 우선순위를 낮춤 — 독해 훈련이 1차
+    const wmPriority=inp.acc>=70
+      ?(def.includes("워킹메모리부족(심각)")?4:5)
+      :(def.includes("워킹메모리부족(심각)")?3:def.includes("워킹메모리부족")?4:5);
+    presc.push({p:wmPriority,c:inp.acc>=70?"독해력 훈련 심화 (워킹메모리 자연 향상 병행)":"워킹메모리훈련"});
+  }
+  if(def.includes("음독습관(심함)"))presc.push({p:inp.acc>=50?3:4,c:"음독습관 교정훈련"});
+  presc.sort((a,b)=>a.p-b.p);
+
+  const NX={"초저":"초고","초고":"중등","중등":"고등","고등":"수능"};
+  const tr=urg!=="중장기"&&NX[inp.level]?NX[inp.level]+"진입시 역량갭확대":"";
+  log.push("결손: ["+def.join(",")+"]");
+  log.push("음독심각도: "+habClass.심각도+" / 표면음독: "+habClass.표면음독+"개 / 내재음독(재처리): "+habClass.내재음독재처리+"개 / 내재음독(이해): "+habClass.내재음독이해+"개 / 전체음독관련: "+habClass.전체음독관련+"개");
+  // Part 1. 근거자료 수집
+  const evidence=collectEvidence(inp,kv,flagC,flagO,habClass);
+  return{bt,st,urg,tone,inten,flagC,flagO,invSpd,retest:!!retest,def,cau,presc,tr,gap,evidence,
+    kor:inp.kor,eng:inp.eng,math:inp.math,uiLevel:inp.uiLevel,
+    habChecked:inp.habChecked, effChecked:inp.effChecked, habScore:inp.hab, effScore:inp.eff, log,
+    acc:inp.acc, fct:inp.fct, str_:inp.str, voc:inp.voc, wm:inp.wm, inf:inp.inf, hab:inp.hab, eff:inp.eff};
+}
 
 // ── 렌더링 ──
 const TC={"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
@@ -1415,13 +2252,13 @@ function renderResult(e,nm){
     return`<div class="ib"><div class="ib-row"><span style="color:#475569">${lb}${near?" <span style='font-size:9px;background:rgba(251,191,36,.15);color:#D97706;padding:1px 4px;border-radius:3px;margin-left:4px'>경계</span>":""}</span><span style="font-weight:700;color:${pct<=60?'#EF4444':'#1E293B'}">${pct}</span></div><div class="ib-bg" style="background:#E2E8F0"><div class="ib-f" style="width:${pct}%;background:${col}"></div></div></div>`;
   }).join("");
 
-  const defH=(!e.def||e.def.length===0)
+  const defH=e.def.length===0
     ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
-    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
+    :e.def.map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
 
-  const prescH=(!e.presc||e.presc.length===0)
+  const prescH=e.presc.length===0
     ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
-    :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
+    :e.presc.slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
 
   // ── 권장 프로그램 카드 (결과 화면용) ──
   var _recs = typeof recommendPrograms==="function" ? recommendPrograms(e) : [];
@@ -1446,20 +2283,20 @@ function renderResult(e,nm){
     }).join("")
     +'</div>';
 
-  const cauH=e.cau&&e.cau.length>0
-    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
+  const cauH=e.cau.length>0
+    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+e.cau.map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
 
   // 체크리스트 요약
-  var habSummary=(e.habChecked||[]).length>0
+  var habSummary=e.habChecked.length>0
     ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
-      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+(e.habChecked||[]).length+'/'+HAB_ITEMS.length+'개 문제)</div>'
-      +(e.habChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
+      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+e.habChecked.length+'/'+HAB_ITEMS.length+'개 문제)</div>'
+      +e.habChecked.map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
       +'</div>':""
   ;
-  var effSummary=(e.effChecked||[]).length>0
+  var effSummary=e.effChecked.length>0
     ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--amber)">'
-      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+(e.effChecked||[]).length+'/'+EFF_ITEMS.length+'개 문제)</div>'
-      +(e.effChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
+      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+e.effChecked.length+'/'+EFF_ITEMS.length+'개 문제)</div>'
+      +e.effChecked.map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
       +'</div>':""
   ;
 
@@ -1612,7 +2449,7 @@ function renderResult(e,nm){
               +'</div>';
           }).join('')}
           <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
-            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?(e.habChecked||[]).length:0}</span>개</span>
+            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?e.habChecked.length:0}</span>개</span>
           </div>
         </div>
         <div style="display:inline-flex;flex-direction:column">
@@ -1627,7 +2464,7 @@ function renderResult(e,nm){
               +'</div>';
           }).join('')}
           <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
-            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?(e.effChecked||[]).length:0}</span>개</span>
+            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?e.effChecked.length:0}</span>개</span>
           </div>
         </div>
       </div>
@@ -1717,7 +2554,7 @@ function renderResult(e,nm){
     +'<span style="display:inline-block;width:16px;height:16px;background:var(--surface2);border-radius:4px;text-align:center;line-height:16px;font-size:9px">▾</span>'
     +' 판단 근거 로그</summary>'
     +'<div style="margin-top:6px;background:var(--navy);border-radius:var(--radius);padding:12px 16px">'
-    +(e.log||[]).map(function(l){
+    +e.log.map(function(l){
       return '<div style="font-size:10px;color:rgba(255,255,255,.5);font-family:monospace;line-height:1.8;border-bottom:1px solid rgba(255,255,255,.04);padding:1px 0">'+l+'</div>';
     }).join('')
     +'</div></details>';
@@ -1728,23 +2565,13 @@ function renderResult(e,nm){
 function showErr(m){const b=gv("errBox");b.style.display="block";b.textContent=m;}
 function hideErr(){gv("errBox").style.display="none";}
 
-gv("btnA").addEventListener("click",async function(){
+gv("btnA").addEventListener("click",function(){
   hideErr();
   var b=document.getElementById("reanalyzeBanner");
   if(b)b.remove();
-  var btnA=gv("btnA");
-  btnA.disabled=true; btnA.textContent="분석 중...";
   try{
     const inp=getInputs();
-    const resp=await fetch(TQ_API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
-      body:JSON.stringify({action:"engine",inp:inp})
-    });
-    if(!resp.ok)throw new Error("서버 응답 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
-    const res=await resp.json();
-    if(!res.ok||!res.engine)throw new Error(res.error||"엔진 응답 오류");
-    const eng=res.engine;
+    const eng=runEngine(inp);
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
@@ -1805,34 +2632,156 @@ gv("btnA").addEventListener("click",async function(){
       }
     }
     gv("btnB").disabled=false;
-    var btnB2=document.getElementById("btnB2");
-    if(btnB2){btnB2.disabled=false;btnB2.style.opacity="0.9";}
-  }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
-  finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
+    var _b2=document.getElementById("btnB2"); if(_b2){_b2.disabled=false;_b2.style.opacity="0.9";}
+    var _r3=document.getElementById("btnR3"); if(_r3){_r3.disabled=false;_r3.style.opacity="0.9";}
+  }catch(err){showErr("분석 오류: "+err.message+"\n"+err.stack);console.error(err);}
 });
 
-// ── (판독문 생성은 서버에서 처리) ──
-// SYS_P는 서버(Supabase Edge Function)에만 존재합니다
+// ── 시스템 프롬프트 ──
+const SYS_P=`당신은 StudyForce TQ테스트의 수석 판독 전문가입니다.
+규칙 엔진이 완성한 판독 객체(JSON)를 받아, 학부모와 학생이 읽는 맞춤처방 판독문 4슬롯을 작성합니다.
+
+## 학제별 표현 톤 원칙 ★ 필수 준수
+판독 객체의 school_level(level 필드)에 따라 표현 강도와 톤을 반드시 조정하세요.
+
+**초등학생 (초등/초저/초고)**
+- 과도한 위기감·성취감 표현 금지. 초등은 교육과정 자체가 어렵지 않으므로 "어려움을 극복했다", "성실하게 버텨왔다" 같은 과장된 표현은 부적절함
+- "잘 크고 있는 아이", "앞으로 더 좋아질 수 있는 아이" 수준의 밝고 발달적인 톤 유지
+- 문제 지적보다 가능성과 방향 제시 중심
+
+**중학생 (중등)**
+- 학업 부담과 시험 영향을 현실적으로 언급 가능
+- 위기감은 있으나 비난 없이, 구체적인 개선 방향 중심
+
+**고등학생 (고등)**
+- 입시·수능·진학 현실을 직접 언급 가능
+- 위기 상황이면 명확하게 경고하되 방향 제시 반드시 포함
+
+## 절대 원칙
+1. 판독 객체에 없는 내용 추가·추론 금지
+2. 수치(점수·자/분 등) 직접 언급 금지
+3. 낙인 표현 절대 금지 ("머리가 나쁜", "능력이 없는" 등)
+4. 슬롯①과 슬롯④에는 반드시 강점·잠재력·회복 가능성 포함
+5. 각 슬롯은 반드시 3~5문단 200자 이상으로 작성 — 짧은 답변 금지
+
+## 워킹메모리 판독 원칙 (중요)
+워킹메모리는 평균 수준이어도 학습에 문제를 일으키는 주요 원인입니다.
+스마트폰 등장 이후 학습이 '설명을 들으며 이해하는' 수동적·단순화 방식으로 전환되고,
+학습만화·스토리북 위주 독서 환경이 확산되면서
+현재 학생들의 워킹메모리는 전반적으로 낮아진 상태입니다.
+(단, 스마트폰 과다 사용 자체를 직접 원인으로 지목하지 말 것)
+- WM이 50 미만이면 반드시 학습 지장 요인으로 서술할 것
+- "평균 수준이라 괜찮다"는 식의 표현 금지
+- WM 부족은 독해속도 저하, 반복 재처리, 암기 의존의 근본 원인으로 연결할 것
+
+## 체크리스트 활용 (가장 중요한 추가 정보)
+판독 객체의 hab_checked(독해습관 체크 항목)와 eff_checked(독해효율성 체크 항목)는
+학생이 직접 응답한 자가진단입니다. 이 항목들을 슬롯②에서 반드시 구체적으로 언급하세요.
+- 음독 관련 항목이 체크된 경우: "소리 내어 읽거나 속으로 발음하며 읽는 습관이 있다는 점"
+- 반복재처리 항목: "긴 문장을 여러 번 읽게 되는 습관"
+- 긴 문장 어려움: "글의 구조와 흐름을 파악하는 데 어려움"
+- 시간 부족 체크: "실제 시험 현장에서도 시간 압박을 느끼고 있다는 점"
+
+## 표현 강도 기준
+- 최약: "살펴볼 필요가 있습니다"
+- 약: "어려울 수 있습니다"
+- 중: "어렵습니다", "결손이 있는 상태입니다"
+- 강: "불가능한 상태입니다", "할 수밖에 없는 구조입니다"
+
+## 슬롯별 작성 기준
+슬롯①: 강점 먼저 → 현실 대비 → 가능성 (200자+)
+슬롯②: causal_paths 인과 서사 + 체크리스트 구체 항목 포함 (250자+)
+슬롯③: 긴급도 비례 경각심 + 학제 전환 리스크 (200자+)
+슬롯④: 처방 우선순위 서술 + 솔루션 연결 + 희망 마무리 (200자+)
+
+## flag_contradiction=true 전용
+"현재 성적은 역량이 아닌 노력(암기)의 결과입니다" 반드시 포함
+"스스로는 문제점을 자각하지 못하고 있으나 고교 진학 후 성적 하락이 예상됩니다" 포함
+
+## 검증된 언어 자산
+- "현재 학업성적은 [이름]의 실체나 전부가 아닙니다"
+- "노력에 비해 성과가 나타나지 않는 결과를 가져오게 되고, 이는 공부에 대한 자신감 상실로 이어지는 악순환이 됩니다"
+- "체계적인 역량 회복 훈련만 잘 견뎌낸다면 머지않아 상위권 진입도 얼마든지 가능한 잠재력을 지닌 아이입니다"
+
+## _meta 힌트 활용 ★ 최우선 준수
+evidence_part1의 bullets 중 t:"_meta" 항목은 화면 미표시 내부 지침입니다. 반드시 반영하세요.
+
+### "acc70+_wm50" 힌트 감지 시 — 슬롯④ 작성 필수 규칙
+
+**1순위 — 독해력 훈련이 핵심 목표**
+슬롯④의 처방 서술은 반드시 "고등 수준의 독해력 형성 훈련"을 중심 축으로 구성하세요.
+워킹메모리 보완은 독해력 훈련을 통해 자연스럽게 이루어진다는 방향으로, 별도 항목이 아닌 보조 언급 수준에서만 다루세요.
+절대로 워킹메모리를 독립적인 개선 과제처럼 강조하거나 비중 있게 서술하지 마세요.
+
+**2순위 — 미래 전망 포함**
+슬롯④ 마지막 부분에, 중학교 시절에 고등 수준의 독해력에 도달한다면 민사고·특목자사고 진학 후에도 학업 수행에 어려움이 없을 것이라는 전망을 자연스럽고 격려하는 톤으로 포함하세요.
+
+**잘못된 예시 (금지)**
+"워킹메모리 훈련도 함께 진행하는 것이 중요합니다. 특히 워킹메모리를 강화하면..."
+→ 워킹메모리를 독립 과제로 부각하는 서술 금지
+
+**올바른 예시**
+"지금 가장 집중해야 할 것은 고등 수준의 독해 훈련입니다. 이 훈련이 쌓이면서 워킹메모리 역량도 함께 성장하게 됩니다..."
+→ 독해 훈련 중심, WM은 자연스러운 부산물로
+
+## 근거자료 활용 (가장 중요)
+판독 객체의 evidence_part1은 9개 항목별로 수집된 근거 문장들입니다.
+9번째 항목 '학교 학업 상태'는 국어·영어·수학 성적과 TQ 역량을 교차 분석한 결과입니다.
+- 성적과 역량의 일치 여부는 판독의 핵심 근거입니다
+- 모순패턴(고성적·저역량)은 슬롯③ 위험 서술에 반드시 반영하세요
+- 과목 편차 패턴은 처방 방향 설정에 활용하세요
+이것이 판독의 뼈대입니다. 판독문은 이 근거들을 바탕으로 작성해야 합니다.
+- [강점] 태그 근거 → 슬롯①의 강점 서술에 활용
+- [위험]/[주의] 태그 근거 → 슬롯②③의 현상·리스크 서술에 활용
+- 모든 근거가 판독문 어딘가에 반영되어야 함
+- 근거에 없는 내용을 만들어내지 말 것
+
+출력 규칙: 반드시 유효한 JSON만 출력. 슬롯 내용에 줄바꿈이 필요하면 \n 사용. 큰따옴표 포함 시 \" 이스케이프. 마크다운 코드블록 금지. {"slot1":"...","slot2":"...","slot3":"...","slot4":"..."}`;
 
 gv("btnB").addEventListener("click",async function(){
-  const eng=window.__eng, nm=window.__nm||"학생", inp=window.__inp;
+  const eng=window.__eng, nm=window.__nm||"학생";
   if(!eng)return;
+  if(!getApiKey()){
+    if(confirm('API 키가 설정되지 않았습니다.\n지금 입력하시겠습니까?')){showApiKeyDialog();}
+    return;
+  }
   hideErr();
   const btnB=gv("btnB");
   btnB.disabled=true; btnB.textContent="판독문 생성 중...";
-  for(var i=1;i<=4;i++){
-    var el=gv("sl"+i);
-    if(el)el.innerHTML='<div style="display:flex;gap:4px;align-items:center"><span style="font-size:11px;color:#B4B2A9">생성 중...</span></div>';
+  for(let i=1;i<=4;i++){
+    const el=gv("sl"+i);
+    if(el)el.innerHTML=`<div style="display:flex;gap:4px;align-items:center">${[0,1,2].map(j=>`<div class="dot blink" style="background:${SC[i-1]};animation-delay:${j*.18}s"></div>`).join("")}<span style="font-size:11px;color:#B4B2A9;margin-left:5px">생성 중...</span></div>`;
   }
+  // evidence를 LLM용으로 변환 (각 항목의 근거 문장 목록)
+  const evForLLM=eng.evidence?eng.evidence.map(function(item){
+    return{
+      항목:item.title,
+      근거:item.bullets.map(function(b){return"["+b.t+"] "+b.s;})
+    };
+  }):[];
+  const payload={
+    base_type:eng.bt, sub_type:eng.st, urgency:eng.urg, tone:eng.tone,
+    scores:{kor:gv("sS0")?gv("sS0").value:null, eng:gv("sS1")?gv("sS1").value:null, math:gv("sS2")?gv("sS2").value:null},
+    intensity:{expression_strength:eng.inten.ex,contradiction_intensity:eng.inten.con,overall_intensity:eng.inten.ov,accuracy_near_boundary:eng.inten.aN,inference_near_boundary:eng.inten.iN},
+    flag_contradiction:eng.flagC, flag_overload:eng.flagO,
+    deficit_factors:eng.def, causal_paths:eng.cau,
+    prescriptions:eng.presc.map(p=>({priority:p.p,category:p.c})),
+    transition_risk:eng.tr,
+    hab_checked:eng.habChecked, eff_checked:eng.effChecked,
+    hab_score:eng.habScore, eff_score:eng.effScore,
+    evidence_part1:evForLLM
+  };
   try{
-    const resp=await fetch(TQ_API_URL,{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
-      body:JSON.stringify({action:"generate",inp:inp,name:nm,engineResult:eng})
+      headers:{"Content-Type":"application/json","x-api-key":getApiKey(),"anthropic-version":"2023-06-01"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4000,system:SYS_P,
+        messages:[{role:"user",content:`${nm} 학생의 판독문 4슬롯을 작성하세요.\n【필수】 각 슬롯 200자 이상, 체크리스트 항목을 슬롯②에 반드시 반영하세요.\n\n판독 객체:\n${JSON.stringify(payload,null,2)}\n\nJSON만 출력하세요.`}]})
     });
-    if(!resp.ok){const e=await resp.json();throw new Error(e.error||"서버 오류 "+resp.status);}
-    let raw=await resp.text();
-    raw=raw.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||"API "+res.status);}
+    const data=await res.json();
+    let raw=data.content[0].text.trim();
+    raw=raw.replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
     var _s=raw.indexOf("{"),_e=raw.lastIndexOf("}");
     if(_s>=0&&_e>_s)raw=raw.slice(_s,_e+1);
     var slots;
@@ -1844,247 +2793,21 @@ gv("btnB").addEventListener("click",async function(){
         var _m=raw.match(rex);
         if(_m)slots[k]=_m[1].replace(/\\n/g,"\n").replace(/\\"/g,'"');
       });
-      if(!slots.slot1)throw new Error("응답 파싱 실패");
+      if(!slots.slot1)throw new Error("JSON 파싱 실패: "+_err.message);
     }
-    for(var i=1;i<=4;i++){var el=gv("sl"+i);if(el)el.textContent=slots["slot"+i]||"";}
+    for(let i=1;i<=4;i++){const el=gv("sl"+i);if(el)el.textContent=slots["slot"+i]||"";}
+    // 리포트 버튼 활성화 & 데이터 저장
     window.__TQ_SLOTS=slots;
-
-    // ── 베타 피드백 UI 삽입 ──
-    // 1) 각 슬롯 헤더에 🚩 버튼 추가
-    var SLOT_TITLES = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
-    for(var si=1;si<=4;si++){
-      (function(idx){
-        var slotEl = document.querySelector('.slot:nth-of-type('+idx+') .slot-h');
-        if(!slotEl) return;
-        if(slotEl.querySelector('.beta-flag-btn')) return; // 중복 방지
-        var flagBtn = document.createElement('button');
-        flagBtn.className = 'beta-flag-btn';
-        flagBtn.innerHTML = '🚩 오류 신고';
-        flagBtn.title = '슬롯'+idx+' 판독 내용이 부정확한 경우 신고';
-        flagBtn.onclick = function(){ openFlagModal(idx, SLOT_TITLES[idx-1], slots["slot"+idx]||""); };
-        slotEl.appendChild(flagBtn);
-      })(si);
-    }
-
-    // 2) 전체 의견 입력란 — 슬롯 섹션 아래에 한 번만 삽입
-    var feedbackArea = document.getElementById('beta-feedback-area');
-    if(!feedbackArea){
-      var slotsContainer = document.querySelector('[id^="sl1"]');
-      var parentSection = slotsContainer ? slotsContainer.closest('.slot')?.parentElement : null;
-      // slot들의 부모 찾기
-      var allSlots = document.querySelectorAll('.slot');
-      var lastSlot = allSlots[allSlots.length-1];
-      if(lastSlot && lastSlot.parentElement){
-        var fb = document.createElement('div');
-        fb.id = 'beta-feedback-area';
-        fb.innerHTML = '<div style="margin-top:16px;background:#FFF8F0;border:1.5px solid #FED7AA;border-radius:10px;padding:16px 20px">'
-          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-          + '<span style="background:#EA580C;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:2px;letter-spacing:.5px">BETA</span>'
-          + '<span style="font-size:13px;font-weight:700;color:#9A3412">판독 품질 개선을 위한 의견을 남겨주세요</span>'
-          + '</div>'
-          + '<textarea id="beta-feedback-text" placeholder="전반적인 판독 결과에 대한 의견, 개선 사항 등을 자유롭게 입력해주세요." '
-          + 'style="width:100%;height:80px;padding:10px 12px;border:1px solid #FDBA74;border-radius:6px;font-size:12px;font-family:inherit;resize:vertical;background:#fff;color:#1E293B;line-height:1.6;outline:none"></textarea>'
-          + '<div style="display:flex;justify-content:flex-end;margin-top:8px">'
-          + '<button onclick="submitFeedback()" style="background:#EA580C;color:#fff;border:none;padding:7px 20px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s" onmouseover="this.style.background=\'#C2410C\'" onmouseout="this.style.background=\'#EA580C\'">의견 전송</button>'
-          + '</div>'
-          + '</div>';
-        lastSlot.parentElement.appendChild(fb);
-      }
-    }
     gv("btnR").disabled=false;
+    var btnR3b=document.getElementById("btnR3");
+    if(btnR3b){btnR3b.disabled=false;btnR3b.style.opacity="1";btnR3b.style.background="linear-gradient(135deg,#0BA98E,#0E7CC0)";}
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
-    for(var i=1;i<=4;i++){var el=gv("sl"+i);if(el)el.innerHTML='<span style="color:#A32D2D;font-size:11px">오류 발생</span>';}
-  }finally{btnB.disabled=false;btnB.textContent="② 판독문 생성 — Claude AI";}
+    for(let i=1;i<=4;i++){const el=gv("sl"+i);if(el)el.innerHTML=`<span style="color:#A32D2D;font-size:11px">오류 발생</span>`;}
+  }finally{btnB.disabled=false;btnB.textContent="② 판독문 생성 (Claude)";}
 });
 
 // ── 샘플 데이터 ──
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 베타 피드백 시스템
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// CSS 동적 삽입
-(function(){
-  var s = document.createElement('style');
-  s.textContent = `
-    .beta-flag-btn {
-      margin-left: auto;
-      background: transparent;
-      border: 1px solid rgba(234,88,12,.35);
-      color: rgba(234,88,12,.7);
-      font-size: 10px; font-weight: 600;
-      padding: 3px 10px; border-radius: 4px;
-      cursor: pointer; font-family: inherit;
-      transition: all .15s; white-space: nowrap;
-    }
-    .beta-flag-btn:hover {
-      background: rgba(234,88,12,.08);
-      border-color: #EA580C; color: #EA580C;
-    }
-    #beta-flag-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.5); z-index: 9999;
-      align-items: center; justify-content: center;
-    }
-    #beta-flag-overlay.open { display: flex; }
-    #beta-flag-modal {
-      background: #fff; border-radius: 12px;
-      padding: 28px 28px 24px; width: 480px; max-width: 90vw;
-      box-shadow: 0 20px 60px rgba(0,0,0,.3);
-    }
-    #beta-flag-modal h3 {
-      font-size: 15px; font-weight: 700; color: #1E293B;
-      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
-    }
-    #beta-flag-modal .modal-slot-preview {
-      background: #F8FAFC; border: 1px solid #E2E8F0;
-      border-radius: 6px; padding: 10px 12px;
-      font-size: 11px; color: #64748B; line-height: 1.6;
-      max-height: 80px; overflow-y: auto; margin: 12px 0;
-    }
-    #beta-flag-modal label {
-      font-size: 12px; font-weight: 600; color: #475569;
-      display: block; margin-bottom: 6px;
-    }
-    #beta-flag-comment {
-      width: 100%; height: 80px;
-      border: 1px solid #CBD5E1; border-radius: 6px;
-      padding: 9px 12px; font-size: 12px; font-family: inherit;
-      resize: vertical; outline: none; color: #1E293B;
-      line-height: 1.6;
-    }
-    #beta-flag-comment:focus { border-color: #8B5CF6; }
-    .modal-actions {
-      display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;
-    }
-    .modal-btn-cancel {
-      background: #F1F5F9; color: #64748B; border: none;
-      padding: 8px 18px; border-radius: 6px;
-      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
-    }
-    .modal-btn-cancel:hover { background: #E2E8F0; }
-    .modal-btn-submit {
-      background: #EA580C; color: #fff; border: none;
-      padding: 8px 22px; border-radius: 6px;
-      font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
-      transition: background .15s;
-    }
-    .modal-btn-submit:hover { background: #C2410C; }
-    .modal-btn-submit:disabled { opacity: .5; cursor: not-allowed; }
-  `;
-  document.head.appendChild(s);
-})();
-
-// 🚩 플래그 모달 HTML 동적 생성
-(function(){
-  var overlay = document.createElement('div');
-  overlay.id = 'beta-flag-overlay';
-  overlay.innerHTML = `
-    <div id="beta-flag-modal">
-      <h3>🚩 <span id="flag-slot-title">슬롯 오류 신고</span></h3>
-      <p style="font-size:11px;color:#94A3B8;margin-bottom:4px">판독 내용 미리보기</p>
-      <div class="modal-slot-preview" id="flag-slot-preview"></div>
-      <label>어떤 부분이 부정확한가요?</label>
-      <textarea id="beta-flag-comment" placeholder="예) 이 학생의 음독 습관 분석이 실제와 다릅니다. 속도가 느린 이유가 음독이 아닌 것 같습니다."></textarea>
-      <div class="modal-actions">
-        <button class="modal-btn-cancel" onclick="closeFlagModal()">취소</button>
-        <button class="modal-btn-submit" id="flag-submit-btn" onclick="submitFlag()">신고 전송</button>
-      </div>
-    </div>
-  `;
-  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeFlagModal(); });
-  document.body.appendChild(overlay);
-})();
-
-var _flagSlotIdx = 0;
-var _flagSlotContent = '';
-
-function openFlagModal(slotIdx, slotTitle, slotContent) {
-  _flagSlotIdx = slotIdx;
-  _flagSlotContent = slotContent;
-  document.getElementById('flag-slot-title').textContent = '슬롯' + slotIdx + ' — ' + slotTitle;
-  document.getElementById('flag-slot-preview').textContent = slotContent.slice(0, 150) + (slotContent.length > 150 ? '...' : '');
-  document.getElementById('beta-flag-comment').value = '';
-  document.getElementById('beta-flag-overlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('beta-flag-comment').focus(); }, 100);
-}
-
-function closeFlagModal() {
-  document.getElementById('beta-flag-overlay').classList.remove('open');
-}
-
-function submitFlag() {
-  var comment = document.getElementById('beta-flag-comment').value.trim();
-  var btn = document.getElementById('flag-submit-btn');
-  btn.disabled = true; btn.textContent = '전송 중...';
-
-  var payload = {
-    type: 'slot_flag',
-    slot_idx: _flagSlotIdx,
-    slot_content: _flagSlotContent.slice(0, 500),
-    comment: comment,
-    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
-    created_at: new Date().toISOString()
-  };
-
-  sendFeedbackToSupabase(payload, function(ok){
-    btn.disabled = false; btn.textContent = '신고 전송';
-    closeFlagModal();
-    if(ok) showFeedbackToast('신고가 접수됐습니다. 감사합니다 🙏');
-    else showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
-  });
-}
-
-function submitFeedback() {
-  var text = (document.getElementById('beta-feedback-text')||{}).value || '';
-  text = text.trim();
-  if(!text){ showFeedbackToast('의견을 입력해주세요.', true); return; }
-
-  var payload = {
-    type: 'overall_feedback',
-    comment: text,
-    slots: window.__TQ_SLOTS ? JSON.stringify(window.__TQ_SLOTS).slice(0, 2000) : '',
-    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
-    created_at: new Date().toISOString()
-  };
-
-  sendFeedbackToSupabase(payload, function(ok){
-    var el = document.getElementById('beta-feedback-text');
-    if(ok){
-      if(el) el.value = '';
-      showFeedbackToast('의견이 전송됐습니다. 감사합니다 🙏');
-    } else {
-      showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
-    }
-  });
-}
-
-function sendFeedbackToSupabase(payload, cb) {
-  // Edge Function을 통해 저장 — API 키 프론트엔드 노출 없음
-  fetch(TQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-academy-token': TQ_API_TOKEN || ''
-    },
-    body: JSON.stringify(Object.assign({ action: 'feedback' }, payload))
-  })
-  .then(function(r){ cb(r.ok); })
-  .catch(function(){ cb(false); });
-}
-
-function showFeedbackToast(msg, isErr) {
-  var t = document.createElement('div');
-  t.textContent = msg;
-  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
-    + 'background:' + (isErr ? '#DC2626' : '#059669') + ';color:#fff;'
-    + 'padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;'
-    + 'z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);'
-    + 'animation:tq-fadein .3s ease both';
-  document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 3000);
-}
-
 var SAMPLES=[
   // 0. 진호윤 — 초고5 통합완성형, 음독+재처리 있지만 고역량
   {
@@ -2700,9 +3423,7 @@ function postRenderSWOT(eng, inp) {
 
   // 카드 렌더링 후 겹침 방지 — 실제 높이 기반으로 top 재계산
   setTimeout(function() {
-    var GAP = 12; // 카드 간 최소 간격(px)
-
-    // 우측 카드: ev-right-top → ev-right-mid → ev-right-bottom 순차 배치
+    var GAP = 12;
     var rightIds = ['ev-right-top', 'ev-right-mid', 'ev-right-bottom'];
     var rightY = 20;
     rightIds.forEach(function(id) {
@@ -2711,15 +3432,13 @@ function postRenderSWOT(eng, inp) {
       el.style.top = rightY + 'px';
       rightY += el.offsetHeight + GAP;
     });
-
-    // 좌측 카드: ev-left-top (현재 1개이므로 top만 보정)
     var leftEl = document.getElementById('ev-left-top');
     if (leftEl && leftEl.innerHTML.trim()) {
       leftEl.style.top = '20px';
     }
   }, 100);
 
-
+  // evidence 카드 → 원인분석 영역에 배치 (모든 카드)
   var evidenceEl = document.getElementById('evidenceCards');
   if (evidenceEl && eng.evidence) {
     // 요인별 색상
@@ -3097,7 +3816,7 @@ function rpBuildResultHTML(eng, inp) {
   +'<div style="width:794px;height:1123px;flex-shrink:0;background:white;display:flex;flex-direction:column;overflow:hidden;">'
 
   // ── 헤더
-  +'<div style="background:#0F172A;padding:21px 36px;display:flex;justify-content:space-between;align-items:center;">'
+  +'<div style="background:#666666;padding:21px 36px;display:flex;justify-content:space-between;align-items:center;">'
     +'<div style="display:flex;align-items:center;gap:24px">'
       +'<div>'
         +'<div style="line-height:1">'
@@ -3106,14 +3825,14 @@ function rpBuildResultHTML(eng, inp) {
         +'</div>'
         +'<div style="color:#64748B;font-size:13.5px;letter-spacing:0.04em">Textual Quotient Test</div>'
       +'</div>'
-      +'<div style="padding-left:24px;color:#CBD5E1;font-size:34.4px;font-weight:400;letter-spacing:-0.1em">문자정보 처리역량 테스트</div>'
+      +'<div style="padding-left:4px;color:#CBD5E1;font-size:34.4px;font-weight:400;letter-spacing:-0.1em">문자정보 처리역량 테스트</div>'
     +'</div>'
     +'<div style="text-align:right">'
       +'<div style="color:white;font-weight:400;font-size:21px">'
         +'<span style="font-size:14.7px">'+school+' '+grade+'</span>&nbsp;&nbsp;'
         +'<span style="font-size:31.5px">'+name+'</span>'
       +'</div>'
-      +'<div style="margin-top:6px"><span style="background:#1E293B;border-radius:4px;padding:3px 10px;color:#CBD5E1;font-size:15px">진단일 : '+dateStr+'</span></div>'
+      +'<div style="margin-top:6px"><span style="background:#888888;border-radius:4px;padding:3px 10px;color:#fff;font-size:15px">진단일 : '+dateStr+'</span></div>'
     +'</div>'
   +'</div>'
 
@@ -3195,7 +3914,7 @@ function rpBuildResultHTML(eng, inp) {
   +'</div>'
 
   // ── 푸터
-  +'<div style="background:#0F172A;border-top:2px solid #E2E8F0;padding:19px 24px;display:flex;justify-content:space-between;align-items:center;position:relative;">'
+  +'<div style="background:#666666;border-top:2px solid #E2E8F0;padding:19px 24px;display:flex;justify-content:space-between;align-items:center;position:relative;">'
     +'<div style="font-size:15px;font-weight:500;color:#94A3B8;">스터디포스 공부의철인</div>'
     +'<div style="font-size:17px;font-weight:900;color:white;letter-spacing:-0.3px;">스터디포스 <span style="font-size:14px;font-weight:500;color:#94A3B8;">언어과학연구소</span></div>'
   +'</div>'
@@ -3363,12 +4082,14 @@ function openReport(){
     acc:eng.acc, fct:eng.fct, str_:eng.str_,
     inf:eng.inf, voc:eng.voc, wm:eng.wm,
     hab:eng.hab, eff:eng.eff,
-    habChecked:eng.habChecked||[], effChecked:eng.effChecked||[],
+    habChecked:eng.habChecked||[],
+    effChecked:eng.effChecked||[],
     exStr:eng.inten?eng.inten.ex:"",
     presc:eng.presc||[],
     slots:slots,
     imgSrc:imgSrc
   };
+
   openStandaloneReport(d);
 }
 
@@ -3468,130 +4189,423 @@ function printReport(){
 }
 window.printReport=printReport;
 
-// 리포트 HTML 빌더 (인라인 렌더링용)
-function buildReportHTML(d){
-  var TC={"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
-  var UC={"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
-  var UBG={"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
-  var SC=["#1E40AF","#0BA98E","#B45309","#7C3AED"];
-  var SLOT_T=["은 어떤 학습자인가?","의 지금 공부 상태는?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
-  var lvMap={"초등":"초등학생","초저":"초등학생","초고":"초등학생","중등":"중학생","고등":"고등학생","일반":"일반"};
-  var SMAP_R={"90점 이상":93,"80~89점":85,"70~79점":75,"60~69점":65,"60점 미만":50,"1등급":95,"2등급":89,"3등급":79,"4등급":65,"5등급 이하":45,"매우잘함":93,"잘함":80,"보통":65,"노력요함":50};
-  function barCol(v,t){return v>=t+20?"#0BA98E":v>=t?"#16A34A":v>=t-20?"#D97706":"#DC2626";}
 
-  var now=new Date();
-  var dateStr=now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
-  var lvLabel=(lvMap[d.level]||d.level||"")+(d.grade&&d.grade>0?" "+d.grade+"학년":"");
-  var tc=TC[d.bt]||"#0BA98E";
-  var uc=UC[d.urg]||"#047857";
-  var ubg=UBG[d.urg]||"#ECFDF5";
 
-  // 역량 바
-  var skillsHtml=["독해정확도:acc:50","사실적이해:fct:50","구조적이해:str_:50","추론능력:inf:50","어휘능력:voc:50","워킹메모리:wm:60","독해습관:hab:50","독해효율성:eff:50"].map(function(s){
-    var p=s.split(":");var lb=p[0],key=p[1],t=+p[2];
-    var v=Math.round(d[key]||0),col=barCol(d[key],t),near=Math.abs((d[key]||0)-t)<=10;
-    return'<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:#4A5568;margin-bottom:2px"><span>'+lb+(near?' <span style="font-size:9px;color:#B45309;background:#FEF3C7;padding:0 3px;border-radius:2px">경계</span>':'')+'</span><span style="font-weight:700;color:'+col+'">'+v+'</span></div><div style="height:5px;background:#EEF1F6;border-radius:3px;overflow:hidden"><div style="height:100%;width:'+v+'%;background:'+col+';border-radius:3px"></div></div></div>';
-  }).join("");
+  // ── PolarArea SVG 생성 (tq_integrated ResultPage 동일) ──
+  function buildPolarAreaSVG(factors, size) {
+    size = size || 317;
+    var cx = size/2, cy = size/2;
+    var maxR = size * 0.355;
+    var n = factors.length;
+    var step = (Math.PI*2) / n;
+    var segs = factors.map(function(d, i) {
+      var sa = -Math.PI/2 - (Math.PI/5) + i*step;
+      var ea = sa + step;
+      var r = Math.max((Math.min(d.score,100)/100)*maxR, 2);
+      var x1=cx+r*Math.cos(sa), y1=cy+r*Math.sin(sa);
+      var x2=cx+r*Math.cos(ea), y2=cy+r*Math.sin(ea);
+      var mid = sa + step/2;
+      var lR = maxR * 1.38;
+      var lxOff = d.name==="독해효율성"?5 : d.name==="워킹메모리"?-5 : 0;
+      var lyOff = d.name==="독해습관"?-5 : d.name==="추론능력"?-5 : 0;
+      return {
+        path: 'M '+cx.toFixed(1)+' '+cy.toFixed(1)+' L '+x1.toFixed(1)+' '+y1.toFixed(1)+' A '+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+' Z',
+        color: d.color, label: d.name, value: d.score,
+        lx: cx+lR*Math.cos(mid)+lxOff, ly: cy+lR*Math.sin(mid)+lyOff,
+        needsBadge: d.score <= 60,
+      };
+    });
 
-  // 성적
-  var scoreHtml="";
-  [{lb:"국어",v:d.kor},{lb:"영어",v:d.eng_score},{lb:"수학",v:d.math}].forEach(function(s){
-    if(!s.v||s.v==="-")return;
-    var sv=SMAP_R[s.v]||0,col=sv>=80?"#0BA98E":sv>=65?"#16A34A":sv>=50?"#D97706":"#DC2626";
-    scoreHtml+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #EEF1F6"><span style="font-size:11px;color:#4A5568">'+s.lb+'</span><span style="font-size:12px;font-weight:700;color:'+col+'">'+s.v+'</span></div>';
-  });
+    var gridCircles = [20,40,60,80,100].map(function(g){
+      return '<circle cx="'+cx+'" cy="'+cy+'" r="'+((g/100)*maxR).toFixed(1)+'" fill="none" stroke="#D1D5DB" stroke-width="0.7"/>';
+    }).join('');
 
-  // 처방
-  var prescHtml=(d.presc||[]).map(function(p){
-    return'<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:6px"><div style="width:17px;height:17px;border-radius:50%;background:#0B1829;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+p.p+'</div><div style="font-size:11px;color:#0B1829;line-height:1.5;font-weight:500">'+p.c+'</div></div>';
-  }).join("")||'<p style="font-size:11px;color:#047857">종합 역량 유지 ✓</p>';
+    var gridLines = factors.map(function(_,i){
+      var a = -Math.PI/2-(Math.PI/5)+i*step;
+      return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+maxR*Math.cos(a)).toFixed(1)+'" y2="'+(cy+maxR*Math.sin(a)).toFixed(1)+'" stroke="#D1D5DB" stroke-width="0.7"/>';
+    }).join('');
 
-  // 플래그
-  var flagHtml="";
-  if(d.flagC)flagHtml+='<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:12px;background:#FEF2F2;color:#B91C1C;border:1.5px solid #FECACA;margin-right:4px">⚠ 모순패턴</span>';
-  if(d.flagO)flagHtml+='<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:12px;background:#FFFBEB;color:#B45309;border:1.5px solid #FDE68A">⚡ 선행과부하</span>';
+    var bgCircles = [[40,60],[80,100]].map(function(pair){
+      var rLo=(pair[0]/100)*maxR, rHi=(pair[1]/100)*maxR;
+      return '<circle cx="'+cx+'" cy="'+cy+'" r="'+rHi.toFixed(1)+'" fill="#f5f5f5" fill-opacity="0.45"/>'
+            +'<circle cx="'+cx+'" cy="'+cy+'" r="'+rLo.toFixed(1)+'" fill="white" fill-opacity="0.6"/>';
+    }).join('');
 
-  // 이미지
-  var imgHtml=d.imgSrc
-    ?'<img src="'+d.imgSrc+'" style="width:100%;border-radius:8px;border:1px solid #DDE3ED;display:block">'
-    :'<div style="height:120px;background:#F5F7FA;border:1.5px dashed #DDE3ED;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#8E9BB0;font-size:12px">결과지 이미지 없음</div>';
+    var paths = segs.map(function(s){
+      return '<path d="'+s.path+'" fill="'+s.color+'" fill-opacity="0.80" stroke="white" stroke-width="1.2"/>';
+    }).join('');
 
-  // 슬롯
-  var slotsHtml="";
-  for(var i=1;i<=4;i++){
-    var txt=(d.slots&&d.slots["slot"+i])||"";
-    if(!txt)continue;
-    slotsHtml+='<div style="border:1px solid #DDE3ED;border-radius:10px;overflow:hidden;margin-bottom:14px"><div style="background:#0B1829;padding:8px 14px;display:flex;align-items:center;gap:8px"><div style="width:20px;height:20px;border-radius:50%;background:'+SC[i-1]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;border:1.5px solid rgba(255,255,255,.25)">'+i+'</div><span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.92)">'+(d.name||"학생")+SLOT_T[i-1]+'</span></div><div style="padding:16px 18px;font-size:13px;line-height:2.1;color:#0B1829;white-space:pre-wrap;word-break:keep-all">'+txt+'</div></div>';
+    var pctLabels = [0,20,40,60,80,100].map(function(pct){
+      var r = (pct/100)*maxR;
+      return '<text x="'+(cx+4)+'" y="'+(cy+r+7).toFixed(1)+'" text-anchor="start" dominant-baseline="middle" font-size="11" fill="#000000" fill-opacity="0.6" font-weight="600" font-family="system-ui">'+pct+'%</text>';
+    }).join('');
+
+    var labels = segs.map(function(s){
+      var col = s.value<=60?"#EF4444":"#CBD5E1";
+      return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555555" font-weight="700" font-family="system-ui">'+s.label+'</text>'
+            +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+col+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';
+    }).join('');
+
+    var badges = segs.filter(function(s){return s.needsBadge;}).map(function(s){
+      return '<rect x="'+(s.lx-26).toFixed(1)+'" y="'+(s.ly+22).toFixed(1)+'" width="52" height="16" rx="3" fill="#EF4444"/>'
+            +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+30).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="white" font-weight="800" font-family="system-ui">개선 필요</text>';
+    }).join('');
+
+    return '<svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" overflow="visible" style="width:100%;max-width:'+size+'px">'
+      +bgCircles+gridCircles+gridLines+paths+pctLabels+labels+badges+'</svg>';
   }
 
-  return'<div style="width:100%;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12)">'
-  // 헤더
-  +'<div style="background:#0B1829;padding:36px 40px 28px;position:relative;overflow:hidden">'
-  +'<div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(11,169,142,.15),transparent 70%)"></div>'
-  +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:20px;position:relative">'
-  +'<div style="width:34px;height:34px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">TQ</div>'
-  +'<div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.5px">STUDYFORCE</div>'
-  +'<div style="font-size:9px;color:rgba(255,255,255,.38);letter-spacing:.8px">LANGUAGE RESEARCH INSTITUTE</div></div>'
-  +'<div style="margin-left:auto;text-align:right"><div style="font-size:9px;color:rgba(255,255,255,.38);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px">독해역량 진단 리포트</div>'
-  +'<div style="font-size:11px;color:rgba(255,255,255,.5)">'+dateStr+'</div></div></div>'
-  +'<div style="display:flex;align-items:flex-end;justify-content:space-between;position:relative">'
-  +'<div><div style="font-size:26px;font-weight:700;color:#fff;letter-spacing:-.5px;line-height:1">'+( d.name||"학생")+'</div>'
-  +'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:5px">'+lvLabel+'</div></div>'
-  +'<div style="text-align:right"><div style="font-size:20px;font-weight:700;color:'+tc+'">'+d.bt+'</div>'
-  +'<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px">'+(d.st||"").replace((d.bt||"")+"_","")+'</div>'
-  +'<div style="display:inline-block;margin-top:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:'+ubg+';color:'+uc+'">'+d.urg+'</div></div></div></div>'
-  // 구분선
-  +'<div style="height:4px;background:linear-gradient(90deg,#0BA98E,#0E7CC0)"></div>'
-  // 결과지이미지(좌) + 역량프로파일+성적+개선우선순위(우, 세로배열)
-  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #DDE3ED">'
-  // 좌: 결과지 이미지
-  +'<div style="padding:20px 24px;border-right:1px solid #DDE3ED">'
-  +'<div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px">TQ 테스트 결과지</div>'
-  +imgHtml+'</div>'
-  // 우: 역량 수치 + 플래그 + 성적 + 개선우선순위 세로 배열
-  +'<div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">'
-  +'<div>'
-  +'<div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px">역량 수치 프로파일</div>'
-  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px">'+skillsHtml+'</div>'
-  +(flagHtml?'<div style="margin-top:8px">'+flagHtml+'</div>':'')
-  +'</div>'
-  +(scoreHtml?'<div><div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">학교 성적</div>'+scoreHtml+'</div>':'')
-  +'<div><div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">개선 우선순위</div>'+prescHtml+'</div>'
-  +'</div></div>'
-  // 판독문
-  +'<div style="padding:24px 32px;border-bottom:1px solid #DDE3ED">'
-  +'<div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px">맞춤 처방 판독문</div>'
-  +slotsHtml+'</div>'
-  // 권장 훈련 프로그램
-  var recs = typeof recommendPrograms === "function" ? recommendPrograms(e) : [];
+  // ── 1페이지: ResultPage (tq_integrated 동일 스타일) ──
+  function buildPage1(d) {
+    var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
+    var HABIT_ITEMS = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리내어 읽거나 속발음을 함","긴 문장은 이해하기 잘 안됨","긴 문장은 줄여 읽기를 함","긴 글은 내용 기억이 잘 안됨","단어를 다 알아도 이해가 안됨","글 읽는 속도가 느린 편임"];
+    var EFF_ITEMS   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+    var FACTOR_LABEL = {어휘력:"어휘의 의미를 정확히 파악하고 실제 문장 속에서 활용할 수 있는 능력.",워킹메모리:"문장을 읽을 때마다 실시간 정보를 처리하고 그것을 다시 단위로 재처리하여 생성하는 작업기억 능력.",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력.",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준.",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단."};
+
+    var factual    = (d.fct>0) ? d.fct    : d.acc;
+    var structural = (d.str_>0) ? d.str_  : d.acc;
+    var avgAcc     = Math.round((factual+structural)/2);
+    var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
+
+    // 체크 항목
+    var habChecked = d.habChecked && d.habChecked.length>0
+      ? HABIT_ITEMS.map(function(item){ return d.habChecked.indexOf(item)>-1; })
+      : HABIT_ITEMS.map(function(_,i){ return i < Math.round((100-Math.min(Math.max(d.hab||50,0),100))/100*HABIT_ITEMS.length); });
+    var effChecked = d.effChecked && d.effChecked.length>0
+      ? EFF_ITEMS.map(function(item){ return d.effChecked.indexOf(item)>-1; })
+      : EFF_ITEMS.map(function(_,i){ return i < Math.round((100-Math.min(Math.max(d.eff||50,0),100))/100*EFF_ITEMS.length); });
+    var habitCount = habChecked.filter(Boolean).length;
+    var effCount   = effChecked.filter(Boolean).length;
+
+    var FACTORS = [
+      {name:"어휘력",    score:Math.round(d.voc||0),  color:FACTOR_COLORS["어휘력"]},
+      {name:"워킹메모리",score:Math.round(d.wm||0),   color:FACTOR_COLORS["워킹메모리"]},
+      {name:"추론능력",  score:Math.round(d.inf||0),  color:FACTOR_COLORS["추론능력"]},
+      {name:"독해습관",  score:Math.round(d.hab||0),  color:FACTOR_COLORS["독해습관"]},
+      {name:"독해효율성",score:Math.round(d.eff||0),  color:FACTOR_COLORS["독해효율성"]},
+    ];
+
+    var lvMap = {초등:"초등학교",초저:"초등학교",초고:"초등학교",중등:"중학교",고등:"고등학교"};
+    var lvLabel = (lvMap[d.level]||d.level||"") + (d.grade&&d.grade>0?" "+d.grade+"학년":"");
+
+    var now = new Date();
+    var dateStr = now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
+
+    // 습관 체크리스트 HTML
+    var habitRows = HABIT_ITEMS.map(function(item,i){
+      var on = habChecked[i];
+      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+        +'<span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span>'
+        +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span>'
+        +'</div>';
+    }).join('');
+
+    // 효율성 체크리스트 HTML
+    var effRows = EFF_ITEMS.map(function(item,i){
+      var on = effChecked[i];
+      return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+        +'<span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span>'
+        +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span>'
+        +'</div>';
+    }).join('');
+
+    // 요인분석 테이블
+    var factorRows = FACTORS.map(function(f){
+      return '<div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;margin-bottom:10px;margin-left:20px">'
+        +'<div style="text-align:center;padding:5px 4px;background:'+f.color+'22;border-radius:6px;border:1px solid '+f.color+'44">'
+        +'<div style="font-size:16px;font-weight:400;color:#111111">'+f.name+'</div>'
+        +'</div>'
+        +'<div style="font-size:12px;color:#475569;line-height:1.55">'+FACTOR_LABEL[f.name]+'</div>'
+        +'</div>';
+    }).join('');
+
+    var PAGE_STYLE = 'width:210mm;min-height:297mm;background:white;margin:0 auto;box-shadow:0 8px 32px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;font-family:"Noto Sans KR",sans-serif;';
+
+    return '<div style="'+PAGE_STYLE+'">'
+      // 헤더
+      +'<div style="background:#666666;padding:21px 36px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="display:flex;align-items:center;gap:24px">'
+      +'<div>'
+      +'<div style="line-height:1"><span style="color:#EF4444;font-weight:900;font-size:43px;letter-spacing:-0.5px">TQ</span><span style="color:white;font-weight:400;font-size:43px;letter-spacing:-0.5px">TEST</span></div>'
+      +'<div style="color:#64748B;font-size:13.5px;letter-spacing:0.04em">Textual Quotient Test</div>'
+      +'</div>'
+      +'<div style="padding-left:4px;color:#CBD5E1;font-size:34.4px;font-weight:400;letter-spacing:-0.1em">문자정보 처리역량 테스트</div>'
+      +'</div>'
+      +'<div style="text-align:right">'
+      +'<div style="color:white;font-weight:400;font-size:21px">'
+      +'<span style="font-size:14.7px">'+lvLabel+'</span>&nbsp;&nbsp;'
+      +'<span style="font-size:31.5px">'+(d.name||"학생")+'</span>'
+      +'</div>'
+      +'<div style="margin-top:6px"><span style="background:#888888;border-radius:4px;padding:3px 10px;color:#fff;font-size:15px">진단일 : '+dateStr+'</span></div>'
+      +'</div>'
+      +'</div>'
+
+      // 본문
+      +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0">'
+
+      // 상단 3열
+      +'<div style="display:grid;grid-template-columns:45fr 27.5fr 27.5fr;gap:8px">'
+
+      // 열1: 정확도+속도
+      +'<div style="padding-right:20px;display:flex;flex-direction:column;align-items:center">'
+      +'<div style="margin-bottom:20px;width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px">'
+      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해정확도</span><span style="font-size:16px;color:#666;font-weight:400">(%)</span></div>'
+      +'<div style="font-size:128px;font-weight:900;color:'+accColor+';line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+avgAcc+'</div>'
+      +'<div style="margin-top:8px;width:calc(65% - 30px)">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:23px;color:#111;font-weight:400;line-height:1;font-family:Tahoma,sans-serif">'+factual+'</span><span style="font-size:23px;color:#111;font-weight:400;line-height:1;font-family:Tahoma,sans-serif">'+structural+'</span></div>'
+      +'<div style="width:100%;display:flex;height:10px;border-radius:4px;overflow:hidden;background:#E2E8F0">'
+      +'<div style="flex:1;display:flex;justify-content:flex-end"><div style="width:'+factual+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px"></div></div>'
+      +'<div style="width:1px;background:#94A3B8;flex-shrink:0"></div>'
+      +'<div style="flex:1;display:flex;justify-content:flex-start"><div style="width:'+structural+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0"></div></div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:12px;color:#666;font-weight:400">사실적 이해</span><span style="font-size:12px;color:#666;font-weight:400">구조적 이해</span></div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="width:100%;display:flex;flex-direction:column;align-items:center">'
+      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해속도</span><span style="font-size:16px;color:#666;font-weight:400">(자/분)</span></div>'
+      +'<div style="font-size:92px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+Number(d.spd||0).toLocaleString()+'</div>'
+      +'</div>'
+      +'</div>'
+
+      // 열2: 독해습관
+      +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%">'
+      +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px">독해습관</div>'
+      +habitRows
+      +'<div style="margin-top:8px;font-size:14px;color:#64748B;font-weight:400;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="color:#1E293B;font-size:15px">잘못된 독해습관</span>'
+      +'<span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span>'
+      +'</div>'
+      +'</div>'
+
+      // 열3: 독해효율성
+      +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%">'
+      +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px">독해효율성</div>'
+      +effRows
+      +'<div style="margin-top:8px;font-size:14px;color:#64748B;font-weight:400;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="color:#1E293B;font-size:15px">독해효율성 결합증상</span>'
+      +'<span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+effCount+'</span>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+
+      // 구분선
+      +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0"></div>'
+
+      // 하단: 폴라차트 + 요인분석
+      +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
+      +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'
+      +buildPolarAreaSVG(FACTORS, 317)
+      +'</div>'
+      +'<div style="padding-right:20px;padding-top:30px">'
+      +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px">독해역량 요인분석</div>'
+      +factorRows
+      +'</div>'
+      +'</div>'
+      +'</div>'
+
+      // 푸터
+      +'<div style="background:#666666;border-top:2px solid #E2E8F0;padding:19px 24px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="font-size:15px;font-weight:500;color:#94A3B8">스터디포스 언어과학연구소</div>'
+      +'<div style="font-size:17px;font-weight:900;color:white;letter-spacing:-0.3px">STUDYFORCE <span style="font-size:14px;font-weight:500;color:#94A3B8">언어과학연구소</span></div>'
+      +'</div>'
+      +'</div>';
+  }
+
+// ── 새 멀티페이지 리포트 빌더 ──
+function buildReportHTML(d) {
+  var TC = {"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
+  var UC = {"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
+  var UBG = {"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
+  var SC = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
+  var SLOT_T = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
+  var SLOT_DESC = [
+    "강점과 가능성을 중심으로",
+    "현재 역량 상태와 원인 분석",
+    "지금 개선하지 않을 때의 리스크",
+    "맞춤 처방과 앞으로의 방향"
+  ];
+  var lvMap = {"초등":"초등학생","초저":"초등학생","초고":"초등학생","중등":"중학생","고등":"고등학생","일반":"일반"};
+  var SMAP_R = {"90점 이상":93,"80~89점":85,"70~79점":75,"60~69점":65,"60점 미만":50,
+    "1등급":95,"2등급":89,"3등급":79,"4등급":65,"5등급 이하":45,
+    "매우잘함":93,"잘함":80,"보통":65,"노력요함":50};
+
+  var now = new Date();
+  var dateStr = now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
+  var lvLabel = (lvMap[d.level]||d.level||"")+(d.grade&&d.grade>0?" "+d.grade+"학년":"");
+  var tc = TC[d.bt]||"#0BA98E";
+  var uc = UC[d.urg]||"#047857";
+  var ubg = UBG[d.urg]||"#ECFDF5";
+
+  // 공통 페이지 스타일
+  var PAGE_STYLE = [
+    'width:210mm;height:297mm;background:#fff;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.12);',
+    'display:flex;flex-direction:column;page-break-after:always;font-family:"Noto Sans KR",sans-serif;overflow:hidden;'
+  ].join('');
+
+  // 공통 헤더 (소형)
+  function miniHeader(pageNum, totalPages) {
+    return '<div style="background:#666666;padding:6px 20px;display:flex;align-items:center;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="width:20px;height:20px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff">TQ</div>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+(d.name||"학생")+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.4)">'+pageNum+' / '+totalPages+'</span>'
+      +'</div>'
+      +'</div>';
+  }
+
+  // 공통 푸터
+  function footer() {
+    return '<div style="margin-top:auto;background:#666666;padding:6px 20px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:8px;color:rgba(255,255,255,.3)">STUDYFORCE LANGUAGE RESEARCH INSTITUTE · TQ 독해역량 진단 시스템</span>'
+      +'<span style="font-size:8px;color:rgba(255,255,255,.2)">'+dateStr+'</span>'
+      +'</div>';
+  }
+
+  // 역량 바 생성
+  function barCol(v, t) { return v>=t+20?"#0BA98E":v>=t?"#16A34A":v>=t-20?"#D97706":"#DC2626"; }
+  function skillBar(lb, v, t) {
+    v = Math.round(v||0);
+    var col = barCol(v, t);
+    var near = Math.abs(v-t)<=10;
+    return '<div style="margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A5568;margin-bottom:3px">'
+      +'<span>'+lb+(near?' <span style="font-size:9px;color:#B45309;background:#FEF3C7;padding:0 3px;border-radius:2px;font-weight:600">경계</span>':'')+'</span>'
+      +'<span style="font-weight:700;color:'+col+'">'+v+'</span>'
+      +'</div>'
+      +'<div style="height:6px;background:#EEF1F6;border-radius:4px;overflow:hidden">'
+      +'<div style="height:100%;width:'+v+'%;background:'+col+';border-radius:4px"></div>'
+      +'</div>'
+      +'</div>';
+  }
+
+  // 성적 HTML
+  var scoreRows = "";
+  [{lb:"국어",v:d.kor},{lb:"영어",v:d.eng_score},{lb:"수학",v:d.math}].forEach(function(s){
+    if(!s.v||s.v==="-") return;
+    var sv = SMAP_R[s.v]||0;
+    var col = sv>=85?"#0BA98E":sv>=70?"#16A34A":sv>=60?"#D97706":"#DC2626";
+    scoreRows += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #EEF1F6">'
+      +'<span style="font-size:12px;color:#4A5568">'+s.lb+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+col+'">'+s.v+'</span>'
+      +'</div>';
+  });
+
+  // 플래그
+  var flagHtml = "";
+  if(d.flagC) flagHtml += '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:12px;background:#FEF2F2;color:#B91C1C;border:1.5px solid #FECACA;margin-right:5px">⚠ 모순패턴</span>';
+  if(d.flagO) flagHtml += '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:12px;background:#FFFBEB;color:#B45309;border:1.5px solid #FDE68A">⚡ 선행과부하</span>';
+
+  // 이미지
+  var imgHtml = d.imgSrc
+    ? '<img src="'+d.imgSrc+'" style="width:100%;border-radius:8px;border:1px solid #DDE3ED;display:block">'
+    : '<div style="height:180px;background:#F5F7FA;border:1.5px dashed #DDE3ED;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#8E9BB0">'
+      +'<span style="font-size:28px;opacity:.4">📷</span>'
+      +'<span style="font-size:12px">결과지 이미지 없음</span>'
+      +'</div>';
+
+  // 처방
+  var prescHtml = (d.presc||[]).map(function(p){
+    return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
+      +'<div style="width:18px;height:18px;border-radius:50%;background:#0B1829;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">'+p.p+'</div>'
+      +'<div style="font-size:12px;color:#0B1829;line-height:1.6;font-weight:500">'+p.c+'</div>'
+      +'</div>';
+  }).join("")||'<p style="font-size:12px;color:#047857;padding:4px 0">종합 역량 유지 ✓</p>';
+
+  // 슬롯 데이터
+  var slots = d.slots||{};
+  var totalPages = 2 + 4 + 1; // 표지 + 슬롯4개 + 훈련
+
+  var page1 = buildPage1(d);
+
+  // ══════════════════════════════════
+  // 페이지 2~5 — 판독문 슬롯 (각 1페이지)
+  // ══════════════════════════════════
+  var slotPages = "";
+  for(var i = 1; i <= 4; i++) {
+    var txt = (slots["slot"+i])||"";
+    var slotColor = SC[i-1];
+    slotPages += '<div style="'+PAGE_STYLE+'">'
+      // 슬롯 컬러 헤더 — 맨 위에서 시작
+      +'<div style="background:'+slotColor+';padding:28px 32px 24px;position:relative;overflow:hidden">'
+      +'<div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)"></div>'
+      +'<div style="display:flex;align-items:center;gap:16px;position:relative">'
+      +'<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;font-family:\'DM Sans\',sans-serif;flex-shrink:0">'+i+'</div>'
+      +'<div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">SLOT '+i+' · '+SLOT_DESC[i-1]+'</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px">'+(d.name||"학생")+'의 '+SLOT_T[i-1]+'</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      // 구분선
+      +'<div style="height:3px;background:linear-gradient(90deg,'+slotColor+',rgba(255,255,255,.1))"></div>'
+      // 판독문 내용
+      +'<div style="padding:28px 32px 48px;font-size:14px;line-height:2.0;color:#0B1829;white-space:pre-wrap;word-break:keep-all;letter-spacing:-.1px">'
+      +(txt||'<span style="color:#8E9BB0;font-size:13px">판독문이 생성되지 않았습니다.</span>')
+      +'</div>'
+      // 학생정보 소형 배지
+      +'<div style="display:flex;justify-content:flex-end;padding:0 32px 8px"><div style="background:#F5F7FA;border:1px solid #DDE3ED;border-radius:8px;padding:8px 14px;display:flex;gap:12px;align-items:center">'
+      +'<span style="font-size:10px;color:#8E9BB0">'+(d.name||"학생")+'</span>'
+      +'<span style="font-size:10px;color:#CBD5E1">|</span>'
+      +'<span style="font-size:10px;color:'+tc+';font-weight:600">'+d.bt+'</span>'
+      +'<span style="font-size:10px;color:#CBD5E1">|</span>'
+      +'<span style="font-size:10px;color:'+uc+'">'+d.urg+'</span>'
+      +'</div></div>'
+      +miniHeader(i+1, totalPages)
+      +'</div>';
+  }
+
+  // ══════════════════════════════════
+  // 마지막 페이지 — 권장 훈련 프로그램
+  // ══════════════════════════════════
+  var recs = (typeof recommendPrograms === "function") ? recommendPrograms(d) : [];
   var areaColor = {"국어":"#1E40AF","어휘":"#0BA98E","수학":"#D97706","영어":"#7C3AED","특목":"#DC2626"};
-  var areaBg   = {"국어":"#EFF6FF","어휘":"#E6F8F5","수학":"#FFFBEB","영어":"#F5F3FF","특목":"#FEF2F2"};
-  var recHtml = recs.length === 0
-    ? '<p style="font-size:12px;color:#8E9BB0;text-align:center;padding:16px 0">분석 결과에 따른 권장 프로그램이 없습니다</p>'
-    : recs.map(function(r,i){
+  var areaBg = {"국어":"#EFF6FF","어휘":"#E6F8F5","수학":"#FFFBEB","영어":"#F5F3FF","특목":"#FEF2F2"};
+
+  var recsHtml = recs.length === 0
+    ? '<div style="padding:24px;text-align:center;color:#8E9BB0;font-size:13px;border:1.5px dashed #DDE3ED;border-radius:10px">분석 결과에 따른 권장 프로그램이 없습니다</div>'
+    : recs.map(function(r, i){
         var ac = areaColor[r.area]||"#333";
         var ab = areaBg[r.area]||"#F5F5F5";
-        return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #EEF1F6">'
-          +'<div style="width:22px;height:22px;border-radius:50%;background:#0B1829;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">'+(i+1)+'</div>'
+        return '<div style="display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid #EEF1F6">'
+          +'<div style="width:28px;height:28px;border-radius:50%;background:#0B1829;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">'+(i+1)+'</div>'
           +'<div style="flex:1">'
-          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
-          +'<span style="font-size:12px;font-weight:700;color:#0B1829">'+r.name+'</span>'
-          +'<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:'+ab+';color:'+ac+'">'+r.course+'</span>'
-          +(r.special?'<span style="font-size:9px;background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;padding:1px 6px;border-radius:8px;font-weight:600">상담 필요</span>':'')+'</div>'
-          +'<div style="font-size:11px;color:#4A5568;margin-bottom:3px">'+r.reason+'</div>'
-          +'<div style="font-size:10px;color:#8E9BB0">'+r.grade+'&nbsp;·&nbsp;'+r.sessions+'회&nbsp;·&nbsp;'+r.period+'</div>'
-          +'</div></div>';
+          +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">'
+          +'<span style="font-size:14px;font-weight:700;color:#0B1829">'+r.name+'</span>'
+          +'<span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;background:'+ab+';color:'+ac+'">'+r.course+'</span>'
+          +(r.special?'<span style="font-size:10px;background:#FEF2F2;color:#B91C1C;border:1px solid #FECACA;padding:2px 7px;border-radius:8px;font-weight:600">상담 필요</span>':'')
+          +'</div>'
+          +'<div style="font-size:12px;color:#4A5568;margin-bottom:4px;line-height:1.6">'+r.reason+'</div>'
+          +'<div style="font-size:11px;color:#8E9BB0">'+r.grade+' · '+r.sessions+'회 · '+r.period+'</div>'
+          +'</div>'
+          +'</div>';
       }).join("");
-  +'<div style="padding:20px 32px;background:#F5F7FA;border-bottom:1px solid #DDE3ED">'
-  +'<div style="font-size:9px;font-weight:700;color:#8E9BB0;letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px">권장 훈련 프로그램</div>'
-  +recHtml
-  +'</div>'
-  // 푸터
-  +'<div style="background:#0B1829;padding:14px 32px;display:flex;justify-content:space-between;align-items:center">'
-  +'<span style="font-size:9px;color:rgba(255,255,255,.35)">STUDYFORCE LANGUAGE RESEARCH INSTITUTE · TQ 독해역량 진단 시스템</span>'
-  +'<span style="font-size:9px;color:rgba(255,255,255,.25)">본 리포트는 TQ테스트 결과를 바탕으로 자동 생성되었습니다</span></div>'
-  +'</div>';
+
+  var lastPage = '<div style="'+PAGE_STYLE+'page-break-after:auto">'
+    // 훈련 섹션 헤더
+    +'<div style="background:#666666;padding:28px 32px 24px">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">RECOMMENDED TRAINING</div>'
+    +'<div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.3px">권장 훈련 프로그램</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:6px">'+(d.name||"학생")+'의 역량 분석 결과를 바탕으로 추천드리는 프로그램입니다.</div>'
+    +'</div>'
+    +'<div style="height:4px;background:linear-gradient(90deg,#0BA98E,#0E7CC0)"></div>'
+    // 훈련 목록
+    +'<div style="padding:24px 32px 80px">'
+    +recsHtml
+    +'</div>'
+    // 안내 문구
+    +'<div style="position:absolute;bottom:40px;left:32px;right:32px;background:#F5F7FA;border:1px solid #DDE3ED;border-radius:10px;padding:14px 18px">'
+    +'<div style="font-size:10px;font-weight:700;color:#4A5568;margin-bottom:4px">📋 상담 안내</div>'
+    +'<div style="font-size:11px;color:#8E9BB0;line-height:1.7">위 프로그램은 TQ테스트 결과를 바탕으로 자동 추천된 것입니다. 구체적인 수강 일정과 세부 내용은 담당 컨설턴트와 상담 후 결정하시기 바랍니다.</div>'
+    +'</div>'
+    +footer()
+    +'</div>';
+
+  return page1 + slotPages + lastPage;
 }
+
 window.openReport=openReport;
 
 // ── 초기화 (다음 학생) ──
@@ -3604,8 +4618,6 @@ function resetAll(){
   if(gv("emptyView"))gv("emptyView").style.display="flex";
   gv("btnB").disabled=true;
   gv("btnR").disabled=true;
-  var btnB2r=document.getElementById("btnB2");
-  if(btnB2r){btnB2r.disabled=true;btnB2r.style.opacity="0.5";}
   window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
   var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
   closeReport();
@@ -3666,11 +4678,16 @@ gv("btnR").addEventListener("click",openReport);
       <button class="tab-btn" onclick="switchTab('boundary')">경계값 기준표</button>
       <button class="tab-btn" onclick="switchTab('logic')">판독 로직 구조</button>
       <button class="tab-btn" onclick="switchTab('contra')">모순패턴 관리</button>
+      <button class="tab-btn" onclick="switchTab('hardcoded')">엔진전용 문장</button>
     </div>
     <div style="padding:0 12px;display:flex;gap:6px;align-items:center">
       <span id="changeBadge" class="badge" style="display:none">0 변경</span>
       <button style="padding:4px 10px;background:rgba(251,191,36,.15);color:#D97706;border:1px solid rgba(251,191,36,.3);border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit" onclick="scanAllConflicts()">&#9888; 충돌 스캔</button>
       <button style="padding:4px 12px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px" onclick="openEngineExport()">📋 엔진 코드 내보내기</button>
+      <button onclick="tqSaveToFile()" style="padding:4px 14px;background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">💾 파일 저장</button>
+      <button onclick="tqClearStorage()" style="padding:4px 10px;background:rgba(239,68,68,.1);color:#DC2626;border:1px solid rgba(239,68,68,.25);border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit">&#8617; 원본 복원</button>
+      <span id="tqSaveBar" style="font-size:10px;color:#64748B;margin-left:4px">자동저장 대기중</span>
+      <button onclick="showApiKeyDialog()" style="padding:4px 10px;background:rgba(251,191,36,.15);color:#D97706;border:1px solid rgba(251,191,36,.3);border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit" id="apiKeyBtn">🔑 API 키</button>
     </div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden">
@@ -3719,7 +4736,22 @@ gv("btnR").addEventListener("click",openReport);
       <tr><td class="bv-var">kv<br><span style="font-size:9px;color:#9CA3AF">(정규화)</span></td><td>국어성적<br><span style="font-size:10px;color:#7A8CA0">학제별 입력 다름</span></td><td class="bv-vals" style="white-space:normal;line-height:1.8"><strong>초등:</strong> 노력요함→50 / 보통→70 / 잘함→80 / 매우잘함→90<br><strong>중등:</strong> 60미만→50 / 60~69→60 / 70~79→70 / 80~89→80 / 90↑→90<br><strong>고등:</strong> 5등급↓→50 / 4등급→60 / 3등급→70 / 2등급→80 / 1등급→90</td><td style="font-size:11px;color:#4A5568;line-height:1.9"><strong>최상위:</strong> kv≥90 / <strong>상위:</strong> kv≥80 / <strong>중위:</strong> kv≥70 / <strong>하위:</strong> kv≥60 / <strong>최하위:</strong> kv&lt;60</td><td class="bv-cnt">5</td></tr>
       <tr><td class="bv-var">flagC</td><td>모순패턴</td><td class="bv-vals" style="color:#DC2626">kv ≥ 80 AND acc ≤ 30</td><td style="font-size:11px;color:#4A5568">두 변수 교차. 경계: acc=30/31, kv=79/80</td><td class="bv-cnt">4</td></tr>
       <tr><td class="bv-var">flagO</td><td>선행과부하</td><td class="bv-vals" style="color:#D97706">acc ≥ 60 AND eff ≤ 40</td><td style="font-size:11px;color:#4A5568">두 변수 교차. 경계: acc=59/60, eff=40/41</td><td class="bv-cnt">4</td></tr>
-      <tr><td class="bv-var">habClass</td><td>음독분류</td><td class="bv-vals">없음 / 경미 / 보통 / 심함</td><td style="font-size:11px;color:#4A5568">체크박스 10개 → classifyHabits() → 4단계. 5번 항목 전체 좌우</td><td class="bv-cnt">4단계</td></tr>
+      <tr><td class="bv-var">habClass<br><span style="font-size:9px;color:#9CA3AF">.심각도</span></td><td>음독 심각도<br><span style="font-size:10px;color:#7A8CA0">classifyHabits()</span></td><td class="bv-vals" style="white-space:normal;line-height:1.8">없음 / 경미 / 보통 / 심함</td><td style="font-size:11px;color:#4A5568;line-height:1.9">
+        <strong>없음:</strong> 체크 0개<br>
+        <strong>경미:</strong> 체크 ≥1개 (표면음독=0, 재처리+이해결손 &lt;3)<br>
+        <strong>보통:</strong> 표면음독 ≥1 OR (재처리+이해결손 ≥3)<br>
+        <strong>심함:</strong> 표면음독 ≥1 AND (재처리+이해결손 ≥2)
+      </td><td class="bv-cnt">4단계</td></tr>
+      <tr><td class="bv-var">habClass<br><span style="font-size:9px;color:#9CA3AF">.표면음독</span></td><td>표면음독 수<br><span style="font-size:10px;color:#7A8CA0">0 ~ 2</span></td><td class="bv-vals" style="white-space:normal;line-height:1.8">0 / 1 / 2</td><td style="font-size:11px;color:#4A5568;line-height:1.9">
+        해당 항목: <strong>소리 내어 읽거나 속발음을 함</strong>, <strong>단어 단위로 또박또박 읽음</strong><br>
+        0 = 두 항목 모두 미체크 / 1 = 1개 체크 / 2 = 2개 모두 체크<br>
+        ≥1이면 표면음독 존재 → 심각도 판정에 핵심 영향
+      </td><td class="bv-cnt">3단계</td></tr>
+      <tr><td class="bv-var">habClass<br><span style="font-size:9px;color:#9CA3AF">.내재음독이해</span></td><td>이해결손 음독 수<br><span style="font-size:10px;color:#7A8CA0">0 ~ 4</span></td><td class="bv-vals" style="white-space:normal;line-height:1.8">0 / 1 / 2 / 3 / 4</td><td style="font-size:11px;color:#4A5568;line-height:1.9">
+        해당 항목: <strong>긴 문장은 이해가 잘 안됨</strong>, <strong>긴 문장은 훑어 읽기를 함</strong>, <strong>긴 글은 내용 기억이 잘 안남</strong>, <strong>모르는 단어가 있어도 이해가 잘 안됨</strong><br>
+        0 = 미체크 / ≥1 이해결손 일부 자각 / ≥2 처리 한계 명확 (심각도 판정 기준)<br>
+        표면음독 ≥1 AND 이해결손 ≥2 → 심각도 "심함" 판정
+      </td><td class="bv-cnt">5단계</td></tr>
       <tr><td class="bv-var">level×grade</td><td>학제·학년</td><td class="bv-vals">초3/4/5/6 중1/2/3 고1/2/3</td><td style="font-size:11px;color:#4A5568">spd 판정 기준 학제별 상이. 프로그램 추천 학년별 세분화</td><td class="bv-cnt">10</td></tr>
     </tbody>
   </table>
@@ -4066,6 +5098,130 @@ gv("btnR").addEventListener("click",openReport);
 </div>
 
 </div>
+<div id="tab-hardcoded" style="display:none;flex:1;overflow-y:auto;padding:20px 28px;max-width:960px">
+
+<h2 style="font-size:15px;font-weight:700;color:#0B1829;margin-bottom:4px">엔진전용 문장</h2>
+<p style="font-size:11px;color:#7A8CA0;margin-bottom:16px;line-height:1.7">
+  의사결정 테이블에 등록되지 않고 <strong>엔진 코드에 직접 하드코딩</strong>된 동적 문장 목록입니다.<br>
+  동적 값(숫자·과목명 등)이 문장 안에 삽입되어야 하는 경우에 사용됩니다. 수정은 <code>collectEvidence()</code> 코드에서 직접 해야 합니다.
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+  <thead>
+    <tr style="background:#F1F5F9;color:#475569">
+      <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E2E8F0;width:80px">항목</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E2E8F0;width:60px">태그</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E2E8F0">발동 조건</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E2E8F0">출력 문장 (동적 부분 포함)</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:2px solid #E2E8F0;width:70px">코드 줄</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid #F1F5F9">
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600">5) 정보처리습관</td>
+      <td style="padding:8px 12px"><span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">주의/위험</span></td>
+      <td style="padding:8px 12px;color:#374151">habClass.표면음독 ≥ 1<br><span style="color:#9CA3AF">AND (저정확 + 저속도 — 나머지 분기에 해당하지 않는 경우)</span></td>
+      <td style="padding:8px 12px;color:#1E293B">"음독습관이 <strong>[심각한 수준 / 확인됨]</strong> — 눈이 글자를 인식하는 속도보다 발음 속도가 느려 독해속도 제한, 시험 시간 부족으로 직결"<br><span style="color:#9CA3AF;font-size:10px">※ sev(심각도)에 따라 태그·표현 동적 변환</span></td>
+      <td style="padding:8px 12px;color:#6B7280">1571~1572</td>
+    </tr>
+    <tr style="border-bottom:1px solid #F1F5F9;background:#FAFAFA">
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600">5) 정보처리습관</td>
+      <td style="padding:8px 12px"><span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">주의</span></td>
+      <td style="padding:8px 12px;color:#374151">habClass.내재음독재처리 ≥ 1<br><span style="color:#9CA3AF">AND NOT (고정확+고속)</span></td>
+      <td style="padding:8px 12px;color:#1E293B">"<strong>[N]</strong>개 재처리 습관 확인 — 음독으로 인한 불완전한 처리를 반복 독해로 보완하는 패턴, 독해 효율 저하"<br><span style="color:#9CA3AF;font-size:10px">※ N = 체크된 재처리 항목 수 (이미 읽은 곳 / 글줄 놓침 / 짚어가며)</span></td>
+      <td style="padding:8px 12px;color:#6B7280">1582</td>
+    </tr>
+    <tr style="border-bottom:1px solid #F1F5F9">
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600">9) 학교학업</td>
+      <td style="padding:8px 12px"><span style="background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">강점</span></td>
+      <td style="padding:8px 12px;color:#374151">mathVal > 89<br>AND inf ≥ 50 (주의/위험 분기 해당 없음)</td>
+      <td style="padding:8px 12px;color:#1E293B">"수학 성적 최상위 — <strong>[높은 추론능력이 수학 실력으로 이어지고 있음]</strong>"<br><span style="color:#9CA3AF;font-size:10px">※ inf ≥ 60이면 추론 언급 추가, inf 50~59면 "수학 성적 최상위"만 출력</span></td>
+      <td style="padding:8px 12px;color:#6B7280">1913</td>
+    </tr>
+    <tr style="border-bottom:1px solid #F1F5F9;background:#FAFAFA">
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600">9) 학교학업</td>
+      <td style="padding:8px 12px"><span style="background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">강점</span></td>
+      <td style="padding:8px 12px;color:#374151">mathVal 75~89<br>AND inf ≥ 50 (주의/위험 분기 해당 없음)</td>
+      <td style="padding:8px 12px;color:#1E293B">"수학 성적 우수 — <strong>[높은 추론능력이 수학 실력으로 이어지고 있음]</strong>"<br><span style="color:#9CA3AF;font-size:10px">※ inf ≥ 60이면 추론 언급 추가, inf 50~59면 "수학 성적 우수"만 출력</span></td>
+      <td style="padding:8px 12px;color:#6B7280">1923</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600">9) 학교학업</td>
+      <td style="padding:8px 12px"><span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">주의</span></td>
+      <td style="padding:8px 12px;color:#374151">국어·영어·수학 성적 최대-최소 ≥ 30</td>
+      <td style="padding:8px 12px;color:#1E293B">"과목 간 편차 큼 (<strong>[강세과목]</strong> 강세 / <strong>[약세과목]</strong> 약세) — 역량 불균형 또는 학습 집중 편차"<br><span style="color:#9CA3AF;font-size:10px">※ 과목명(국어/영어/수학)이 성적에 따라 동적으로 조합됨</span></td>
+      <td style="padding:8px 12px;color:#6B7280">1982~1983</td>
+    </tr>
+    <tr style="border-bottom:1px solid #F1F5F9;background:#FAFAFA">
+      <td style="padding:8px 12px;color:#4C1D95;font-weight:600" colspan="2">8) 독해효율성<br><span style="font-size:10px;color:#9CA3AF;font-weight:400">자기인식 괴리 패턴 (기대체크수 로직)</span></td>
+      <td style="padding:8px 12px;color:#374151" colspan="3">
+        <strong>기대체크수 = acc 구간별 최소 체크 수</strong><br>
+        acc &lt; 30 → 기대 4개 / acc 30~49 → 기대 4개 / acc 50~69 → 기대 3개<br>
+        괴리정도 = 기대체크수 − 실제체크수<br><br>
+        <table style="font-size:11px;border-collapse:collapse;width:100%">
+          <tr style="background:#F8FAFC">
+            <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">ID</th>
+            <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">태그</th>
+            <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">발동 조건</th>
+            <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">출력 문장</th>
+            <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">줄</th>
+          </tr>
+          <tr>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_23</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 ≥ 4</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">역량 수준에 비해 체크 항목이 현저히 적음 — 자신의 학습 상태를 심각하게 과대평가하고 있거나 문제를 전혀 인지하지 못하는 상태</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1766</td>
+          </tr>
+          <tr style="background:#FAFAFA">
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_24</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 ≥ 4</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기 인식이 부족한 학습자의 전형적 패턴 — 괴리가 클수록 개선 의지를 이끌어내기 어려움</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1767</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_25</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 3~4</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자신의 공부 문제를 충분히 인지하지 못하고 있거나 스스로에게 관대한 편</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1769</td>
+          </tr>
+          <tr style="background:#FAFAFA">
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_26</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px">주의</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 3~4</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기 인식과 실제역량의 괴리가 클수록 개선 의지를 이끌어내기 어려움</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1770</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_27</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px">주의</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 1~2</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">자신에 대한 평가가 관대한 편 — 스스로 문제없다고 여기지만 실제 역량과 괴리가 있는 상태</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1772</td>
+          </tr>
+          <tr style="background:#FAFAFA">
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_28</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#DBEAFE;color:#1E40AF;padding:1px 5px;border-radius:3px">보통</span></td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">acc 70~80 AND 총체크수=0 AND 초·중등</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">현재는 학습에 큰 어려움을 느끼지 않는 상태</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">1776</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="margin-top:20px;padding:12px 16px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;font-size:11px;color:#92400E;line-height:1.8">
+  ⚠️ <strong>수정 방법:</strong> 위 항목들은 에디터에서 직접 수정이 불가합니다.<br>
+  파일 내 <code>collectEvidence()</code> 함수의 해당 줄을 직접 편집하거나, Claude에게 수정 요청하세요.
+</div>
+
+</div>
+
+</div>
     </div>
   </div>
 </div>
@@ -4114,11 +5270,6 @@ function v5Switch(tab) {
     }
   }
   if (tab==='편집' && typeof renderNav==='function') {
-    if(Object.keys(MESSAGES).length === 0) {
-      var mainArea = document.getElementById('mainArea');
-      if(mainArea) mainArea.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:#7A8CA0"><div style="font-size:14px;font-weight:600">의사결정 테이블</div><div style="font-size:12px;text-align:center;line-height:1.8">판독 엔진이 서버에서 운영됩니다.<br>이 탭은 내부 편집 전용입니다.</div></div>';
-      return;
-    }
     renderNav(); if(curKey) renderEditor(curKey);
   }
 }
@@ -4172,16 +5323,23 @@ var ITEM_COLS = {
     {k:"spd", l:"독해속도"},
   ],
   "7) 추론능력": [
-    {k:"모순패턴", l:"모순패턴"},
-    {k:"inf", l:"추론능력"},
-    {k:"acc", l:"독해정확도"},
-    {k:"gap", l:"사실-구조 갭"},
+    {k:"모순패턴",        l:"모순패턴"},
+    {k:"inf",             l:"추론능력"},
+    {k:"acc",             l:"독해정확도"},
+    {k:"gap",             l:"사실-구조 갭"},
+    {k:"eff.수학체크수",  l:"수학관련 체크 수"},
+    {k:"mathVal",         l:"수학성적"},
   ],
   "8) 독해효율성": [
-    {k:"모순패턴",    l:"모순패턴"},
-    {k:"eff",         l:"독해효율성"},
-    {k:"acc",         l:"독해정확도"},
-    {k:"effChecked수",l:"효율성 체크 수"},
+    {k:"모순패턴",             l:"모순패턴"},
+    {k:"eff",                  l:"독해효율성"},
+    {k:"acc",                  l:"독해정확도"},
+    {k:"spdGrade",             l:"독해속도"},
+    {k:"habClass.심각도",      l:"음독심각도"},
+    {k:"eff.시험관련체크",     l:"시험관련 체크 수"},
+    {k:"kv",                   l:"국어성적"},
+    {k:"engVal",               l:"영어성적"},
+    {k:"mathVal",              l:"수학성적"},
   ],
   "9) 학교학업": [
     {k:"모순패턴", l:"모순패턴"},
@@ -4195,8 +5353,199 @@ var ITEM_COLS = {
   ],
 };
 
-// MESSAGES 데이터는 서버(Supabase Edge Function)에만 존재합니다
-var MESSAGES = {};
+var MESSAGES = {
+"1) 성적선행지수": [
+  {id:"1_4",tag:"강점",conds:{"모순패턴":"-",acc:"≥90",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"최상위권 독해역량"},
+  {id:"1_5",tag:"강점",conds:{"모순패턴":"-",acc:"≥90",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"상위 난이도 재검사로 더 정밀한 분석 권고"},
+  {id:"1_6_kv",tag:"강점",conds:{"모순패턴":"-",acc:"≥90",spdGrade:"-",kv:"≥80","voc":"-","wm":"-","inf":"-"},text:"역량과 성적 완전 일치 — 실력 기반 최상위권"},
+  {id:"1_new_teukmok",tag:"강점",conds:{"모순패턴":"-",acc:"≥90",kv:"-",spdGrade:"≥500",voc:"≥80",wm:"≥40",inf:"≥80"},text:"특목자사고 진학 설계 권장"},
+  {id:"1_new_unstable_top",tag:"보통",conds:{"모순패턴":"-",acc:"≥90",kv:"-",spdGrade:"-",voc:"≤60",wm:"≤30",inf:"≤60"},text:"불안정 최상위권"},
+  {id:"1_6",tag:"강점",conds:{"모순패턴":"-",acc:"70~89",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"공부를 잘 할 수 있는 우수한 소양을 지닌 아이 — 상위권 역량"},
+  {id:"1_7",tag:"강점",conds:{"모순패턴":"-",acc:"70~89",spdGrade:"-",kv:"≥80","voc":"-","wm":"-","inf":"-"},text:"역량과 성적이 일치 — 실력 기반 상위권"},
+  {id:"1_8",tag:"주의",conds:{"모순패턴":"-",acc:"70~89",spdGrade:"-",kv:"<70","voc":"-","wm":"-","inf":"-"},text:"역량에 비해 성적이 낮음 — 학습 환경·방법 점검 필요"},
+  {id:"1_9",tag:"보통",conds:{"모순패턴":"-",acc:"50~69",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"기본 공부역량은 갖추고 있으나 개선 여지 있음"},
+  {id:"1_10",tag:"주의",conds:{"모순패턴":"-",acc:"50~64",spdGrade:"빠름",kv:"-","voc":"-","wm":"-","inf":"-"},text:"빠르게 읽으려 하기보다 정확하게 이해하는 훈련이 필요 — 속도보다 이해의 질이 우선"},
+  {id:"1_11",tag:"주의",conds:{"모순패턴":"-",acc:"30~49",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"공부역량 부족으로 공부에 어려움을 겪고 있음"},
+  {id:"1_12",tag:"주의",conds:{"모순패턴":"-",acc:"30~49",spdGrade:"빠름",kv:"-","voc":"-","wm":"-","inf":"-"},text:"빠르게 읽고 넘기는 습관으로 인해 내용이 정확히 처리되지 않음"},
+  {id:"1_13",tag:"주의",conds:{"모순패턴":"-",acc:"30~49",spdGrade:"느림",kv:"-","voc":"-","wm":"-","inf":"-"},text:"정확히 이해하고 기억하려는 의지는 있으나 역량이 따라주지 않는 상태"},
+  {id:"1_14",tag:"주의",conds:{"모순패턴":"-",acc:"30~49",spdGrade:"보통",kv:"-","voc":"-","wm":"-","inf":"-"},text:"독해 정확도가 기준에 미치지 못하는 상태 — 역량 개선이 필요함"},
+  {id:"1_15",tag:"위험",conds:{"모순패턴":"-",acc:"<30",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"공부역량이 형성되지 않은 심각한 상태"},
+  {id:"1_16",tag:"위험",conds:{"모순패턴":"-",acc:"<30",spdGrade:"빠름",kv:"-","voc":"-","wm":"-","inf":"-"},text:"글자를 빠르게 훑지만 내용이 처리되지 않는 상태 — 이해 없이 읽는 습관이 굳어진 상태"},
+  {id:"1_17",tag:"위험",conds:{"모순패턴":"-",acc:"<30",spdGrade:"느림·보통",kv:"-","voc":"-","wm":"-","inf":"-"},text:"반복해서 읽어도 이해되지 않고 기억되지 않는 상태"},
+  {id:"1_1",tag:"위험",conds:{"모순패턴":"true",kv:"≥80",acc:"≤30",spdGrade:"-","voc":"-","wm":"-","inf":"-"},text:"성적은 역량이 아닌 반복암기와 노력의 결과임"},
+  {id:"1_2",tag:"위험",conds:{"모순패턴":"true",kv:"≥80",acc:"≤30",spdGrade:"-","voc":"-","wm":"-","inf":"-"},text:"역량 대비 성적이 과도하게 높은 모순 상태 — 붕괴 임박"},
+  {id:"1_3",tag:"위험",conds:{"모순패턴":"true",kv:"≥80",acc:"≤30",spdGrade:"-","voc":"-","wm":"-","inf":"-"},text:"스스로는 문제점을 자각하지 못하고 있을 가능성 높음"},
+  {id:"1_18",tag:"위험",conds:{"모순패턴":"-",acc:"≤10",spdGrade:"-",kv:"-","voc":"-","wm":"-","inf":"-"},text:"하위 난이도 재검사 권고"},
+],
+"2) 독해속도": [
+  {id:"2_1",tag:"위험",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","invSpd":"true","habClass.심각도":"-"},text:"심각한 속도이상값 감지 — 결과 신뢰도 낮음, 재검사 권고"},
+  {id:"2_2",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"빠름","invSpd":"-","habClass.심각도":"-"},text:"빠른 독해속도 — 정보처리 효율이 높은 수준"},
+  {id:"2_5",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"집요함과 성실함이 있는 아이 — 천천히 읽어 확인하는 독해 성향"},
+  {id:"2_3",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"빠름","invSpd":"-","habClass.심각도":"-"},text:"빠른 속도로 글자를 넘기고 있어 내용이 실제로 처리되지 않는 상태 — 정확하게 이해하며 읽는 훈련이 필요함"},
+  {id:"2_4",tag:"주의",conds:{"모순패턴":"-",acc:"<50",spdGrade:"보통","invSpd":"-","habClass.심각도":"-"},text:"속도에 비해 정확도가 낮음 — 내용을 충분히 처리하지 않고 넘기는 패턴"},
+  {id:"2_6",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"독해속도가 낮아 시험 시간 부족이 예상됨"},
+
+  {id:"eng_5_1",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"집요하고 꼼꼼하게 읽으려는 성실한 습관"},
+  {id:"eng_5_3",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"시험에서 시간 부족 현상 발생 가능성 높음"},
+  {id:"eng_5_4",tag:"보통",conds:{"모순패턴":"-",acc:"40~69",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"성실하게 읽으려 노력하고 있으나 역량 부족으로 반복 처리"},
+  {id:"eng_5_6",tag:"위험",conds:{"모순패턴":"-",acc:"<40",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"글자를 읽지만 정보처리가 되지 않는 상태"},
+  {id:"eng_5_7",tag:"위험",conds:{"모순패턴":"-",acc:"<40",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"여러 번 읽어도 이해·기억이 안 되는 상태"},
+  {id:"eng_5_8",tag:"보통",conds:{"모순패턴":"-",acc:"-",spdGrade:"보통이하","invSpd":"-","habClass.심각도":"-"},text:"글 읽는 속도는 보통 수준 — 성실하게 읽는 편"},
+  {id:"eng_5_9",tag:"주의",conds:{"모순패턴":"-",acc:"<50",spdGrade:"보통이하","invSpd":"-","habClass.심각도":"-"},text:"속도 대비 정확도가 낮음 — 피상적 독해 가능성"},
+  {id:"eng_5_10",tag:"강점",conds:{"모순패턴":"-",acc:"-",spdGrade:"보통이상","invSpd":"-","habClass.심각도":"-"},text:"정보처리 속도 양호 — 지적 호기심과 독서 경험 반영"},
+  {id:"eng_5_11",tag:"주의",conds:{"모순패턴":"-",acc:"<50",spdGrade:"보통이상","invSpd":"-","habClass.심각도":"-"},text:"빠른 속도에 비해 정확도 낮음 — 대충 읽는 습관 가능성"},
+  {id:"eng_5_12",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"빠름","invSpd":"-","habClass.심각도":"-"},text:"우수한 정보처리 속도 — 지적 호기심과 역량 모두 높음"},
+  {id:"eng_5_13",tag:"주의",conds:{"모순패턴":"-",acc:"<70",spdGrade:"빠름","invSpd":"-","habClass.심각도":"-"},text:"속도가 매우 빠르나 정확도가 낮음 — 스킬 위주 읽기 또는 대충 읽기"},
+  {id:"eng_5_14",tag:"위험",conds:{"모순패턴":"-",acc:"<70",spdGrade:"빠름","invSpd":"-","habClass.심각도":"-"},text:"지문을 제대로 읽지 않고 답을 찾는 방식일 가능성"},
+  {id:"5_1",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"빠름","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"빠른 속도로 글자를 넘기고 있어 내용이 실제로 처리되지 않는 상태"},
+  {id:"5_2",tag:"주의",conds:{"모순패턴":"-",acc:"<50",spdGrade:"보통","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"속도에 비해 정확도가 낮음 — 충분히 처리하지 않고 넘기는 패턴"},
+  {id:"eng_5_26",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"느림","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"독해속도 느림을 스스로 인지 — 시험 시간 부족 자각, 측정 결과와 일치"},],
+"3) 독서의 양": [
+  {id:"3_1",tag:"강점",conds:{"모순패턴":"-",voc:"≥75",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"풍부한 독서 이력이 어휘력과 추론력에 긍정적으로 작용하고 있음"},
+  {id:"3_2",tag:"강점",conds:{"모순패턴":"-",voc:"≥75",acc:"-",inf:"高","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"비문학 독서도 일정 수준 이상 해왔을 것으로 예상됩니다"},
+  {id:"3_3",tag:"주의",conds:{"모순패턴":"-",voc:"50~74",acc:"≥70",inf:"<60","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독해정확도에 비해 어휘력이 충분히 발달하지 않음 — 독서 편식형"},
+  {id:"3_4",tag:"주의",conds:{"모순패턴":"-",voc:"50~74",acc:"<70",inf:"-","eff.독서량체크":"미체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"본인은 독서량이 충분하다고 느낄 수 있으나, 양질의 독서가 충분하지 않음"},
+  {id:"3_5",tag:"주의",conds:{"모순패턴":"-",voc:"50~74",acc:"<70",inf:"-","eff.독서량체크":"체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"어휘력이 낮아 비문학·다양한 분야의 독서 경험이 충분하지 않음"},
+  {id:"3_6",tag:"주의",conds:{"모순패턴":"-",voc:"35~49",acc:"≥70",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독해정확도는 형성되어 있으나 어휘력이 낮음 — 독서 범위가 좁았던 것으로 추정"},
+  {id:"3_7",tag:"주의",conds:{"모순패턴":"-",voc:"35~49",acc:"<70",inf:"-","eff.독서량체크":"미체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독서 훈련 경험이 부족한 아이로 추정"},
+  {id:"3_8",tag:"주의",conds:{"모순패턴":"-",voc:"35~49",acc:"<70",inf:"-","eff.독서량체크":"미체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"스토리북 정도의 독서 경험만 있을 가능성"},
+  {id:"3_9",tag:"위험",conds:{"모순패턴":"-",voc:"<35",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"어휘력이 현저히 낮음 — 독서 경험 자체가 절대적으로 부족한 상태"},
+  {id:"3_10",tag:"보통",conds:{"모순패턴":"-",voc:"-",acc:"<70",inf:"-","eff.독서량체크":"-","eff.밤새워":"체크","eff.두꺼운책":"-"},text:"독서에 깊이 몰입한 경험이 적음"},
+  {id:"3_11",tag:"주의",conds:{"모순패턴":"-",voc:"-",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"체크"},text:"두꺼운 책을 읽은 경험 없음 — 심층적 독해 경험 부족"},
+  {id:"eng_3_1",tag:"강점",conds:{"모순패턴":"-",voc:"≥75",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"비문학 독서 경험이 풍부한 것으로 추정"},
+  {id:"eng_3_2",tag:"강점",conds:{"모순패턴":"-",voc:"≥75",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"충분한 독서량이 어휘력 형성에 기여"},
+  {id:"eng_3_3",tag:"보통",conds:{"모순패턴":"-",voc:"60~74",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"적정 수준의 독서 경험 — 비문학 독서 이력 있음"},
+  {id:"eng_3_4",tag:"주의",conds:{"모순패턴":"-",voc:"50~59",acc:"≥70",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독해정확도에 비해 어휘력이 충분히 발달하지 않음 — 익숙한 분야 위주의 독서로 인한 어휘 편중 가능성"},
+  {id:"eng_3_5",tag:"주의",conds:{"모순패턴":"-",voc:"50~59",acc:"<70",inf:"-","eff.독서량체크":"체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"어휘력이 낮아 비문학·다양한 분야의 독서 경험이 충분하지 않음 — 독서의 질과 범위를 넓히는 것이 필요"},
+  {id:"eng_3_6",tag:"주의",conds:{"모순패턴":"-",voc:"50~59",acc:"<70",inf:"-","eff.독서량체크":"미체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"본인은 독서량이 충분하다고 느낄 수 있으나, 어휘력 수준으로 보아 양질의 독서(비문학·깊이 있는 독서)가 충분하지 않음"},
+  {id:"eng_3_7",tag:"주의",conds:{"모순패턴":"-",voc:"35~49",acc:"≥70",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독해정확도는 형성되어 있으나 어휘력이 낮음 — 읽기 능력보다 독서 범위가 좁았던 것으로 추정, 비문학·다양한 영역으로 독서 확장 필요"},
+  {id:"eng_3_8",tag:"주의",conds:{"모순패턴":"-",voc:"35~49",acc:"<70",inf:"-","eff.독서량체크":"체크","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독서 훈련 경험이 충분하지 않음 — 스토리북 위주의 가벼운 독서에 머물렀을 가능성"},
+  {id:"eng_3_9",tag:"위험",conds:{"모순패턴":"-",voc:"<35",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독서 경험이 거의 없는 것으로 추정"},
+  {id:"eng_3_10",tag:"위험",conds:{"모순패턴":"-",voc:"<35",acc:"-",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"스토리북조차 읽지 않은 것으로 추정 — 어휘력 미발달"},
+  {id:"eng_3_11",tag:"주의",conds:{"모순패턴":"-",voc:"≥60",acc:"<40",inf:"-","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독서량에 비해 독해 처리 능력이 부족 — 읽기 방식의 문제"},
+  {id:"eng_extra_19",tag:"주의",conds:{"모순패턴":"-",voc:"<60",acc:"≥70",inf:"<60","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"독해정확도와 독해습관은 양호하나 어휘·추론이 낮음 — 독서량 부족보다 독서 영역의 편중이 원인으로 추정됨. 익숙한 장르·주제 위주로만 읽어온 것으로 보임"},
+  {id:"eng_extra_20",tag:"주의",conds:{"모순패턴":"-",voc:"<60",acc:"≥70",inf:"<60","eff.독서량체크":"-","eff.밤새워":"-","eff.두꺼운책":"-"},text:"비문학·논설·다양한 분야의 독서 경험을 넓히는 것이 어휘와 추론능력 향상의 핵심 과제"}],
+"4) 독해의 질": [
+  {id:"4_1",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"<30",voc:"-"},text:"지문의 세부 정보와 핵심 내용을 균형 있게 파악하는 독해 능력"},
+  {id:"4_4",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"-",voc:"acc보다 20↓"},text:"독해 능력에 비해 어휘력이 충분히 발달하지 않음 — 독서 편식 가능성"},
+  {id:"4_2",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-",gap:"≥30(fct>str)",voc:"-"},text:"사실 정보는 파악하나 글의 구조·흐름·의도 파악이 부족"},
+  {id:"4_3",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-",gap:"≤-20(str>fct)",voc:"-"},text:"글의 구조 파악은 되나 세부 사실 정보 기억이 부족"},
+  {id:"eng_4_1",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"≥30(fct>str)",voc:"-"},text:"세부 사실 정보 파악 능력 우수"},
+  {id:"eng_4_2",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"≥30(fct>str)",voc:"-"},text:"구조적 이해 부족 — 글의 핵심과 흐름 파악에 어려움"},
+  {id:"eng_4_3",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"≥30(fct>str)",voc:"-"},text:"세부정보에 집착하다 큰 틀을 놓치는 패턴"},
+  {id:"eng_4_4",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"≤-20(str>fct)",voc:"-"},text:"글의 구조와 흐름 파악 능력 양호"},
+  {id:"eng_4_5",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"≤-20(str>fct)",voc:"-"},text:"세부 사실 정보 처리는 상대적으로 부족"},
+  {id:"eng_4_6",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"균형",voc:"-"},text:"사실적·구조적 이해 모두 양호 — 균형 잡힌 독해"},
+  {id:"eng_4_7",tag:"강점",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"균형",voc:"-"},text:"지문 내용을 정확히 이해하고 기억하려고 노력함"},
+  {id:"eng_4_8",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"-",gap:"-",voc:"acc보다 20↓"},text:"독해역량 대비 어휘력이 상대적으로 낮음 — 글을 빠르게 처리하는 과정에서 어휘 정보를 정교하게 처리하지 않는 습관에서 기인한 것으로, 독서량 부족보다는 읽기 방식의 문제"},
+  {id:"eng_4_9",tag:"보통",conds:{"모순패턴":"-",acc:"50~69",spdGrade:"-",gap:"≥20",voc:"-"},text:"사실 정보 파악은 되나 핵심 파악이 어려운 상태"},
+  {id:"eng_4_10",tag:"주의",conds:{"모순패턴":"-",acc:"50~69",spdGrade:"-",gap:"≥20",voc:"-"},text:"글의 구조를 통해 글쓴이의 의도 파악이 부족함"},
+  {id:"eng_4_11",tag:"보통",conds:{"모순패턴":"-",acc:"50~69",spdGrade:"-",gap:"<20",voc:"-"},text:"기본적 정보 파악은 가능하나 깊이 있는 이해는 어려움"},
+  {id:"eng_4_12",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"-",gap:"-",voc:"-"},text:"지문의 사실 정보 파악 자체가 어려운 상태"},
+  {id:"eng_4_13",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"-",gap:"fct<30",voc:"-"},text:"글을 읽어도 내용을 기억하거나 이해하지 못함"},
+  {id:"eng_4_14",tag:"위험",conds:{"모순패턴":"-",acc:"<50",spdGrade:"-",gap:"str<20",voc:"-"},text:"글의 구조와 흐름 파악 불가 — 글쓴이의 의도 파악 어려움"}],
+"5) 정보처리습관": [
+  {id:"5_3",tag:"보통",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"빠름","habClass.심각도":"-","habClass.표면음독":"≥1","habClass.내재음독이해":"-"},text:"이해 어려운 구간에서 부분음독 경향 — 역량 높은 학습자의 자연스러운 현상"},
+  {id:"5_4",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"느림","habClass.심각도":"-","habClass.표면음독":"≥1","habClass.내재음독이해":"-"},text:"음독습관이 독해속도를 제한 — 속도 병목 발생"},
+  {id:"5_5",tag:"위험",conds:{"모순패턴":"-",acc:"<70",spdGrade:"빠름","habClass.심각도":"-","habClass.표면음독":"≥1","habClass.내재음독이해":"-"},text:"빠르게 훑어 읽으면서 음독 시도 — 정확 이해하려면 현재 속도에서 시간 절대 부족"},
+  {id:"5_6",tag:"위험",conds:{"모순패턴":"-",acc:"<70",spdGrade:"-","habClass.심각도":"심함","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"음독습관이 심각한 수준 — 독해속도 제한, 시험 시간 부족으로 직결"},
+  {id:"5_7",tag:"주의",conds:{"모순패턴":"-",acc:"<70",spdGrade:"-","habClass.심각도":"보통","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"음독습관이 확인됨 — 독해속도 제한"},
+  {id:"5_8",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"≥2"},text:"긴 문장에서 이해 결손이 생기는 패턴 — 워킹메모리 부족과 연관"},
+  {id:"eng_5_2",tag:"주의",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"음독습관 또는 재처리 습관으로 속도가 저하된 것으로 추정"},
+  {id:"eng_5_5",tag:"주의",conds:{"모순패턴":"-",acc:"40~69",spdGrade:"느림","invSpd":"-","habClass.심각도":"-"},text:"반복 재처리 습관이 속도 저하의 원인으로 추정"},
+  {id:"eng_5_15",tag:"위험",conds:{"모순패턴":"-",acc:"-",spdGrade:"느림","invSpd":"-","habClass.심각도":"≥1"},text:"음독습관이 독해속도 저하의 직접 원인으로 확인됨"},
+  {id:"eng_5_17",tag:"보통",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"빠름","habClass.심각도":"-","habClass.표면음독":"≥1","habClass.내재음독이해":"-"},text:"이해가 어려운 구간에서 소리 내어 확인하는 부분음독 경향 — 역량이 높은 학습자에게서 나타나는 자연스러운 현상이며 전체 속도에 거의 영향 없음"},
+  {id:"eng_5_18",tag:"보통",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"-","habClass.표면음독":"≥1","habClass.내재음독이해":"-"},text:"단어 단위로 또박또박 읽는 경향(내재음독) — 현재 역량과 속도를 고려하면 학습 지장은 없으나 고등 수준 지문에서 부하가 생길 수 있음"},
+  {id:"eng_5_19",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"보통~심함","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"음독습관(표면음독·내재음독)이 독해속도를 제한하고 있음 — 눈이 글자를 처리하는 속도보다 발음 속도가 느려 속도 병목 발생"},
+  {id:"eng_5_20",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"보통~심함","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"역량 대비 속도 개선 여지가 충분함 — 음독 교정 훈련을 통해 속도 향상 가능"},
+  {id:"eng_5_21",tag:"보통",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"≥2"},text:"재독·짚어읽기 경향(내재음독의 흔적) — 꼼꼼하게 확인하려는 습관으로 현재 역량에서는 속도에 큰 영향 없음"},
+  {id:"eng_5_22",tag:"보통",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"≥2"},text:"긴 문장·복잡한 내용에서 처리 부하 자각 — 내재음독으로 인한 워킹메모리 과부하가 간헐적으로 나타남"},
+  {id:"eng_5_23",tag:"위험",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"심함","habClass.표면음독":"-","habClass.내재음독이해":"≥2"},text:"음독으로 인한 정보처리 한계 명확 — 긴 문장 이해 어려움·내용 기억 안 됨·모르는 단어에서 막힘이 복합적으로 발생"},
+  {id:"eng_5_24",tag:"주의",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"1"},text:"음독으로 인한 처리 한계 일부 자각 — 이해 어려움 간헐적 발생"},
+  {id:"eng_5_25",tag:"보통",conds:{"모순패턴":"-",acc:"-",spdGrade:"빠름","habClass.심각도":"-","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"속도가 느리다고 스스로 인지하나 실제 측정 속도는 양호 — 자기인식과 실제 능력의 괴리"},
+  {id:"eng_5_27",tag:"보통",conds:{"모순패턴":"-",acc:"≥70",spdGrade:"빠름","habClass.심각도":"<심함","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"체크된 습관들은 현재 역량 수준에서 큰 학습 지장을 주지 않으나, 고등·수능 난이도 지문에서는 음독 교정이 필요해질 수 있음"},
+  {id:"eng_5_28",tag:"위험",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"심함","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"음독에서 파생된 복합 독해습관 문제 — 표면음독·내재음독·이해결손이 동시에 나타나는 상태로 체계적 교정 훈련 필요"},
+  {id:"eng_5_29",tag:"강점",conds:{"모순패턴":"-",acc:"-",spdGrade:"-","habClass.심각도":"없음","habClass.표면음독":"-","habClass.내재음독이해":"-"},text:"독해 효율성에 긍정적 영향을 주는 습관 상태"}
+],
+"6) 워킹메모리": [
+  {id:"6_1",tag:"강점",conds:{"모순패턴":"-",wm:"≥80",acc:"-",spd:"-"},text:"워킹메모리가 우수한 수준 — 복잡한 내용도 한 번에 처리하고 기억하는 능력"},
+  {id:"6_2",tag:"강점",conds:{"모순패턴":"-",wm:"≥80",acc:"-",spd:"-"},text:"이해 중심 공부가 가능하여 암기에 의존하지 않아도 됨"},
+  {id:"6_3",tag:"보통",conds:{"모순패턴":"-",wm:"60~79",acc:"-",spd:"-"},text:"워킹메모리 보통 수준 — 일반적인 학습에는 지장이 없으나 복잡한 내용에서 어려움 가능"},
+  {id:"6_4",tag:"주의",conds:{"모순패턴":"-",wm:"40~59",acc:"-",spd:"-"},text:"워킹메모리 부족 — 정보를 한 번에 처리하지 못하고 반복 재처리하는 경향"},
+  {id:"6_5",tag:"주의",conds:{"모순패턴":"-",wm:"40~59",acc:"-",spd:"-"},text:"음독습관 또는 짚어읽기 습관의 원인이 워킹메모리 부족일 가능성 높음"},
+  {id:"6_6",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"워킹메모리 심각 부족 — 읽은 내용이 바로 증발하는 상태"},
+  {id:"6_7",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"글의 앞 내용을 기억하지 못한 채 뒷부분을 읽게 되어 전체 맥락 파악이 어려움"},
+  {id:"6_8",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"독서·학습 경험이 워킹메모리 발달로 이어지지 않은 상태"},
+  {id:"6_9",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"암기식 공부에도 한계 — 외워도 금방 잊어버리는 악순환"},
+  {id:"6_10",tag:"위험",conds:{"모순패턴":"-",wm:"<30",acc:"-",spd:"-"},text:"워킹메모리가 거의 발달되지 않은 상태 — 글자를 읽지만 내용을 처리하지 못함"},
+  {id:"6_11",tag:"위험",conds:{"모순패턴":"-",wm:"<30",acc:"-",spd:"-"},text:"단기 기억 처리 자체가 안 되므로 암기식 공부마저 효과 없음 — 외운 즉시 휘발되는 상태"},
+  {id:"eng_6_1",tag:"강점",conds:{"모순패턴":"-",wm:"≥70",acc:"-",spd:"-"},text:"워킹메모리 역량 우수 — 복잡한 정보를 처리하며 동시에 기억 가능한 상태"},
+  {id:"eng_6_2",tag:"강점",conds:{"모순패턴":"-",wm:"60~69",acc:"-",spd:"-"},text:"워킹메모리가 또래 가운데 우수한 편 — 이해력과 기억력이 좋은 편"},
+  {id:"eng_6_3",tag:"보통",conds:{"모순패턴":"-",wm:"60~69",acc:"-",spd:"-"},text:"심화 과정에서는 정보 처리 한계가 나타날 수 있음"},
+  {id:"eng_6_4",tag:"주의",conds:{"모순패턴":"-",wm:"50~59",acc:"-",spd:"-"},text:"워킹메모리가 학습 적정 수준에 미치지 못함"},
+  {id:"eng_6_5",tag:"주의",conds:{"모순패턴":"-",wm:"50~59",acc:"-",spd:"-"},text:"단순화된 학습 환경과 스토리북·학습만화 위주 독서 경험이 워킹메모리 발달을 저해했을 가능성"},
+  {id:"eng_6_6",tag:"주의",conds:{"모순패턴":"-",wm:"50~59",acc:"-",spd:"-"},text:"긴 문장·복잡한 개념 처리 시 반복 재처리 발생 가능"},
+  {id:"eng_6_7",tag:"주의",conds:{"모순패턴":"-",wm:"40~49",acc:"-",spd:"-"},text:"학습만화·스토리북 위주 독서 환경이 워킹메모리 발달을 저해했을 가능성"},
+  {id:"eng_6_8",tag:"위험",conds:{"모순패턴":"-",wm:"≥70",acc:"≥70",spd:"-"},text:"모든 공부방식이 효과 없는 근본 원인 — 즉각적 개선 개입 필요"},
+  {id:"eng_6_9",tag:"_meta",conds:{"모순패턴":"-",wm:"<30",acc:"-",spd:"-"},text:"acc70+_wm50: 이 학생은 최상위 독해역량 보유자로 WM은 상대적으로 낮지만 독해력 훈련이 1차 목표. 슬롯④에서 반드시: (1) 고등 수준 독해력 형성 훈련을 핵심 처방으로 서술, (2) WM 보완은 독해 훈련의 자연스러운 부산물로만 언급, 독립 과제로 강조 금지, (3) 중학 시절 고등 수준 독해력 도달 시 민사고·특목자사고 진학 후 학업 수행 가능하다는 전망으로 마무리"},
+  {id:"eng_6_10",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"워킹메모리 부족 → 정보 재처리 반복 → 독해속도 저하 인과관계 확인됨"},
+  {id:"eng_6_11",tag:"위험",conds:{"모순패턴":"-",wm:"30~39",acc:"-",spd:"-"},text:"워킹메모리 부족이 독해정확도 저하의 직접 원인 중 하나로 추정"}],
+"7) 추론능력": [
+  {id:"7_1",tag:"강점",conds:{"모순패턴":"-",inf:"≥70",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"높은 추론능력 — 글의 맥락과 의도를 파악하고 논리적으로 판단하는 능력이 우수"},
+  {id:"7_2",tag:"강점",conds:{"모순패턴":"-",inf:"≥70",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"수학·과학 등 논리적 사고가 필요한 과목에서 강점 발휘 가능"},
+  {id:"7_3",tag:"보통",conds:{"모순패턴":"-",inf:"50~69",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 보통 수준 — 훈련을 통해 향상 가능한 영역"},
+  {id:"7_4",tag:"주의",conds:{"모순패턴":"-",inf:"30~49",acc:"-",gap:"str>fct","eff.수학체크수":"-","mathVal":"-"},text:"추론의지는 있으나 역량이 따라주지 않는 상태"},
+  {id:"7_5",tag:"주의",conds:{"모순패턴":"-",inf:"30~49",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력이 낮아 글의 숨은 의미·논리 파악이 어려움"},
+  {id:"7_6",tag:"위험",conds:{"모순패턴":"-",inf:"<40",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 결손 — 수학·과학에서 개념 이해가 아닌 암기에 의존할 가능성"},
+  {id:"7_7",tag:"위험",conds:{"모순패턴":"-",inf:"<40",acc:"<50",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"독해정확도(acc)와 추론능력(inf)이 동시에 낮음 — 기초적인 이해와 논리력 모두 개선이 필요"},
+  {id:"eng_7_1",tag:"강점",conds:{"모순패턴":"-",inf:"≥75",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 우수 — 수학·과학 개념이해 능력 높음"},
+  {id:"eng_7_2",tag:"강점",conds:{"모순패턴":"-",inf:"≥75",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"글의 사실적 관계 파악과 숨겨진 의미 유추 능력 우수"},
+  {id:"eng_7_3",tag:"강점",conds:{"모순패턴":"-",inf:"≥75",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"논리적 사고력 기반이 갖춰진 상태"},
+  {id:"eng_7_4",tag:"강점",conds:{"모순패턴":"-",inf:"60~74",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 양호 — 논리적 사고력 보유"},
+  {id:"eng_7_5",tag:"주의",conds:{"모순패턴":"-",inf:"60~74",acc:"<50",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론의지는 있으나 정확도 부족으로 능력 발휘 어려움"},
+  {id:"eng_7_6",tag:"보통",conds:{"모순패턴":"-",inf:"50~59",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 보통 — 기본적 논리 처리 가능하나 심화 어려움"},
+  {id:"eng_7_7",tag:"주의",conds:{"모순패턴":"-",inf:"35~49",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론능력 부족 — 수학·과학 개념이해에 어려움"},
+  {id:"eng_7_8",tag:"주의",conds:{"모순패턴":"-",inf:"35~49",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"언어 재처리 습관이 수학 풀이에도 악영향 가능"},
+  {id:"eng_7_9",tag:"위험",conds:{"모순패턴":"-",inf:"<35",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"추론의지도 추론역량도 부족한 상태"},
+  {id:"eng_7_10",tag:"위험",conds:{"모순패턴":"-",inf:"<35",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"수학·과학에서 개념이해가 불가능하여 공식 암기에만 의존"},
+  {id:"eng_7_11",tag:"위험",conds:{"모순패턴":"-",inf:"<35",acc:"-",gap:"-","eff.수학체크수":"-","mathVal":"-"},text:"이과적 사고 자체가 어려운 상태"}],
+"8) 독해효율성": [
+  {id:"8_1",tag:"강점",conds:{"모순패턴":"-",eff:"≥90",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"공부 전반에 대해 긍정적 자기인식 상태"},
+  {id:"8_2",tag:"강점",conds:{"모순패턴":"-",eff:"≥90",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"자신의 독해 방식에 대한 자신감 있음"},
+  {id:"8_8",tag:"위험",conds:{"모순패턴":"true",eff:"≥70",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"성적이 좋아 자신의 문제점을 인지하지 못하고 있음 — 위험 요소"},
+  {id:"8_3",tag:"주의",conds:{"모순패턴":"-",eff:"<70",acc:"≥80",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"독해 역량은 양호하나 자신의 공부 방식에 회의감을 느끼는 상태"},
+  {id:"8_4",tag:"보통",conds:{"모순패턴":"-",eff:"60~79",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"독해효율성 보통 — 일부 공부 방식에 회의감 있음"},
+  {id:"8_5",tag:"주의",conds:{"모순패턴":"-",eff:"40~59",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"자신의 공부방법 전반에 대해 회의감 느끼는 상태"},
+  {id:"8_6",tag:"위험",conds:{"모순패턴":"-",eff:"<40",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"공부 효율성에 심각한 문제를 자각하는 상태"},
+  {id:"8_7",tag:"위험",conds:{"모순패턴":"-",eff:"-",acc:"-",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"≥2",kv:"-",engVal:"-",mathVal:"-"},text:"시험 실전에서 효율성 결함이 직접 점수에 영향을 주고 있음"},
+  {id:"8_9",tag:"주의",conds:{"모순패턴":"true(선행과부하)",eff:"-",acc:"≥60",spdGrade:"-","habClass.심각도":"-","eff.시험관련체크":"-",kv:"-",engVal:"-",mathVal:"-"},text:"선행·학원 과부하로 인한 피동적 학습이 효율성 저하의 원인"},
+  {id:"8_12_geollimdol",tag:"강점",conds:{"모순패턴":"-",eff:"-",acc:"≥70",spdGrade:"느림","habClass.심각도":"보통~심함","eff.시험관련체크":"-",kv:"<70",engVal:"-",mathVal:"-"},text:"걸림돌을 치워주면 봇물이 터질 아이입니다"}
+],
+"9) 학교학업": [
+  {id:"9_1",tag:"강점",conds:{"모순패턴":"-",kv:"≥90",acc:"≥70",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 최상위 — 독해역량이 성적을 온전히 지지하는 안정적인 상태"},
+  {id:"9_2",tag:"주의",conds:{"모순패턴":"-",kv:"≥90",acc:"50~69",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 노력으로 유지"},
+  {id:"9_3",tag:"위험",conds:{"모순패턴":"-",kv:"≥90",acc:"<50",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량 낮음 — 암기·스킬 의존"},
+  {id:"9_4",tag:"강점",conds:{"모순패턴":"-",kv:"≥80",acc:"≥70",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 상위권 — 독해역량이 성적을 온전히 지지하는 안정적인 상태"},
+  {id:"9_5",tag:"주의",conds:{"모순패턴":"-",kv:"≥80",acc:"<50",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 상위권이나 독해역량 낮음 — 과도한 노력 투입 가능성"},
+  {id:"9_11",tag:"강점",conds:{"모순패턴":"-",kv:"-",acc:"≥70",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"전과목>89"},text:"전 과목 최상위 — 역량과 성적이 안정적으로 연결된 상태"},
+  {id:"9_12",tag:"위험",conds:{"모순패턴":"-",kv:"-",acc:"<50",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"전과목>89"},text:"전 과목 최상위이나 독해역량 낮음 — 고등 진학 시 성적 급락 위험"},
+  {id:"9_6",tag:"강점",conds:{"모순패턴":"-",kv:"-",acc:"≥70",engVal:"≥90",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"영어 성적 최상위 — 독해·어휘 역량이 영어 학습에도 긍정적으로 작용"},
+  {id:"9_7",tag:"주의",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"≥90",mathVal:"-",inf:"-",voc:"<50",level:"-"},text:"영어 성적 최상위이나 독해·어휘 역량 낮음 — 암기나 학원 의존 가능성"},
+  {id:"9_8",tag:"강점",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"≥90",inf:"≥60",voc:"-",level:"-"},text:"수학 성적 최상위 — 높은 추론능력이 수학 실력으로 이어지고 있음"},
+  {id:"9_9",tag:"주의",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"≥90",inf:"<50",voc:"-",level:"-"},text:"수학 성적 최상위이나 추론능력 낮음 — 암기·유형 반복 의존"},
+  {id:"9_10",tag:"주의",conds:{"모순패턴":"-",kv:"-",acc:"<60",engVal:"-",mathVal:"≥90",inf:"-",voc:"-",level:"-"},text:"수학 성적은 최상위이나 독해정확도 낮아 서술형·지문형 문제에서 어려움 예상"},
+  {id:"eng_extra_29",tag:"위험",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"≥90",inf:"<50",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음"},
+  {id:"eng_extra_30",tag:"주의",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"≥90",inf:"<50",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음"},
+  {id:"eng_extra_31",tag:"주의",conds:{"모순패턴":"-",kv:"-",acc:"<60",engVal:"-",mathVal:"≥90",inf:"-",voc:"-",level:"-"},text:"국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책"},
+  {id:"eng_extra_32",tag:"보통",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"70~79",inf:"<50",voc:"-",level:"-"},text:"국어 성적 상위권 — 역량 대비 성적이 다소 높은 편으로, 역량을 더 키우면 성적도 안정적으로 따라옴"},
+  {id:"eng_extra_43",tag:"위험",conds:{"모순패턴":"-",kv:"≥90",acc:"<50",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음"},
+  {id:"eng_extra_44",tag:"주의",conds:{"모순패턴":"-",kv:"≥90",acc:"50~69",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음"},
+  {id:"eng_extra_45",tag:"주의",conds:{"모순패턴":"-",kv:"≥80",acc:"50~69",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책"},
+  {id:"eng_extra_46",tag:"보통",conds:{"모순패턴":"-",kv:"≥80",acc:"≥70",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"국어 성적 상위권 — 역량 대비 성적이 다소 높은 편으로, 역량을 더 키우면 성적도 안정적으로 따라옴"},
+  {id:"9_no_score",tag:"보통",conds:{"모순패턴":"-",kv:"-",acc:"-",engVal:"-",mathVal:"-",inf:"-",voc:"-",level:"-"},text:"성적 정보 미입력 — 학교학업 교차 분석 불가"}]
+};
+
+var ORIG = JSON.parse(JSON.stringify(MESSAGES));
 window.MESSAGES = MESSAGES;
 var changedIds = new Set();
 
@@ -4388,12 +5737,13 @@ function condBadge(v, colKey) {
 // ── 탭 ──
 function switchTab(t) {
   document.querySelectorAll('.tab-btn').forEach(function(b,i){
-    b.classList.toggle('active', ['editor','boundary','logic','contra'][i]===t);
+    b.classList.toggle('active', ['editor','boundary','logic','contra','hardcoded'][i]===t);
   });
-  document.getElementById('tab-editor').style.display   = t==='editor'   ? 'flex'  : 'none';
-  document.getElementById('tab-boundary').style.display = t==='boundary' ? 'block' : 'none';
-  document.getElementById('tab-logic').style.display    = t==='logic'    ? 'block' : 'none';
-  document.getElementById('tab-contra').style.display   = t==='contra'   ? 'block' : 'none';
+  document.getElementById('tab-editor').style.display    = t==='editor'     ? 'flex'  : 'none';
+  document.getElementById('tab-boundary').style.display  = t==='boundary'   ? 'block' : 'none';
+  document.getElementById('tab-logic').style.display     = t==='logic'      ? 'block' : 'none';
+  document.getElementById('tab-contra').style.display    = t==='contra'     ? 'block' : 'none';
+  document.getElementById('tab-hardcoded').style.display = t==='hardcoded'  ? 'block' : 'none';
   if (t==='contra') renderContraTable();
 }
 
@@ -4447,6 +5797,12 @@ function renderEditor(k) {
             +'<option value="-"'+(v==='-'?' selected':'')+'>-</option>'
             +'<option value="true"'+(v==='true'?' selected':'')+'>true</option>'
             +'<option value="true(선행과부하)"'+(v.includes('선행')?' selected':'')+'>true(선행과부하)</option>'
+            +'</select></td>';
+        }
+        if (col.k === 'eff.수학체크수') {
+          var opts = ['-','0','≥1','≥2','3'];
+          return '<td class="sep"><select class="ci" style="width:80px" data-col="'+col.k+'" data-id="'+msg.id+'" onchange="updateCondBuf(this)">'
+            +opts.map(function(o){return '<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>';}).join('')
             +'</select></td>';
         }
         return '<td class="sep"><input class="ci" style="min-width:70px;width:90px" value="'+v+'" data-col="'+col.k+'" data-id="'+msg.id+'" oninput="updateCondBuf(this)"></td>';
@@ -4643,6 +5999,7 @@ function saveRow(id) {
   condBuf = {}; editingId = null;
   renderEditor(curKey); renderNav(); updateBadge();
   showToast(conflicts.length > 0 ? '저장됐습니다 (충돌 있음 — 확인 필요)' : '저장됐습니다');
+  tqTriggerAutoSave();
 }
 
 function cancelEdit() { condBuf={}; editingId=null; renderEditor(curKey); }
@@ -4656,6 +6013,7 @@ function addRow(k) {
   editingId = newId;
   renderNav(); renderEditor(k);
   showToast('행이 추가됐습니다');
+  tqTriggerAutoSave();
 }
 
 function delRow(k, id) {
@@ -4665,6 +6023,7 @@ function delRow(k, id) {
   if (editingId===id) editingId=null;
   renderNav(); renderEditor(k); updateBadge();
   showToast('삭제됐습니다');
+  tqTriggerAutoSave();
 }
 
 function updateBadge() {
@@ -5020,6 +6379,8 @@ function buildCondString(conds) {
       'eff.독서량체크': 'effChecked수',
       'eff.밤새워':    'effChecked수',
       'eff.두꺼운책':  'effChecked수',
+      'eff.수학체크수':'eff.수학체크수',
+      'eff.시험관련체크':'eff.시험관련체크',
       'voc.심각도':    'voc'
     };
 
@@ -5073,18 +6434,40 @@ function parseCondExpr(varName, val, origKey) {
     if (val === '1') return 'habClass.내재음독이해 >= 1';
     return '';
   }
+  if (origKey === 'eff.시험관련체크') {
+    var examItems = '["시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다","국어 시험 점수가 유난히 낮다"]';
+    var examExpr = 'inp.effChecked.filter(function(c){return ' + examItems + '.indexOf(c)>-1;}).length';
+    if (val === '≥2') return examExpr + ' >= 2';
+    if (val === '≥1') return examExpr + ' >= 1';
+    if (val === '0')  return examExpr + ' === 0';
+    return examExpr + ' >= 1';
+  }
   if (origKey === 'effChecked수' || origKey === '독서량체크' || origKey.indexOf('eff.') === 0) {
-    if (val === '0') return '(e.effChecked||[]).length === 0';
-    if (val === '체크') return 'inp.effChecked.length > 0';
-    if (val === '미체크') return 'inp.effChecked.length === 0';
+    if (origKey === 'eff.수학체크수') {
+      // 수학관련 3개 항목
+      var mathExpr = 'inp.effChecked.filter(function(c){return ["문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다"].indexOf(c)>-1;}).length';
+      if (val === '0')  return mathExpr + ' === 0';
+      if (val === '≥1') return mathExpr + ' >= 1';
+      if (val === '≥2') return mathExpr + ' >= 2';
+      if (val === '3')  return mathExpr + ' === 3';
+      return mathExpr + ' >= 1';
+    }
     // 복잡한 값은 주석으로
     return '/* ' + origKey + ':' + val + ' 수동처리 필요 */';
   }
   if (origKey === 'level' || origKey === 'inp.uiLevel') {
     if (val === '전과목>89' || val.indexOf('전과목') > -1) {
-      return '/* level:' + val + ' 수동처리 필요 */';
+      return 'allHigh === true';
     }
     return 'inp.uiLevel === "' + val + '"';
+  }
+
+  if (origKey === 'kv' || origKey === 'engVal' || origKey === 'mathVal') {
+    if (val === '-') return '';
+    var nullCheck = varName + ' !== null';
+    var numExpr = parseNumericExpr(varName, val);
+    if (numExpr.indexOf('확인필요') > -1) return '/* ' + origKey + ':' + val + ' 확인필요 */';
+    return '(' + nullCheck + ' && ' + numExpr + ')';
   }
 
   // gap 특수 처리
@@ -5096,12 +6479,16 @@ function parseCondExpr(varName, val, origKey) {
     if (val === '≥20') return 'gap >= 20';
     if (val === 'str>fct') return 'gap < 0';
     if (val === '균형') return 'Math.abs(gap) < 20';
-    if (val.indexOf('fct<') > -1) return '/* gap:' + val + ' 수동처리 필요 */';
+    if (val === 'fct<30') return 'fct < 30';
+    if (val === 'str<20') return 'str_ < 20';
     return '/* gap:' + val + ' 수동처리 필요 */';
   }
 
   // 복잡한 비교 (acc보다 20↓ 등)
-  if (val.indexOf('acc보다') > -1 || val.indexOf('↓') > -1 || val.indexOf('↑') > -1) {
+  if (val.indexOf('acc보다') > -1 || val === 'acc보다 20↓') {
+    return varName + ' < acc - 20';
+  }
+  if (val.indexOf('↓') > -1 || val.indexOf('↑') > -1) {
     return '/* ' + origKey + ':' + val + ' 수동처리 필요 */';
   }
   if (val === '高') return varName + ' >= 65';
@@ -5132,124 +6519,28 @@ function parseNumericExpr(varName, val) {
 }
 
 // 초기 렌더링 트리거 — switchTab에서 호출
-// MESSAGES는 서버 연동 후 의사결정 테이블 편집 탭에서만 사용됩니다
 
-function safeRenderNav() {
-  if(typeof renderNav==='function' && Object.keys(MESSAGES).length > 0) {
-    renderNav();
-    var firstKey = Object.keys(MESSAGES)[0];
-    if(firstKey && typeof selectItem==='function') selectItem(firstKey);
-  }
-}
-safeRenderNav();
+renderNav();
+selectItem(Object.keys(MESSAGES)[0]);
 
 document.addEventListener('DOMContentLoaded', function() {
-  safeRenderNav();
+  if(typeof renderNav==='function') {
+    renderNav();
+    selectItem('1) 성적선행지수');
+  }
   v5Switch('판독');
 
-  // URL 파라미터 ?tqdata=... 감지 → 자동 주입 후 바로 결과 페이지
-  var params = new URLSearchParams(window.location.search);
-  var tqRaw = params.get('tqdata');
-
-  if (tqRaw) {
-    // 파라미터 있음 → 폼 자동 채우고 분석 실행
-    setTimeout(function() {
-      try {
-        var d = JSON.parse(decodeURIComponent(tqRaw));
-
-        // 이름
-        if (d.name) { var el = document.getElementById('iName'); if(el) el.value = d.name; }
-
-        // 학제
-        if (d.level) {
-          var lvSel = document.getElementById('iLevel');
-          if (lvSel) {
-            for (var i=0; i<lvSel.options.length; i++) {
-              if (lvSel.options[i].value === d.level) { lvSel.selectedIndex=i; break; }
-            }
-            if(typeof onLevelChange==='function') onLevelChange();
-          }
-        }
-
-        // 학년
-        if (d.grade != null) {
-          setTimeout(function() {
-            var grSel = document.getElementById('iGrade');
-            if (grSel) {
-              for (var j=0; j<grSel.options.length; j++) {
-                if (String(grSel.options[j].value) === String(d.grade)) { grSel.selectedIndex=j; break; }
-              }
-            }
-          }, 50);
-        }
-
-        // 수치 슬라이더/입력
-        var fieldMap = {
-          fct:'sFct', str:'sStr', spd:'sSpd',
-          voc:'sVoc', wm:'sWm', inf:'sInf'
-        };
-        Object.keys(fieldMap).forEach(function(key) {
-          if (d[key] == null) return;
-          var el = document.getElementById(fieldMap[key]);
-          if (el) {
-            el.value = d[key];
-            el.dispatchEvent(new Event('input'));
-          }
-          // 수치 표시 span
-          var spanEl = document.getElementById(fieldMap[key]+'V');
-          if (spanEl) spanEl.textContent = d[key];
-        });
-
-        // 독해속도 직접 입력
-        if (d.spd != null) {
-          var spdEl = document.getElementById('sSpd');
-          if (spdEl) spdEl.value = d.spd;
-        }
-
-        // 성적 드롭다운 (국어/영어/수학)
-        var scoreMap = { kor_score:'sS0', eng_score:'sS1', math:'sS2' };
-        Object.keys(scoreMap).forEach(function(key) {
-          if (d[key] == null) return;
-          var sel = document.getElementById(scoreMap[key]);
-          if (sel) {
-            for (var k=0; k<sel.options.length; k++) {
-              if (sel.options[k].value === String(d[key])) { sel.selectedIndex=k; break; }
-            }
-          }
-        });
-
-        // 독해습관 체크리스트
-        if (Array.isArray(d.hab_checks)) {
-          d.hab_checks.forEach(function(v, i) {
-            var el = document.getElementById('h'+i);
-            if (el) el.checked = !!v;
-          });
-          if(typeof updateChkScore==='function') updateChkScore();
-        }
-
-        // 독해효율성 체크리스트
-        if (Array.isArray(d.eff_checks)) {
-          d.eff_checks.forEach(function(v, i) {
-            var el = document.getElementById('e'+i);
-            if (el) el.checked = !!v;
-          });
-          if(typeof updateChkScore==='function') updateChkScore();
-        }
-
-        // 분석 실행 → 바로 결과 페이지
-        setTimeout(function() {
-          var btnA = document.getElementById('btnA');
-          if (btnA) btnA.click();
-        }, 150);
-
-      } catch(err) {
-        console.warn('tqdata 파싱 실패:', err);
-        // 파싱 실패 시 그냥 입력 페이지 표시 (아무것도 안 함)
-      }
-    }, 300);
-
-  }
-  // tqdata 없음 → 그냥 입력 페이지 (기존 동작)
+  // 새로고침 시 샘플 데이터 자동 분석 → 결과 리포트 미리보기
+  setTimeout(function(){
+    // 샘플 2번(박서연) 로드 후 분석 → 디자인 미리보기
+    if (typeof loadSample === 'function') loadSample(2);
+    var btnA = document.getElementById('btnA');
+    if (btnA) btnA.click();
+    // 분석 완료 후 미리보기 실행 (약간 딜레이)
+    setTimeout(function(){
+      if (typeof previewReportWithSample === 'function') previewReportWithSample();
+    }, 800);
+  }, 400);
 });
 
 </script>
@@ -5282,6 +6573,146 @@ document.addEventListener('DOMContentLoaded', function() {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initResizer);
   else initResizer();
 })();
+
+// ══════════════════════════════════════════════
+// TQ 에디터 — 자동저장 & 파일 저장
+// ══════════════════════════════════════════════
+var TQ_STORAGE_KEY = 'tq_messages_v5';
+var tqAutoSaveTimer = null;
+
+function tqUpdateBar(msg, color) {
+  var el = document.getElementById('tqSaveBar');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || '#0BA98E';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() {
+    el.textContent = '자동저장 활성화됨';
+    el.style.color = '#64748B';
+  }, 3000);
+}
+
+function tqAutoSave() {
+  try {
+    localStorage.setItem(TQ_STORAGE_KEY, JSON.stringify(MESSAGES));
+    tqUpdateBar('자동저장 완료 ✓', '#0BA98E');
+  } catch(e) {
+    tqUpdateBar('저장 실패', '#DC2626');
+  }
+}
+
+function tqTriggerAutoSave() {
+  clearTimeout(tqAutoSaveTimer);
+  tqAutoSaveTimer = setTimeout(tqAutoSave, 800);
+}
+
+function tqRestoreFromStorage() {
+  try {
+    var saved = localStorage.getItem(TQ_STORAGE_KEY);
+    if (!saved) return false;
+    var parsed = JSON.parse(saved);
+    if (!parsed || typeof parsed !== 'object') return false;
+    if (Object.keys(parsed).length === 0) return false;
+    Object.keys(parsed).forEach(function(k) {
+      if (MESSAGES[k]) MESSAGES[k] = parsed[k];
+    });
+    window.MESSAGES = MESSAGES;
+    return true;
+  } catch(e) { return false; }
+}
+
+function tqSaveToFile() {
+  try {
+    var messagesStr = JSON.stringify(MESSAGES, null, 2);
+    var html = document.documentElement.outerHTML;
+    var START = 'var MESSAGES = {';
+    var si = html.indexOf(START);
+    if (si < 0) { alert('저장 실패: MESSAGES 위치를 찾을 수 없습니다.'); return; }
+    var depth = 0, ei = -1;
+    for (var i = si + START.length - 1; i < html.length; i++) {
+      if (html[i] === '{') depth++;
+      else if (html[i] === '}') { depth--; if (depth === 0) { ei = i; break; } }
+    }
+    if (ei < 0) { alert('저장 실패: MESSAGES 끝을 찾을 수 없습니다.'); return; }
+    var newHtml = html.slice(0, si) + 'var MESSAGES = ' + messagesStr + html.slice(ei + 1);
+    var blob = new Blob([newHtml], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    var d = new Date();
+    var ts = d.getFullYear() + ('0'+(d.getMonth()+1)).slice(-2) + ('0'+d.getDate()).slice(-2)
+           + '_' + ('0'+d.getHours()).slice(-2) + ('0'+d.getMinutes()).slice(-2);
+    a.download = 'tq_v5_editor_' + ts + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    tqUpdateBar('파일 저장 완료! ✓', '#7C3AED');
+  } catch(e) {
+    alert('파일 저장 실패: ' + e.message);
+  }
+}
+
+function tqClearStorage() {
+  if (!confirm('저장된 수정 내용을 삭제하고 원본으로 되돌리겠습니까?')) return;
+  localStorage.removeItem(TQ_STORAGE_KEY);
+  location.reload();
+}
+
+(function() {
+  var restored = tqRestoreFromStorage();
+  document.addEventListener('DOMContentLoaded', function() {
+    if (restored) {
+      tqUpdateBar('이전 수정 내용 복원됨 ✓', '#7C3AED');
+    } else {
+      tqUpdateBar('자동저장 활성화됨', '#64748B');
+    }
+  });
+})();
+// ══════════════════════════════════════════════
+
+// ── 샘플 판독문으로 리포트 미리보기 ──
+function previewReportWithSample() {
+  var eng = window.__eng;
+  if (!eng) {
+    alert('먼저 샘플 데이터를 선택하고 ① 분석 버튼을 눌러주세요.');
+    return;
+  }
+  var nm = window.__nm || '학생';
+  // 샘플 판독문 (디자인 확인용)
+  window.__TQ_SLOTS = {
+    slot1: nm + '은(는) 전반적인 독해 역량이 양호한 편이나, 몇 가지 개선이 필요한 영역이 확인됩니다. 특히 어휘력과 추론능력 측면에서 성장 가능성이 충분히 있으며, 꾸준한 훈련을 통해 상위권 역량으로 발전할 수 있는 잠재력을 지닌 학습자입니다. 현재 보여주고 있는 성실함과 집중력은 앞으로의 학습에 큰 강점이 될 것입니다. 지금의 역량을 바탕으로 체계적인 훈련이 뒷받침된다면 눈에 띄는 성장을 기대할 수 있습니다.',
+    slot2: '현재 독해 과정에서 음독 습관이 확인되고 있습니다. 글을 소리 내어 읽거나 속으로 발음하며 읽는 습관이 독해 속도를 제한하고, 긴 문장을 처리할 때 반복 재독하는 경향이 나타나고 있습니다. 이로 인해 워킹메모리에 부담이 가중되어 내용을 처리하면서 동시에 기억하는 데 어려움이 생기고 있습니다. 어휘력이 충분히 발달하지 않아 비문학 분야의 독서 경험이 다소 제한되어 있으며, 이것이 추론 능력 발달에도 영향을 미치고 있는 상태입니다.',
+    slot3: '현재 상태를 그대로 유지한다면 중학교 진학 후 교과 내용의 난이도가 높아지면서 학습 부담이 급격히 커질 수 있습니다. 독해 속도의 한계는 시험 시간 부족으로 직결되고, 워킹메모리 부족은 복잡한 개념을 이해하고 기억하는 과정 전반에 영향을 미칩니다. 지금은 노력으로 보완하고 있지만, 학년이 올라갈수록 역량의 차이가 성적으로 나타나기 시작할 가능성이 높습니다. 지금이 가장 중요한 개입 시점입니다.',
+    slot4: '가장 먼저 집중해야 할 것은 독해 정확도를 높이는 훈련입니다. 정확하게 이해하며 읽는 습관을 형성하면 음독 습관도 자연스럽게 교정되고, 워킹메모리 역량도 함께 성장합니다. 동시에 비문학 분야의 독서 경험을 넓혀 어휘력과 추론능력을 키워나가는 것이 중요합니다. 지금 이 훈련을 충실히 쌓아간다면 ' + nm + '이(가) 가진 잠재력이 충분히 발휘될 것이며, 머지않아 상위권 역량에 도달할 수 있을 것입니다.'
+  };
+  // 리포트 버튼 활성화
+  var btnR = document.getElementById('btnR');
+  if (btnR) btnR.disabled = false;
+  var btnR3 = document.getElementById('btnR3');
+  if (btnR3) { btnR3.disabled = false; btnR3.style.opacity = '1'; }
+  // 리포트 열기 — 샘플 데이터로 standalone 열기
+  var engForPreview = window.__eng || {};
+  var inpForPreview = window.__inp || {};
+  var pd = {
+    name: inpForPreview.name || "박서연",
+    level: inpForPreview.level || "중등",
+    grade: inpForPreview.grade || 1,
+    uiLevel: inpForPreview.uiLevel || "중등",
+    kor: inpForPreview.kor || "-", eng_score: inpForPreview.eng_score || "-", math: inpForPreview.math || "-",
+    bt: engForPreview.bt || "추론잠재형", st: engForPreview.st || "",
+    urg: engForPreview.urg || "조기",
+    flagC: engForPreview.flagC || false, flagO: engForPreview.flagO || false,
+    acc: engForPreview.acc || 35, fct: engForPreview.fct || 30, str_: engForPreview.str_ || 40,
+    inf: engForPreview.inf || 65, voc: engForPreview.voc || 40, wm: engForPreview.wm || 40,
+    hab: engForPreview.hab || 60, eff: engForPreview.eff || 60,
+    habChecked: engForPreview.habChecked || [], effChecked: engForPreview.effChecked || [],
+    presc: engForPreview.presc || [],
+    slots: window.__TQ_SLOTS || {},
+    imgSrc: null
+  };
+  openStandaloneReport(pd);
+}
 
 // ══════════════════════════════════════════════════════
 // 새 창 리포트 출력 — standalone 구조
@@ -5440,7 +6871,5 @@ function openStandaloneReport(d) {
 }
 // ══════════════════════════════════════════════════════
 </script>
-</body>
-</html></script>
 </body>
 </html>
