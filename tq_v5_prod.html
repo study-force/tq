@@ -2472,7 +2472,28 @@ function postRenderSWOT(eng, inp) {
     });
   }
 
-  // evidence 카드 → 원인분석 영역에 배치 (모든 카드)
+  // 카드 렌더링 후 겹침 방지 — 실제 높이 기반으로 top 재계산
+  setTimeout(function() {
+    var GAP = 12; // 카드 간 최소 간격(px)
+
+    // 우측 카드: ev-right-top → ev-right-mid → ev-right-bottom 순차 배치
+    var rightIds = ['ev-right-top', 'ev-right-mid', 'ev-right-bottom'];
+    var rightY = 20;
+    rightIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el || !el.innerHTML.trim()) return;
+      el.style.top = rightY + 'px';
+      rightY += el.offsetHeight + GAP;
+    });
+
+    // 좌측 카드: ev-left-top (현재 1개이므로 top만 보정)
+    var leftEl = document.getElementById('ev-left-top');
+    if (leftEl && leftEl.innerHTML.trim()) {
+      leftEl.style.top = '20px';
+    }
+  }, 100);
+
+
   var evidenceEl = document.getElementById('evidenceCards');
   if (evidenceEl && eng.evidence) {
     // 요인별 색상
