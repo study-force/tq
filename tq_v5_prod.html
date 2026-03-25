@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
       </button>
     </div>
   </div>
-  <div id="resultView" style="padding:0"></div>
+  <div id="resultView" style="padding:20px 0"></div>
 </div></div>
 
 <!-- 학부모 리포트 모달 -->
@@ -1498,7 +1498,6 @@ function renderResult(e,nm){
   ).join("");
 
   var html=`
-  <div style="max-width:1180px;margin:0 auto;padding:0 20px;">
   <!-- ══ 학생 정보 — 중앙 카드 좌측 absolute ══ -->
   <div id="studentInfoCard" style="display:none">
     <div style="padding:4px 2px">
@@ -1683,14 +1682,14 @@ function renderResult(e,nm){
     </div>
 
     <!-- 원인분석 카드 그리드 -->
-    <div style="position:relative;z-index:1;margin-bottom:16px">
+    <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
         <span>원인 분석</span><span style="flex:1;height:1px;background:var(--divider)"></span>
       </div>
       <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
     </div>
 
-    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08)">
+    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08);max-width:1180px;margin-left:auto;margin-right:auto">
       <div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px">
         <span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span>
       </div>
@@ -1699,7 +1698,7 @@ function renderResult(e,nm){
 
     ${recH}
 
-    <div style="padding-top:16px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1">
+    <div style="padding-top:16px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1;max-width:1180px;margin-left:auto;margin-right:auto">
       <button id="btnR2"
         style="width:100%;padding:12px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;box-shadow:0 4px 14px rgba(139,92,246,.35)"
         onclick="openReport()">
@@ -1707,8 +1706,6 @@ function renderResult(e,nm){
       </button>
     </div>
   </div>
-
-  </div><!-- /.tq-result-container -->
 
 
 
