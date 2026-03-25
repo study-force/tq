@@ -3107,6 +3107,7 @@ function openReport(){
     name:gv("iName").value||"학생",
     level:gv("iLevel").value,
     grade:parseInt(gv("iGrade").value)||0,
+    uiLevel:gv("iLevel").value,
     kor:gv("sS0")?gv("sS0").value:"-",
     eng_score:gv("sS1")?gv("sS1").value:"-",
     math:gv("sS2")?gv("sS2").value:"-",
@@ -3115,19 +3116,13 @@ function openReport(){
     acc:eng.acc, fct:eng.fct, str_:eng.str_,
     inf:eng.inf, voc:eng.voc, wm:eng.wm,
     hab:eng.hab, eff:eng.eff,
+    habChecked:eng.habChecked||[], effChecked:eng.effChecked||[],
     exStr:eng.inten?eng.inten.ex:"",
     presc:eng.presc||[],
     slots:slots,
     imgSrc:imgSrc
   };
-
-  // 오버레이에 직접 렌더링 (iframe/window.open 불필요)
-  var container=document.getElementById("reportContent");
-  container.innerHTML=buildReportHTML(d);
-  // 모달 표시
-  document.getElementById("reportOverlay").style.display="block";
-  document.getElementById("reportScrollArea").scrollTop=0;
-  document.body.style.overflow="hidden";
+  openStandaloneReport(d);
 }
 
 function closeReport(){
@@ -4945,6 +4940,165 @@ document.addEventListener('DOMContentLoaded', function() {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initResizer);
   else initResizer();
 })();
+
+// ══════════════════════════════════════════════════════
+// 새 창 리포트 출력 — standalone 구조
+// ══════════════════════════════════════════════════════
+var HABIT_ITEMS_RPT = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리내어 읽거나 속발음을 함","긴 문장은 이해하기 잘 안됨","긴 문장은 줄여 읽기를 함","긴 글은 내용 기억이 잘 안됨","단어를 다 알아도 이해가 안됨","글 읽는 속도가 느린 편임"];
+var EFF_ITEMS_RPT   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+var FC_RPT = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
+var FL_RPT = {어휘력:"어휘의 의미를 정확히 파악하고 실제 문장 속에서 활용할 수 있는 능력.",워킹메모리:"문장을 읽을 때마다 실시간 정보를 처리하고 그것을 다시 단위로 재처리하여 생성하는 작업기억 능력.",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력.",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준.",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단."};
+var TC_RPT = {"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
+var UC_RPT = {"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
+var SC_RPT = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
+var SLOT_T_RPT = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
+var SLOT_D_RPT = ["강점과 가능성을 중심으로","현재 역량 상태와 원인 분석","지금 개선하지 않을 때의 리스크","맞춤 처방과 앞으로의 방향"];
+
+function openStandaloneReport(d) {
+  var now = new Date();
+  var dateStr = now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
+  var lvMap = {초등:"초등학교",초저:"초등학교",초고:"초등학교",중등:"중학교",고등:"고등학교"};
+  var lvLabel = (lvMap[d.level]||d.level||"")+(d.grade?" "+d.grade+"학년":"");
+  var tc = TC_RPT[d.bt]||"#0BA98E";
+  var uc = UC_RPT[d.urg]||"#047857";
+
+  function buildPolar(factors, size) {
+    var cx=size/2,cy=size/2,maxR=size*0.355,n=factors.length,step=(Math.PI*2)/n;
+    var segs=factors.map(function(f,i){
+      var sa=-Math.PI/2-(Math.PI/5)+i*step,ea=sa+step;
+      var r=Math.max((Math.min(f.score,100)/100)*maxR,2);
+      var x1=cx+r*Math.cos(sa),y1=cy+r*Math.sin(sa),x2=cx+r*Math.cos(ea),y2=cy+r*Math.sin(ea);
+      var mid=sa+step/2,lR=maxR*1.38;
+      var lxOff=f.name==="독해효율성"?5:f.name==="워킹메모리"?-5:0;
+      var lyOff=f.name==="독해습관"?-5:f.name==="추론능력"?-5:0;
+      return {path:'M '+cx.toFixed(1)+' '+cy.toFixed(1)+' L '+x1.toFixed(1)+' '+y1.toFixed(1)+' A '+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+' Z',
+        color:f.color,label:f.name,value:f.score,needsBadge:f.score<=60,
+        lx:cx+lR*Math.cos(mid)+lxOff,ly:cy+lR*Math.sin(mid)+lyOff};
+    });
+    var bg=[[40,60],[80,100]].map(function(p){return '<circle cx="'+cx+'" cy="'+cy+'" r="'+((p[1]/100)*maxR).toFixed(1)+'" fill="#f5f5f5" fill-opacity="0.45"/><circle cx="'+cx+'" cy="'+cy+'" r="'+((p[0]/100)*maxR).toFixed(1)+'" fill="white" fill-opacity="0.6"/>';}).join('');
+    var grids=[20,40,60,80,100].map(function(g){return '<circle cx="'+cx+'" cy="'+cy+'" r="'+((g/100)*maxR).toFixed(1)+'" fill="none" stroke="#D1D5DB" stroke-width="0.7"/>';}).join('');
+    var lines=factors.map(function(_,i){var a=-Math.PI/2-(Math.PI/5)+i*step;return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+maxR*Math.cos(a)).toFixed(1)+'" y2="'+(cy+maxR*Math.sin(a)).toFixed(1)+'" stroke="#D1D5DB" stroke-width="0.7"/>';}).join('');
+    var paths=segs.map(function(s){return '<path d="'+s.path+'" fill="'+s.color+'" fill-opacity="0.80" stroke="white" stroke-width="1.2"/>';}).join('');
+    var pcts=[0,20,40,60,80,100].map(function(pct){return '<text x="'+(cx+4)+'" y="'+(cy+(pct/100)*maxR+7).toFixed(1)+'" text-anchor="start" dominant-baseline="middle" font-size="11" fill="#000" fill-opacity="0.6" font-weight="600" font-family="system-ui">'+pct+'%</text>';}).join('');
+    var labels=segs.map(function(s){return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="system-ui">'+s.label+'</text><text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(s.value<=60?"#EF4444":"#CBD5E1")+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';}).join('');
+    var badges=segs.filter(function(s){return s.needsBadge;}).map(function(s){return '<rect x="'+(s.lx-26).toFixed(1)+'" y="'+(s.ly+22).toFixed(1)+'" width="52" height="16" rx="3" fill="#EF4444"/><text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+30).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="white" font-weight="800" font-family="system-ui">개선 필요</text>';}).join('');
+    return '<svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" overflow="visible">'+bg+grids+lines+paths+pcts+labels+badges+'</svg>';
+  }
+
+  function buildFooter(pageNum, total) {
+    return '<div style="background:#666666;padding:7px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="width:18px;height:18px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff">TQ</div>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:12px">'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+(d.name||"학생")+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">'+pageNum+' / '+total+'</span>'
+      +'</div></div>';
+  }
+
+  var TOTAL = 6;
+  var factual = d.fct>0?d.fct:d.acc, structural = d.str_>0?d.str_:d.acc;
+  var avgAcc = Math.round((factual+structural)/2);
+  var accColor = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
+  var habChecked = HABIT_ITEMS_RPT.map(function(item){return (d.habChecked||[]).indexOf(item)>-1;});
+  var effChecked = EFF_ITEMS_RPT.map(function(item){return (d.effChecked||[]).indexOf(item)>-1;});
+  var habitCount = habChecked.filter(Boolean).length, effCount = effChecked.filter(Boolean).length;
+  var FACTORS = [{name:"어휘력",score:Math.round(d.voc||0),color:FC_RPT["어휘력"]},{name:"워킹메모리",score:Math.round(d.wm||0),color:FC_RPT["워킹메모리"]},{name:"추론능력",score:Math.round(d.inf||0),color:FC_RPT["추론능력"]},{name:"독해습관",score:Math.round(d.hab||0),color:FC_RPT["독해습관"]},{name:"독해효율성",score:Math.round(d.eff||0),color:FC_RPT["독해효율성"]}];
+
+  var habitRows = HABIT_ITEMS_RPT.map(function(item,i){var on=habChecked[i];return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px"><span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span><span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span></div>';}).join('');
+  var effRows   = EFF_ITEMS_RPT.map(function(item,i){var on=effChecked[i];return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px"><span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span><span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span></div>';}).join('');
+  var factorRows = FACTORS.map(function(f){return '<div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;margin-bottom:10px;margin-left:20px"><div style="text-align:center;padding:5px 4px;background:'+f.color+'22;border-radius:6px;border:1px solid '+f.color+'44"><div style="font-size:16px;font-weight:400;color:#111">'+f.name+'</div></div><div style="font-size:12px;color:#475569;line-height:1.55">'+FL_RPT[f.name]+'</div></div>';}).join('');
+  var prescHtml = (d.presc||[]).map(function(p,i){return '<div style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #EEF1F6"><div style="width:26px;height:26px;border-radius:50%;background:#666;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div><div style="font-size:13px;color:#0B1829;line-height:1.7;font-weight:500">'+p.c+'</div></div>';}).join('') || '<p style="color:#8E9BB0;font-size:13px;padding:16px 0">처방 정보가 없습니다.</p>';
+
+  // 페이지 HTML 생성
+  var page1HTML = '<div class="page">'
+    +'<div style="background:#666666;padding:21px 36px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'
+    +'<div style="display:flex;align-items:center;gap:24px"><div><div style="line-height:1"><span style="color:#EF4444;font-weight:900;font-size:43px;letter-spacing:-0.5px">TQ</span><span style="color:white;font-weight:400;font-size:43px;letter-spacing:-0.5px">TEST</span></div><div style="color:#CBD5E1;font-size:13.5px;letter-spacing:0.04em">Textual Quotient Test</div></div>'
+    +'<div style="padding-left:4px;color:#CBD5E1;font-size:34.4px;font-weight:400;letter-spacing:-0.1em">문자정보 처리역량 테스트</div></div>'
+    +'<div style="text-align:right"><div style="color:white;font-weight:400;font-size:21px"><span style="font-size:14.7px">'+lvLabel+'</span>&nbsp;&nbsp;<span style="font-size:31.5px">'+(d.name||"학생")+'</span></div>'
+    +'<div style="margin-top:6px"><span style="background:#888;border-radius:4px;padding:3px 10px;color:#fff;font-size:15px">진단일 : '+dateStr+'</span></div></div></div>'
+    +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0;overflow:hidden">'
+    +'<div style="display:grid;grid-template-columns:45fr 27.5fr 27.5fr;gap:8px">'
+    +'<div style="padding-right:20px;display:flex;flex-direction:column;align-items:center">'
+    +'<div style="margin-bottom:20px;width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px">'
+    +'<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해정확도</span><span style="font-size:16px;color:#666;font-weight:400">(%)</span></div>'
+    +'<div style="font-size:128px;font-weight:900;color:'+accColor+';line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+avgAcc+'</div>'
+    +'<div style="margin-top:8px;width:calc(65% - 30px)">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:23px;color:#111;font-weight:400;font-family:Tahoma,sans-serif">'+factual+'</span><span style="font-size:23px;color:#111;font-weight:400;font-family:Tahoma,sans-serif">'+structural+'</span></div>'
+    +'<div style="width:100%;display:flex;height:10px;border-radius:4px;overflow:hidden;background:#E2E8F0"><div style="flex:1;display:flex;justify-content:flex-end"><div style="width:'+factual+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px"></div></div><div style="width:1px;background:#94A3B8;flex-shrink:0"></div><div style="flex:1;display:flex;justify-content:flex-start"><div style="width:'+structural+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0"></div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:12px;color:#666">사실적 이해</span><span style="font-size:12px;color:#666">구조적 이해</span></div></div></div>'
+    +'<div style="width:100%;display:flex;flex-direction:column;align-items:center"><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해속도</span><span style="font-size:16px;color:#666;font-weight:400">(자/분)</span></div>'
+    +'<div style="font-size:92px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+Number(d.spd||0).toLocaleString()+'</div></div></div>'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%"><div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px">독해습관</div>'+habitRows
+    +'<div style="margin-top:8px;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center"><span style="color:#1E293B;font-size:15px">잘못된 독해습관</span><span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span></div></div>'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%"><div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px">독해효율성</div>'+effRows
+    +'<div style="margin-top:8px;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center"><span style="color:#1E293B;font-size:15px">독해효율성 결합증상</span><span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+effCount+'</span></div></div></div>'
+    +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0"></div>'
+    +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
+    +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'+buildPolar(FACTORS,317)+'</div>'
+    +'<div style="padding-right:20px;padding-top:30px"><div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px">독해역량 요인분석</div>'+factorRows+'</div></div></div>'
+    +buildFooter(1,TOTAL)+'</div>';
+
+  var slotPages = '';
+  for(var i=1;i<=4;i++){
+    var sc=SC_RPT[i-1], txt=(d.slots&&d.slots["slot"+i])||"";
+    slotPages += '<div class="page">'
+      +'<div style="background:'+sc+';padding:28px 32px 24px;position:relative;overflow:hidden;flex-shrink:0">'
+      +'<div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08)"></div>'
+      +'<div style="display:flex;align-items:center;gap:16px;position:relative">'
+      +'<div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0">'+i+'</div>'
+      +'<div><div style="font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">SLOT '+i+' · '+SLOT_D_RPT[i-1]+'</div>'
+      +'<div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px">'+(d.name||"학생")+'의 '+SLOT_T_RPT[i-1]+'</div></div></div></div>'
+      +'<div style="height:3px;background:linear-gradient(90deg,'+sc+',rgba(255,255,255,.1));flex-shrink:0"></div>'
+      +'<div style="flex:1;padding:32px 36px;font-size:14px;line-height:2.2;color:#0B1829;white-space:pre-wrap;word-break:keep-all;letter-spacing:-.1px;overflow:hidden">'+(txt||'<span style="color:#8E9BB0;font-size:13px">판독문이 생성되지 않았습니다.</span>')+'</div>'
+      +'<div style="padding:8px 32px;display:flex;justify-content:flex-end;flex-shrink:0"><div style="background:#F5F7FA;border:1px solid #DDE3ED;border-radius:8px;padding:7px 14px;display:flex;gap:10px;align-items:center">'
+      +'<span style="font-size:10px;color:#8E9BB0">'+(d.name||"학생")+'</span><span style="font-size:10px;color:#CBD5E1">|</span>'
+      +'<span style="font-size:10px;color:'+tc+';font-weight:600">'+d.bt+'</span><span style="font-size:10px;color:#CBD5E1">|</span>'
+      +'<span style="font-size:10px;color:'+uc+'">'+d.urg+'</span></div></div>'
+      +buildFooter(i+1,TOTAL)+'</div>';
+  }
+
+  var lastPage = '<div class="page">'
+    +'<div style="background:#666666;padding:28px 32px 24px;flex-shrink:0">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">RECOMMENDED TRAINING</div>'
+    +'<div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:-.3px">권장 훈련 프로그램</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:6px">'+(d.name||"학생")+'의 역량 분석 결과를 바탕으로 추천드리는 프로그램입니다.</div></div>'
+    +'<div style="height:4px;background:linear-gradient(90deg,#0BA98E,#0E7CC0);flex-shrink:0"></div>'
+    +'<div style="flex:1;padding:24px 32px;overflow:hidden">'+prescHtml+'</div>'
+    +'<div style="padding:14px 32px;background:#F5F7FA;border-top:1px solid #DDE3ED;flex-shrink:0">'
+    +'<div style="font-size:10px;font-weight:700;color:#4A5568;margin-bottom:4px">📋 상담 안내</div>'
+    +'<div style="font-size:11px;color:#8E9BB0;line-height:1.7">위 프로그램은 TQ테스트 결과를 바탕으로 자동 추천된 것입니다. 구체적인 수강 일정과 세부 내용은 담당 컨설턴트와 상담 후 결정하시기 바랍니다.</div></div>'
+    +buildFooter(TOTAL,TOTAL)+'</div>';
+
+  // 새 창으로 열기
+  var fullHtml = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
+    +'<title>TQ 리포트 — '+(d.name||"학생")+'</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'html{background:#CBD5E1}body{font-family:"Noto Sans KR",sans-serif;padding:52px 16px 60px}'
+    +'.print-bar{position:fixed;top:0;left:0;right:0;z-index:100;background:#0B1829;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.3)}'
+    +'.btn-p{padding:8px 20px;background:#0BA98E;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}'
+    +'.btn-c{padding:8px 16px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit}'
+    +'.page-wrap{display:flex;flex-direction:column;align-items:center;gap:24px}'
+    +'.page{width:794px;height:1123px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}'
+    +'@media print{html{background:#fff}.print-bar{display:none}body{padding:0}.page-wrap{gap:0}.page{box-shadow:none;border-radius:0;page-break-after:always}.page:last-child{page-break-after:auto}}</style></head><body>'
+    +'<div class="print-bar">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div style="width:28px;height:28px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">TQ</div>'
+    +'<div><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">TQ 독해역량 판독 리포트</div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.4)">'+(d.name||"학생")+'</div></div></div>'
+    +'<div style="display:flex;gap:8px"><button class="btn-p" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button><button class="btn-c" onclick="window.close()">✕ 닫기</button></div></div>'
+    +'<div class="page-wrap">'+page1HTML+slotPages+lastPage+'</div>'
+    +'</body></html>';
+
+  var win = window.open('', '_blank', 'width=900,height=800');
+  if(win){ win.document.write(fullHtml); win.document.close(); }
+  else { alert('팝업이 차단됐습니다. 브라우저에서 팝업 허용 후 다시 시도해주세요.'); }
+}
+// ══════════════════════════════════════════════════════
 </script>
+</body>
+</html></script>
 </body>
 </html>
