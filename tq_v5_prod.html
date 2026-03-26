@@ -495,6 +495,7 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
+<script>if(new URLSearchParams(window.location.search).get("tqdata")){document.addEventListener("DOMContentLoaded",function(){var el=document.getElementById("page-input");if(el)el.style.display="none";});}</script>
 <div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
   <div style="flex:1;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:28px 24px 40px">
     <div style="width:100%;max-width:520px">
@@ -1692,7 +1693,7 @@ function renderResult(e,nm){
 
 
     <!-- 원인분석 카드 그리드 -->
-    <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
+    <div id="section-cause" style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
         <span>원인 분석</span><span style="flex:1;height:1px;background:var(--divider)"></span>
       </div>
@@ -2471,7 +2472,14 @@ function showResultPage(nm) {
     res.style.display = 'block';
     res.style.opacity = '0';
     res.style.transition = 'opacity .4s';
-    setTimeout(function(){ res.style.opacity = '1'; }, 20);
+    setTimeout(function(){
+      res.style.opacity = '1';
+      // 원인분석 섹션(2페이지)으로 자동 스크롤
+      setTimeout(function(){
+        var target = document.getElementById('section-cause');
+        if(target) res.scrollTop = target.offsetTop - 16;
+      }, 80);
+    }, 20);
   }, 300);
 }
 
