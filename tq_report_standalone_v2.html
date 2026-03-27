@@ -76,12 +76,8 @@ body { font-family:\'Noto Sans KR\',sans-serif; padding:32px 16px 60px; }
 var D = (function(){
   try {
     var raw = sessionStorage.getItem("__TQ_REPORT__");
-    if (raw) {
-      sessionStorage.removeItem("__TQ_REPORT__");
-      return JSON.parse(raw);
-    }
+    if (raw) { sessionStorage.removeItem("__TQ_REPORT__"); return JSON.parse(raw); }
   } catch(e) {}
-  // 샘플 데이터 (직접 열었을 때)
   return {
   name:"박서연", level:"중등", grade:1, uiLevel:"중등",
   acc:35, fct:30, str_:40, spd:420,
@@ -164,7 +160,7 @@ function buildPolar(factors, size) {
     return '<text x="'+(cx+4)+'" y="'+(cy+(pct/100)*maxR+9).toFixed(1)+'" text-anchor="start" dominant-baseline="middle" font-size="11" fill="#000" fill-opacity="0.6" font-weight="600" font-family="\'Noto Sans KR\',sans-serif">'+pct+'%</text>';
   }).join('');
   var labels = segs.map(function(s){
-    return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="\'Noto Sans KR\',sans-serif">'+s.label+'</text>'
+    return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="\'S-CoreDream\',\'Noto Sans KR\',sans-serif">'+s.label+'</text>'
           +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(s.value<=60?"#EF4444":"#CBD5E1")+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';
   }).join('');
   var badges = segs.filter(function(s){return s.needsBadge;}).map(function(s){
@@ -310,11 +306,12 @@ function buildPage1() {
 function buildSlotBlock(i) {
   var slotColor = SC[i-1];
   var txt = D.slots["slot"+i] || "";
-  var lightBg = ["#EFF3FF","#F0FDF9","#FFFBEB","#F5F3FF"][i-1] || "#F8FAFC";
 
-  var M = '72px'; // 페이지 좌우 여백 — 레이블·박스 모두 이 값으로 정렬
+  var M = '72px';
+  // 전체를 flex:1+flex-direction:column 구조로 — 상/하 박스 동일 높이 보장
   return ''
-    +'<div style="padding:0 '+M+' 12px '+M+';flex-shrink:0;display:flex;align-items:stretch;gap:0;">'
+    // ① 제목 레이블 (고정 높이)
+    +'<div style="padding:0 '+M+' 10px '+M+';flex-shrink:0;display:flex;align-items:stretch;gap:0;">'
     +'<div style="width:3px;background:'+slotColor+';flex-shrink:0;margin-right:16px;border-radius:2px;"></div>'
     +'<div style="display:flex;flex-direction:column;justify-content:center;">'
     +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;">'
@@ -324,14 +321,14 @@ function buildSlotBlock(i) {
     +'<div style="font-size:21px;font-weight:500;color:#1A2332;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">'+D.name+' 학생'+SLOT_JOSA[i-1]+' '+SLOT_T[i-1]+'</div>'
     +'</div>'
     +'</div>'
-    +'<div style="flex:1;margin:0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;">'
+    // ② 콘텐츠 박스 (flex:1 — 남은 공간 모두 차지)
+    +'<div style="flex:1;margin:0 '+M+' 0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;display:flex;flex-direction:column;">'
     +'<div style="position:absolute;top:0;left:0;width:3px;height:100%;background:'+slotColor+';opacity:.5;"></div>'
     +'<div style="position:absolute;bottom:12px;right:16px;font-size:56px;color:'+slotColor+';opacity:.04;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
     +'<div style="font-size:15.5px;line-height:2.1;color:#1A2332;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
     +(txt||'<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>')
     +'</div>'
-    +'</div>'
-    +'<div style="height:48px;flex-shrink:0;"></div>';
+    +'</div>';
     +'</div>'
     +'<div style="height:48px;flex-shrink:0;"></div>';
 }
@@ -346,28 +343,20 @@ function buildDualSlotPage(a, b, pageNum, total) {
     +'<div style="height:62px;flex-shrink:0;"></div>'
 
     // 슬롯 A
-    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:36px;">'
     +buildSlotBlock(a)
     +'</div>'
 
     // 슬롯 B
-    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:36px;">'
     +buildSlotBlock(b)
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 72px 44px;flex-shrink:0;">'
-    +''
-    +''
+    +'</div>'
+
+    // 하단 날짜 표기
+    +'<div style="display:flex;justify-content:flex-end;align-items:center;padding:8px 72px 16px;flex-shrink:0;">'
     +'<p style="font-size:11.5px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;margin:0;">'+D.name+' '+lvLabel+' - '+dateStr+' 검사</p>'
     +'</div>'
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
 
-    +'</div>'
     +buildFooter(pageNum, total);
   return div;
 }
@@ -513,18 +502,13 @@ function buildPrescFromCourse(courseCode) {
 }
 
 function buildLastPage(total) {
-  // D.presc[].c 가 실제 과정명(key)이면 그대로 사용,
-  // 아니면 recommendCourse()로 자동 추천
   var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
   var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
   var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
-
   var activeKeys;
   if (validPresc.length > 0) {
-    // prod에서 올바른 과정명이 전달된 경우
     activeKeys = validPresc;
   } else {
-    // prod 처방 텍스트이거나 없는 경우 → recommendCourse로 자동 생성
     var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
     activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
   }
