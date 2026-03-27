@@ -1527,7 +1527,7 @@ function renderResult(e,nm){
       </div>
 
       <!-- 학년 -->
-      ${e.grade&&e.grade>0?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">학년</span><span style="font-size:12px;color:#fff;font-weight:700">'+e.grade+'학년</span></div>':''} 
+      ${e.grade&&e.grade>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">학년</span><span style="font-size:12px;color:#fff;font-weight:700">${e.grade}학년</span></div>`:""}
 
       <!-- 국어 -->
       ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
@@ -1756,6 +1756,7 @@ gv("btnA").addEventListener("click",async function(){
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
+    eng.grade = eng.grade || inp.grade || 0;  // grade 보강
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -2948,16 +2949,35 @@ function postRenderSWOT(eng, inp) {
 
         var heroRect = heroBox.getBoundingClientRect();
 
-        // 정보처리습관 카드: habTitle 위치 기준, studentInfoSlot 하단보다 위면 밀어내림
+        // 정보처리습관 카드: habTitle 위치에서 시작, studentInfoSlot과 겹치면 밀어내림
         if (habTitle && leftCard) {
-          var habRect  = habTitle.getBoundingClientRect();
-          var habTop   = Math.round(habRect.top - heroRect.top);
-          var infoBot  = 0;
-          var infoEl   = document.getElementById('studentInfoSlot');
-          if (infoEl) infoBot = Math.round(infoEl.getBoundingClientRect().bottom - heroRect.top) + 16;
-          leftCard.style.top = Math.max(habTop, infoBot) + 'px';
+          var habRect = habTitle.getBoundingClientRect();
+          var habTop  = Math.round(habRect.top - heroRect.top);
+          leftCard.style.top = habTop + 'px';
           leftCard.style.marginTop = '0';
         }
+        // 좌측 카드가 radarZone 안 voc-left와 겹치면 radarZone padding-top을 늘려 밀어냄
+        setTimeout(function(){
+          var leftCard  = document.getElementById('ev-left-top');
+          var vocLeft   = document.getElementById('voc-left');
+          if (!leftCard || !vocLeft) return;
+          var GAP_L = 24;
+          var lcBot = leftCard.getBoundingClientRect().bottom;
+          var vlTop = vocLeft.getBoundingClientRect().top;
+          if (lcBot + GAP_L > vlTop) {
+            var radarZone = document.getElementById('radarZone');
+            var heroZone  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
+            if (radarZone && heroZone) {
+              // radarZone의 voc-left 컨테이너에 padding-top 추가
+              var vocCol = vocLeft.parentElement;
+              if (vocCol) {
+                var extra = Math.ceil(lcBot + GAP_L - vlTop);
+                var curPt = parseInt(vocCol.style.paddingTop) || 80;
+                vocCol.style.paddingTop = (curPt + extra) + 'px';
+              }
+            }
+          }
+        }, 120);
 
         // 독해효율성 카드: effTitle과 같은 높이에 시작
         if (effTitle && rightCard) {
