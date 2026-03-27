@@ -495,7 +495,6 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
-<script>if(new URLSearchParams(window.location.search).get("tqdata")){document.addEventListener("DOMContentLoaded",function(){var el=document.getElementById("page-input");if(el)el.style.display="none";});}</script>
 <div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
   <div style="flex:1;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:28px 24px 40px">
     <div style="width:100%;max-width:520px">
@@ -1503,42 +1502,38 @@ function renderResult(e,nm){
   <div id="studentInfoCard" style="display:none">
     <div style="padding:4px 2px">
 
-      <!-- TQ TEST RESULT 라벨 -->
-      <div style="font-size:9px;font-weight:700;color:rgba(139,92,246,.7);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase">TQ TEST RESULT</div>
-      <div style="height:1px;background:rgba(255,255,255,.35);margin-bottom:10px"></div>
-
       <!-- 이름 크게 -->
-      <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;text-align:center;margin-top:7px;margin-bottom:17px">${nm}</div>
+      <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;text-align:center;margin-top:7px;margin-bottom:27px">${nm}</div>
 
       <!-- 유형 타이틀 배너 -->
-      <div id="type-title-banner" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;margin-bottom:12px">
-        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-          <div id="banner-bt" style="font-size:17px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.2">—</div>
-          <div id="banner-urg" style="font-size:10px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.1px"></div>
+      <div id="type-title-banner" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:16px 18px;margin-bottom:16px;margin-top:4px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <div id="banner-bt" style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.3">—</div>
+          <div id="banner-urg" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1px"></div>
         </div>
-        <div id="banner-st" style="font-size:11px;font-weight:600;color:#A78BFA;letter-spacing:-.1px;line-height:1.45"></div>
+        <div id="banner-st" style="font-size:12px;font-weight:600;color:#C4B5FD;letter-spacing:-.1px;line-height:1.5"></div>
       </div>
 
       <!-- 검사일 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
-        <span style="font-size:10px;color:rgba(255,255,255,.4)">검사일</span>
-        <span style="font-size:11px;color:rgba(255,255,255,.8);font-weight:500">${e.date||"—"}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date||"—"}</span>
       </div>
 
       <!-- 난이도 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
-        <span style="font-size:10px;color:rgba(255,255,255,.4)">난이도</span>
-        <span style="font-size:11px;color:#A78BFA;font-weight:700">${{초등:"초등 고학년",초저:"초등 저학년",중등:"중학교",고등:"고등학교"}[e.level]||e.level||"—"}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">난이도</span>
+        <span style="font-size:12px;color:#A78BFA;font-weight:700">${{초등:"초등 고학년",초저:"초등 저학년",중등:"중학교",고등:"고등학교"}[e.level]||e.level||"—"}</span>
       </div>
 
       <!-- 국어 -->
-      ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:10px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:11px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
+      ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
 
       <!-- 영어 -->
-      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:10px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:11px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
+      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
 
       <!-- 수학 -->
-      ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:10px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:11px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
+      ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:12px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
 
     </div>
   </div>
@@ -1551,12 +1546,11 @@ function renderResult(e,nm){
     <!-- 중앙 카드 (position:relative 기준점) -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
-      <!-- 좌측 카드: 정보처리습관 — 중앙 기준 absolute -->
-      <!-- 학생 정보 카드 — 좌측 상단, 다른 슬롯보다 넓고 강조 -->
+      <!-- 학생 정보 카드 — 좌측 상단 -->
       <div id="studentInfoSlot" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20"></div>
 
-      <!-- 좌측 카드: 정보처리습관 -->
-      <div id="ev-left-top" style="position:absolute;right:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
+      <!-- 좌측 카드: 정보처리습관 — JS가 habTitle 위치로 이동시킴 -->
+      <div id="ev-left-top" style="position:absolute;right:calc(100% + 40px);top:400px;width:300px;z-index:10"></div>
 
       <!-- 우측 카드: 성적선행지수 / 독해속도 / 독해효율성 -->
       <div id="ev-right-top"    style="position:absolute;left:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
@@ -1693,7 +1687,7 @@ function renderResult(e,nm){
 
 
     <!-- 원인분석 카드 그리드 -->
-    <div id="section-cause" style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
+    <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
         <span>원인 분석</span><span style="flex:1;height:1px;background:var(--divider)"></span>
       </div>
@@ -2472,14 +2466,7 @@ function showResultPage(nm) {
     res.style.display = 'block';
     res.style.opacity = '0';
     res.style.transition = 'opacity .4s';
-    setTimeout(function(){
-      res.style.opacity = '1';
-      // 원인분석 섹션(2페이지)으로 자동 스크롤
-      setTimeout(function(){
-        var target = document.getElementById('section-cause');
-        if(target) res.scrollTop = target.offsetTop - 16;
-      }, 80);
-    }, 20);
+    setTimeout(function(){ res.style.opacity = '1'; }, 20);
   }, 300);
 }
 
@@ -2498,8 +2485,10 @@ function showInputPage() {
     setTimeout(function(){ inp.style.opacity = '1'; }, 20);
   }, 250);
 }
-window.showInputPage  = showInputPage;
-window.showResultPage = showResultPage;
+window.showInputPage      = showInputPage;
+window.showResultPage     = showResultPage;
+window.renderResult       = renderResult;
+window.runEntryAnimation  = runEntryAnimation;
 
 window.HAB_ITEMS=HAB_ITEMS;
 window.EFF_ITEMS=EFF_ITEMS;
@@ -2900,27 +2889,6 @@ function postRenderSWOT(eng, inp) {
 
 
 
-  // 정보처리습관 카드 — 독해속도 타이틀 기준 수직 고정
-  requestAnimationFrame(function(){
-    // 독해속도 타이틀 요소 찾기
-    var spdTitle = null;
-    document.querySelectorAll('#resultView *').forEach(function(el){
-      if (el.textContent.trim() === '독해속도' && el.tagName !== 'SCRIPT') spdTitle = el;
-    });
-    var leftCard = document.getElementById('ev-left-top');
-    var heroZone = document.getElementById('resultView');
-    if (!spdTitle || !leftCard || !heroZone) return;
-
-    var spdRect  = spdTitle.getBoundingClientRect();
-    var zoneRect = heroZone.getBoundingClientRect();
-    var parentDiv = leftCard.parentElement;
-    var parentRect = parentDiv.getBoundingClientRect();
-
-    // 독해속도 타이틀 top - 컨테이너 top = 카드가 맞춰야 할 top
-    var targetTop = spdRect.top - parentRect.top + heroZone.scrollTop;
-    leftCard.style.marginTop = Math.max(0, Math.round(targetTop)) + 'px';
-  });
-
   // 우측 카드 연쇄 밀어내기 — 성적선행지수 → 독해속도 → 독해효율성
   function cascadeRightCards() {
     var GAP = 16;
@@ -2958,9 +2926,16 @@ function postRenderSWOT(eng, inp) {
       drawConnector('effDot',    'ev-right-bottom', 'left-to-left');
       drawConnectorToRightTop('habDot', 'ev-left-top');
 
-      // 독해습관/효율성 타이틀 위치 기준으로 카드 Y좌표 고정
+      // ── 좌측 카드 포지셔닝 (단순화) ──
+      // studentInfoSlot: top:0 고정 유지 (학생 정보 카드)
+      var infoSlot = document.getElementById('studentInfoSlot');
+      if (infoSlot) {
+        infoSlot.style.display = '';
+        infoSlot.style.top = '0px';
+      }
+
+      // ev-left-top (정보처리습관): habTitle 위치에 정확히 맞춤
       setTimeout(function(){
-        // 히어로 중앙 카드 컨테이너 (flex 아이템 중 가운데)
         var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
         var habTitle = document.getElementById('habTitle');
         var effTitle = document.getElementById('effTitle');
@@ -2970,20 +2945,14 @@ function postRenderSWOT(eng, inp) {
 
         var heroRect = heroBox.getBoundingClientRect();
 
+        // 정보처리습관 카드: habTitle과 같은 높이에 시작
         if (habTitle && leftCard) {
           var habRect = habTitle.getBoundingClientRect();
           leftCard.style.top = Math.round(habRect.top - heroRect.top) + 'px';
+          leftCard.style.marginTop = '0';
         }
-        // studentInfoSlot을 최상단(top:0)에 고정, ev-left-top은 그 아래
-        var infoSlot = document.getElementById('studentInfoSlot');
-        if (infoSlot && leftCard) {
-          infoSlot.style.top = '0px';
-          // ev-left-top은 infoSlot 하단 + 16px
-          var infoBottom = infoSlot.getBoundingClientRect().bottom - heroRect.top;
-          // habTitle 위치와 infoBottom 중 더 아래쪽 사용
-          var habRelTop = habTitle ? Math.round(habTitle.getBoundingClientRect().top - heroRect.top) : infoBottom + 16;
-          leftCard.style.top = Math.max(Math.round(infoBottom + 16), habRelTop) + 'px';
-        }
+
+        // 독해효율성 카드: effTitle과 같은 높이에 시작
         if (effTitle && rightCard) {
           var effRect = effTitle.getBoundingClientRect();
           rightCard.style.top = Math.round(effRect.top - heroRect.top) + 'px';
@@ -5499,8 +5468,103 @@ function openStandaloneReport(d) {
   else { alert('팝업이 차단됐습니다. 브라우저에서 팝업 허용 후 다시 시도해주세요.'); }
 }
 // ══════════════════════════════════════════════════════
+// DEV_BYPASS — false 로 바꾸면 원래 동작 복귀
+// ══════════════════════════════════════════════════════
+var DEV_BYPASS = true;
+var DEV_ENG = {
+  // ── 유형 ──
+  bt:"고역량 잠재력 미개방형", btDisplay:"고역량 잠재력 미개방형",
+  st:"기억력 강화 시 상위권 완전 안착 가능", stDisplay:"기억력 강화 시 상위권 완전 안착 가능",
+  urg:"조기", tone:"격려확인",
+  // ── 플래그 ──
+  flagC:false, flagO:false, invSpd:false, retest:false,
+  // ── 수치 ──
+  acc:65, fct:72, str_:58, voc:64, wm:38, inf:71,
+  hab:60, eff:70, spd:680,
+  spdGrade:"보통이상",
+  spdDesc:"또래 평균보다 빠른 편으로, 정보처리 효율이 양호합니다.",
+  // ── 학생 정보 ──
+  level:"중등", grade:2, uiLevel:"중등",
+  date:(function(){var d=new Date();return d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일";})(),
+  // ── 성적 ──
+  kor:"80~89점", eng:"70~79점", math:"80~89점",
+  // ── 결손/인과/처방 ──
+  def:["워킹메모리부족"],
+  cau:["WM부족 → 재처리반복 → 독해속도저하","독해속도저하 → 시험시간 부족 위험"],
+  presc:[{p:1,c:"워킹메모리 강화 훈련"},{p:2,c:"비문학 독서 확충 — 어휘력 향상"},{p:3,c:"독해 정확도 정밀 훈련"}],
+  tr:"고등 진입 시 역량 갭 확대",
+  gap:14,
+  // ── 체크리스트 ──
+  habChecked:["이미 읽은 곳을 다시 읽음","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","긴 글은 내용 기억이 잘 안됨"],
+  effChecked:["비문학 책은 어렵게 느껴진다","시험에서 시간에 쫓긴다","서술형 평가 시험 점수가 낮다"],
+  habScore:60, effScore:70,
+  // ── 강도 ──
+  inten:{acc:0.35,inf:0.1,voc:0.18,wm:0.55,hab:0.2,eff:0.15,con:0,ov:0.32,ex:"약",aN:false,iN:false},
+  // ── 근거 카드 (9개 항목) ──
+  evidence:[
+    {id:"성적선행지수", title:"1) 성적선행지수", bullets:[
+      {id:"1_6", t:"강점", s:"공부를 잘 할 수 있는 우수한 소양을 지닌 아이 — 상위권 역량"},
+      {id:"1_7", t:"강점", s:"역량과 성적이 일치 — 실력 기반 상위권"}
+    ]},
+    {id:"독해속도", title:"2) 독해속도", bullets:[
+      {id:"eng_5_8", t:"보통", s:"글 읽는 속도는 보통 수준 — 성실하게 읽는 편"},
+      {id:"eng_5_10", t:"강점", s:"정보처리 속도 양호 — 지적 호기심과 독서 경험 반영"}
+    ]},
+    {id:"독서의양", title:"3) 독서의 양", bullets:[
+      {id:"eng_3_3", t:"보통", s:"적정 수준의 독서 경험 — 비문학 독서 이력 있음"},
+      {id:"3_6", t:"주의", s:"독해정확도에 비해 어휘력이 발달하지 않음 — 독서 편중 가능성 높음"}
+    ]},
+    {id:"독해의질", title:"4) 독해의 질", bullets:[
+      {id:"eng_4_7", t:"강점", s:"지문 내용을 정확히 이해하고 기억하려고 노력함"},
+      {id:"eng_4_2", t:"주의", s:"구조적 이해 부족 — 글의 구조·흐름·의도 파악이 부족"}
+    ]},
+    {id:"정보처리습관", title:"5) 정보처리습관", bullets:[
+      {id:"5_8", t:"주의", s:"긴 문장에서 이해 결손이 생기는 패턴 — 워킹메모리 부족과 연관"},
+      {id:"eng_5_21", t:"보통", s:"재독·짚어읽기 경향 — 꼼꼼하게 확인하려는 습관"}
+    ]},
+    {id:"워킹메모리", title:"6) 워킹메모리", bullets:[
+      {id:"6_4", t:"주의", s:"워킹메모리 부족 — 정보를 한 번에 처리하지 못하고 반복 재처리하는 경향"},
+      {id:"6_7", t:"위험", s:"앞서 읽은 내용을 기억하지 못한 채 뒷부분을 읽게 되어 긴 문장이나 글의 전체 맥락 파악이 어려움"}
+    ]},
+    {id:"추론능력", title:"7) 추론능력", bullets:[
+      {id:"7_2", t:"강점", s:"수학·과학 등 논리적 사고가 필요한 과목에서 강점 발휘 가능"},
+      {id:"eng_7_4", t:"강점", s:"추론능력 양호 — 논리적 사고력 보유"}
+    ]},
+    {id:"독해효율성", title:"8) 독해효율성 상태", bullets:[
+      {id:"8_4", t:"보통", s:"독해효율성 보통 — 일부 공부 방식에 회의감 있음"},
+      {id:"8_7", t:"위험", s:"시험 실전에서 효율성 결함이 직접 점수에 영향을 주고 있음"}
+    ]},
+    {id:"학교학업", title:"9) 학교학업", bullets:[
+      {id:"9_4", t:"강점", s:"국어 성적 상위권 — 독해역량 수준이 성적에 고스란히 반영됨"}
+    ]}
+  ],
+  // ── 판독문 슬롯 ──
+  slots:{
+    slot1:"김지우 학생은 독해력과 추론능력이 또래 가운데 상위권으로 발달한 상태입니다. 글을 읽고 사실적인 정보를 파악하는 능력이 탄탄하며, 논리적 사고력도 갖추고 있어 수학·과학 등 이과 계열 과목에서도 두각을 나타낼 수 있는 소양을 지니고 있습니다. 현재 성적이 역량을 고스란히 반영하고 있다는 점 역시 긍정적인 신호입니다. 다만 워킹메모리 하나가 전체 역량의 발현을 막고 있는 구조로, 이 부분만 강화된다면 상위권 완전 안착이 충분히 가능한 학생입니다.",
+    slot2:"현재 가장 주목해야 할 지점은 워킹메모리 역량입니다. 글을 읽는 과정에서 앞 내용을 기억하지 못한 채 뒷 내용을 읽게 되는 패턴이 반복되고 있으며, 이로 인해 긴 문장이나 복잡한 지문에서 전체 맥락 파악이 어려워지는 현상이 나타납니다. 독해습관 체크리스트에서 '이미 읽은 곳을 다시 읽음', '짚어가며 읽거나 밑줄을 그음' 항목이 확인된 것도 이와 직결됩니다. 재처리 반복이 독해 속도를 낮추고, 시험 현장에서 시간이 부족한 이유가 여기에 있습니다.",
+    slot3:"지금 개선하지 않으면 고등학교 진입 시점에 역량 갭이 크게 벌어질 수 있습니다. 현재 중학교 수준에서는 독해역량과 성적이 균형을 이루고 있지만, 고등학교 지문의 난이도와 분량이 급증하면 워킹메모리 부족이 결정적인 약점으로 작용합니다. 특히 수능 국어와 탐구 영역에서는 긴 지문을 단번에 처리하는 능력이 핵심인 만큼, 지금이 개입의 골든타임입니다.",
+    slot4:"우선순위는 워킹메모리 강화 훈련입니다. 정보를 한 번에 처리하고 기억하는 훈련을 통해 재처리 반복 습관을 끊어야 합니다. 동시에 비문학 분야의 독서 범위를 넓혀 어휘력과 배경지식을 쌓는 것이 두 번째 과제입니다. 독해 정확도를 더 높이는 정밀 훈련까지 병행한다면, 현재의 상위권 역량이 최상위권으로 도약하는 것은 충분히 현실적인 목표입니다."
+  },
+  log:[]
+};
+var DEV_INP = {
+  name:"김지우", level:"중등", grade:2, uiLevel:"중등",
+  acc:65, fct:72, str:58, spd:680, voc:64, wm:38, inf:71, hab:60, eff:70,
+  kor:"80~89점", eng:"70~79점", math:"80~89점",
+  habChecked:DEV_ENG.habChecked, effChecked:DEV_ENG.effChecked
+};
+if (DEV_BYPASS) {
+  window.addEventListener('load', function() {
+    window.__eng = DEV_ENG; window.__nm = DEV_INP.name; window.__inp = DEV_INP;
+    var _ev = document.getElementById("emptyView"); if (_ev) _ev.style.display = "none";
+    var _rv = document.getElementById("resultView");
+    if (_rv) _rv.innerHTML = window.renderResult(DEV_ENG, DEV_INP.name);
+    window.showResultPage(DEV_INP.name);
+    if (_rv) window.runEntryAnimation(_rv, DEV_ENG, DEV_INP);
+    var _bB = document.getElementById("btnB"); if (_bB) _bB.disabled = false;
+    var _bB2 = document.getElementById("btnB2"); if (_bB2) { _bB2.disabled=false; _bB2.style.opacity="0.9"; }
+  });
+}
 </script>
-</body>
-</html></script>
 </body>
 </html>
