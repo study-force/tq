@@ -513,7 +513,21 @@ function buildPrescFromCourse(courseCode) {
 }
 
 function buildLastPage(total) {
-  var activeKeys = (D.presc||[]).map(function(p){ return p.c; });
+  // D.presc[].c 가 실제 과정명(key)이면 그대로 사용,
+  // 아니면 recommendCourse()로 자동 추천
+  var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
+  var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
+  var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
+
+  var activeKeys;
+  if (validPresc.length > 0) {
+    // prod에서 올바른 과정명이 전달된 경우
+    activeKeys = validPresc;
+  } else {
+    // prod 처방 텍스트이거나 없는 경우 → recommendCourse로 자동 생성
+    var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
+    activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+  }
 
   // 모던 그라디언트 팔레트 — 활성 단계 공통 색 (진행감)
   var STEP_COLORS = [
