@@ -246,12 +246,12 @@ input[type=range]{width:100%;accent-color:var(--purple);cursor:pointer;height:4p
 .R .tag-보통{background:var(--neutral-bg);color:var(--tx2);border-color:var(--neutral-bd)}
 
 /* 판독 슬롯 */
-.slot{border-bottom:1px solid #E2E8F0;margin-bottom:0;position:relative;z-index:1;}
+.slot{border-bottom:1px solid #E2E8F0;position:relative;z-index:1;}
 .slot:last-child{border-bottom:none;}
-.slot-h{display:flex;align-items:center;gap:9px;padding:12px 0 8px;}
-.slot-h span{font-size:12px;font-weight:600;color:var(--tx2)}
+.slot-h{display:flex;align-items:center;gap:9px;padding:14px 0 8px;}
+.slot-h span{font-size:12px;font-weight:600;color:#4C1D95}
 .sn{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;border:1px solid rgba(255,255,255,.2);}
-.slot-b{padding:0 0 16px;font-size:13.5px;line-height:1.95;color:#1E293B;white-space:pre-wrap;}
+.slot-b{padding:0 0 18px;font-size:13.5px;line-height:1.95;color:#1E293B;white-space:pre-wrap;}
 
 /* 근거 카드 */
 .ev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
@@ -1423,10 +1423,6 @@ function renderResult(e,nm){
     ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
     :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
 
-
-  const cauH=e.cau&&e.cau.length>0
-    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
-
   // 체크리스트 요약
   var habSummary=(e.habChecked||[]).length>0
     ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
@@ -1675,8 +1671,8 @@ function renderResult(e,nm){
       <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
     </div>
 
-    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:20px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08);max-width:1180px;margin-left:auto;margin-right:auto">
-      <div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:8px">
+    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08);max-width:1180px;margin-left:auto;margin-right:auto">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px">
         <span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span>
       </div>
       ${slotsH}
@@ -1723,7 +1719,7 @@ gv("btnA").addEventListener("click",async function(){
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
-    eng.grade = eng.grade || inp.grade || 0;  // grade 보강
+    eng.grade = eng.grade || inp.grade || 0;
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -2916,35 +2912,12 @@ function postRenderSWOT(eng, inp) {
 
         var heroRect = heroBox.getBoundingClientRect();
 
-        // 정보처리습관 카드: habTitle 위치에서 시작, studentInfoSlot과 겹치면 밀어내림
+        // 정보처리습관 카드: habTitle과 같은 높이에 시작
         if (habTitle && leftCard) {
           var habRect = habTitle.getBoundingClientRect();
-          var habTop  = Math.round(habRect.top - heroRect.top);
-          leftCard.style.top = habTop + 'px';
+          leftCard.style.top = Math.round(habRect.top - heroRect.top) + 'px';
           leftCard.style.marginTop = '0';
         }
-        // 좌측 카드가 radarZone 안 voc-left와 겹치면 radarZone padding-top을 늘려 밀어냄
-        setTimeout(function(){
-          var leftCard  = document.getElementById('ev-left-top');
-          var vocLeft   = document.getElementById('voc-left');
-          if (!leftCard || !vocLeft) return;
-          var GAP_L = 24;
-          var lcBot = leftCard.getBoundingClientRect().bottom;
-          var vlTop = vocLeft.getBoundingClientRect().top;
-          if (lcBot + GAP_L > vlTop) {
-            var radarZone = document.getElementById('radarZone');
-            var heroZone  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
-            if (radarZone && heroZone) {
-              // radarZone의 voc-left 컨테이너에 padding-top 추가
-              var vocCol = vocLeft.parentElement;
-              if (vocCol) {
-                var extra = Math.ceil(lcBot + GAP_L - vlTop);
-                var curPt = parseInt(vocCol.style.paddingTop) || 80;
-                vocCol.style.paddingTop = (curPt + extra) + 'px';
-              }
-            }
-          }
-        }, 120);
 
         // 독해효율성 카드: effTitle과 같은 높이에 시작
         if (effTitle && rightCard) {
@@ -5399,7 +5372,6 @@ function openStandaloneReport(d) {
       +'<span style="font-size:10px;color:'+uc+'">'+d.urg+'</span></div></div>'
       +buildFooter(i+1,TOTAL)+'</div>';
   }
-
 
   // 새 창으로 열기
   var fullHtml = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
