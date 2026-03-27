@@ -3358,7 +3358,7 @@ function openReport(){
     kor:gv("sS0")?gv("sS0").value:"-",
     eng_score:gv("sS1")?gv("sS1").value:"-",
     math:gv("sS2")?gv("sS2").value:"-",
-    bt:eng.bt, st:eng.st, urg:eng.urg,
+    bt:eng.btDisplay||eng.bt, st:eng.stDisplay||eng.st, urg:eng.urg,
     flagC:eng.flagC, flagO:eng.flagO,
     acc:eng.acc, fct:eng.fct, str_:eng.str_,
     inf:eng.inf, voc:eng.voc, wm:eng.wm,
@@ -3369,7 +3369,10 @@ function openReport(){
     slots:slots,
     imgSrc:imgSrc
   };
-  openStandaloneReport(d);
+  try {
+    sessionStorage.setItem("__TQ_REPORT__", JSON.stringify(d));
+  } catch(e) { alert("데이터 저장 실패: "+e.message); return; }
+  window.open("tq_report_standalone_v2.html", "_blank");
 }
 
 function closeReport(){
