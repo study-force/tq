@@ -161,7 +161,7 @@ function buildPolar(factors, size) {
   }).join('');
   var labels = segs.map(function(s){
     return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="\'S-CoreDream\',\'Noto Sans KR\',sans-serif">'+s.label+'</text>'
-          +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(s.value<=60?"#EF4444":"#CBD5E1")+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';
+          +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(s.value<=60?"#EF4444":"#1E293B")+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';
   }).join('');
   var badges = segs.filter(function(s){return s.needsBadge;}).map(function(s){
     return '<rect x="'+(s.lx-24).toFixed(1)+'" y="'+(s.ly+20).toFixed(1)+'" width="48" height="18" rx="3" fill="#EF4444"/>'
@@ -288,7 +288,7 @@ function buildPage1() {
     +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
     +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'+buildPolar(FACTORS,317)+'</div>'
     +'<div style="padding-right:20px;padding-top:30px">'
-    +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px;font-family:S-CoreDream,sans-serif">독해역량 요인분석</div>'
+    +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif">독해역량 요인분석</div>'
     +factorRows
     +'</div></div>'
     +'</div>'
