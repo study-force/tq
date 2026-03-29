@@ -6073,11 +6073,26 @@ window.renderReportTab = renderReportTab;
 
 // 편집바를 판독 탭 하단에 표시
 function showEditBar() {
+  // __RPT_D 없으면 __eng/__inp로 직접 조립 (btnA 완료 직후에도 동작)
   var _D = window.__RPT_D;
-  if (!_D) return;
+  if (!_D) {
+    var _eng = window.__eng, _inp = window.__inp;
+    if (!_eng || !_inp) return;
+    _D = {
+      name:    _inp.name || '',
+      level:   _inp.uiLevel || _inp.level || '',
+      uiLevel: _inp.uiLevel || _inp.level || '',
+      grade:   _inp.grade || 0,
+      kor:     _inp.kor,
+      acc:     _eng.acc || 0,
+      presc:   _eng.presc || []
+    };
+  }
   var oldBar = document.getElementById('editBar');
   if (oldBar) oldBar.remove();
   editMode = true;
+  // D를 buildEditBar/buildLastPage가 참조하도록 전역에 설정
+  D = _D;
   currentActiveKeys = (_D.presc||[]).map(function(p){ return p.c; });
   if (!currentActiveKeys.length) {
     var recCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
@@ -6086,7 +6101,6 @@ function showEditBar() {
   currentCourseCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
   aiReasonCache = {};
   var newBar = buildEditBar();
-  // 탭 무관 바닥 고정
   newBar.style.position = 'fixed';
   newBar.style.bottom = '0';
   newBar.style.left = '0';
