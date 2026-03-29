@@ -508,10 +508,22 @@ details summary:hover{color:var(--tx2)}
     margin:0!important; padding:0!important;
     overflow:visible!important; background:white!important;
   }
-  #page-result {
+  /* inline style margin-top:40px 제거 — id+html 조합으로 specificity 올림 */
+  html body #page-result {
     height:auto!important; overflow:visible!important;
-    position:static!important; margin-top:0!important;
-    padding-bottom:0!important;
+    position:static!important;
+    margin:0!important; padding:0!important;
+    top:0!important;
+  }
+  /* 리포트 탭 배경 제거 */
+  html body #resultPane_리포트 {
+    background:white!important;
+    min-height:0!important;
+  }
+  /* placeholder 완전 숨김 */
+  #reportInlinePlaceholder {
+    display:none!important;
+    padding:0!important; margin:0!important; height:0!important;
   }
   #rptPageWrap {
     display:block!important;
@@ -689,22 +701,41 @@ details summary:hover{color:var(--tx2)}
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
 
-  // 리포트 탭으로 전환 (인쇄 CSS가 #resultPane_리포트만 표시하므로)
+  // 리포트 탭으로 전환
   switchResultTab('리포트');
 
   // 파일명 설정
   var orig = document.title;
   if (nm) document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
 
-  // 렌더 완료 대기 후 인쇄
+  // inline style 인쇄 전 임시 제거 (margin-top:40px 등)
+  var pageResult = document.getElementById('page-result');
+  var origMargin = '', origPadding = '', origPos = '', origHeight = '';
+  if (pageResult) {
+    origMargin  = pageResult.style.marginTop;
+    origPadding = pageResult.style.paddingBottom;
+    origPos     = pageResult.style.position;
+    origHeight  = pageResult.style.height;
+    pageResult.style.marginTop     = '0';
+    pageResult.style.paddingBottom = '0';
+    pageResult.style.position      = 'static';
+    pageResult.style.height        = 'auto';
+  }
+
   requestAnimationFrame(function(){
     setTimeout(function(){
       window.print();
-      // 인쇄 후 복원
+      // 인쇄 후 원상복귀
       setTimeout(function(){
         document.title = orig;
+        if (pageResult) {
+          pageResult.style.marginTop     = origMargin;
+          pageResult.style.paddingBottom = origPadding;
+          pageResult.style.position      = origPos;
+          pageResult.style.height        = origHeight;
+        }
       }, 500);
-    }, 300);
+    }, 200);
   });
 }
 window.printReport = printReport;
