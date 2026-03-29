@@ -602,7 +602,7 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 
-<div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative">
+<div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
   <!-- 상단 탑바 -->
   <div style="position:sticky;top:0;z-index:50;background:rgba(2,6,23,.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1)">
     <!-- 1행: 새 학생 / 이름 / 판독문 생성 -->
@@ -1696,7 +1696,8 @@ gv("btnA").addEventListener("click",async function(){
       }
     }
     gv("btnB").disabled=false;
-
+    // 분석 완료 → 편집바 즉시 표시 (적용 버튼은 판독 완료 전까지 비활성)
+    try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
     // 판독문 자동 생성
     setTimeout(function(){ gv("btnB").click(); }, 200);
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
@@ -1765,8 +1766,9 @@ gv("btnB").addEventListener("click",async function(){
         _tabRpt.style.color = '#34D399';
         _tabRpt.style.borderBottomColor = 'transparent';
         _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
-        // 편집바 표시 (renderReportTab 성공 여부와 무관하게)
-        try { showEditBar(); } catch(ebErr){ console.error('[showEditBar]', ebErr); }
+        // 판독 완료 → 적용 버튼 활성화
+        var _applyBtn = document.getElementById('btnApplyEdit');
+        if (_applyBtn) { _applyBtn.disabled=false; _applyBtn.style.opacity='1'; }
       } else {
         _tabRpt.style.color = 'rgba(255,255,255,.35)';
         _tabRpt.innerHTML = '📄 리포트';
@@ -5793,7 +5795,7 @@ function buildEditBar() {
   var bar = document.createElement('div');
   bar.id = 'editBar';
   bar.style.cssText = [
-    'position:sticky;bottom:0;left:0;right:0;z-index:40',
+    'position:fixed;bottom:0;left:0;right:0;z-index:200',
     'background:#1E293B;border-top:2px solid #6366F1',
     'padding:14px 32px',
     'box-shadow:0 -4px 24px rgba(0,0,0,.3)',
@@ -5843,7 +5845,7 @@ function buildEditBar() {
     // 우측: 액션
     +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">'
     +'<button id="btnAiReason" onclick="requestAiReasons()" style="padding:7px 16px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">AI 추천 이유 생성</button>'
-    +'<button onclick="applyEdit()" style="padding:7px 16px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">적용</button>'
+    +'<button id="btnApplyEdit" onclick="applyEdit()" style="padding:7px 16px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.4;" disabled>적용</button>'
 
     +'</div>'
     +'</div>';
@@ -6084,12 +6086,13 @@ function showEditBar() {
   currentCourseCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
   aiReasonCache = {};
   var newBar = buildEditBar();
-  // 고정 표시 — 판독 탭 resultView 아래에 항상 노출
-  newBar.style.position = 'static';
-  var resultView = document.getElementById('resultView');
-  if (resultView && resultView.parentNode) {
-    resultView.parentNode.insertBefore(newBar, resultView.nextSibling);
-  }
+  // 탭 무관 바닥 고정
+  newBar.style.position = 'fixed';
+  newBar.style.bottom = '0';
+  newBar.style.left = '0';
+  newBar.style.right = '0';
+  newBar.style.zIndex = '200';
+  document.body.appendChild(newBar);
 }
 window.showEditBar = showEditBar;
 </script>
