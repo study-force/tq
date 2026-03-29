@@ -5898,6 +5898,23 @@ function buildEditBar() {
 // 편집 잠금 해제 / 잠금
 function unlockEditBar() {
   editUnlocked = true;
+  // currentActiveKeys가 비어있으면 현재 presc 또는 추천 코스로 복원
+  if (!currentActiveKeys.length) {
+    var _src = window.__RPT_D || (window.__eng ? {
+      presc: window.__eng.presc||[], uiLevel: (window.__inp&&window.__inp.uiLevel)||'',
+      level: (window.__inp&&window.__inp.level)||'', grade: (window.__inp&&window.__inp.grade)||0,
+      acc: (window.__eng&&window.__eng.acc)||0, kor: (window.__inp&&window.__inp.kor)||'-'
+    } : null);
+    if (_src) {
+      currentActiveKeys = (_src.presc||[]).map(function(p){ return p.c; })
+        .filter(function(k){ return ALL_PROGRAMS.some(function(p){ return p.key===k; }); });
+      if (!currentActiveKeys.length) {
+        var rc = recommendCourse(_src.uiLevel||_src.level, _src.grade, _src.acc, _src.kor);
+        currentActiveKeys = buildPrescFromCourse(rc).map(function(p){ return p.c; });
+        currentCourseCode = rc;
+      }
+    }
+  }
   rebuildEditBar();
 }
 function lockEditBar() {
@@ -6035,23 +6052,20 @@ function requestAiReasons() {
 
 function applyEdit() {
   var TOTAL = 4;
+  var newPresc = currentActiveKeys.map(function(k, i){ return { p: i+1, c: k }; });
+
+  // 모든 D 소스에 presc 동기화 (renderReportTab이 덮어쓰지 못하도록)
+  if (D) D.presc = newPresc;
+  if (window.__RPT_D) window.__RPT_D.presc = newPresc;
+  if (window.__eng) window.__eng.presc = newPresc;
+
+  // rptPageWrap이 있으면 로드맵 페이지 재렌더링
   var wrap = document.getElementById('rptPageWrap');
-  // presc 업데이트
-  D.presc = currentActiveKeys.map(function(k, i){ return { p: i+1, c: k }; });
-  // AI 이유가 있으면 D.roadmapReasons와 ALL_PROGRAMS 모두에 반영
-  if (Object.keys(aiReasonCache).length) {
-    if (!D.roadmapReasons) D.roadmapReasons = {};
-    ALL_PROGRAMS.forEach(function(p){
-      if (aiReasonCache[p.key]) {
-        p._aiReason = aiReasonCache[p.key];
-        D.roadmapReasons[p.key] = aiReasonCache[p.key];
-      }
-    });
+  if (wrap && wrap.children.length > 0) {
+    var firstPage = wrap.lastChild;
+    var newPage = buildLastPage(TOTAL);
+    wrap.replaceChild(newPage, firstPage);
   }
-  // 로드맵 페이지 재렌더링 (SVG 타임라인 + 카드 전체)
-  var firstPage = wrap.lastChild;
-  var newPage = buildLastPage(TOTAL);
-  wrap.replaceChild(newPage, firstPage);
   showToastRM('로드맵이 업데이트되었습니다.');
 }
 
@@ -6124,7 +6138,7 @@ function renderReportTab() {
     eff:  eng.eff  || 0,
     habChecked: eng.habChecked || [],
     effChecked: eng.effChecked || [],
-    presc:  eng.presc  || [],
+    presc:  (window.__RPT_D && window.__RPT_D.presc && window.__RPT_D.presc.length ? window.__RPT_D.presc : eng.presc) || [],
     slots:  slots,
     imgSrc: imgSrc
   };
