@@ -647,7 +647,7 @@ details summary:hover{color:var(--tx2)}
 
         <button onclick="runSampleDirect(2)" style="background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(217,119,6,.16)';this.style.borderColor='rgba(217,119,6,.4)'" onmouseout="this.style.background='rgba(217,119,6,.07)';this.style.borderColor='rgba(217,119,6,.2)'">
           <div style="font-size:13px;font-weight:700;color:#FCD34D;margin-bottom:4px">박서연</div>
-          <div style="font-size:9.5px;color:rgba(255,255,255,.4);line-height:1.6">중학교 1학년<br>논리 두뇌 미발현형 · 조기 개입</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">중학교 1학년<br>논리 두뇌 미발현형 · 조기 개입</div>
           <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(217,119,6,.13);border-radius:4px;padding:2px 7px">
             <span style="font-size:9px;font-weight:700;color:#FCD34D">▶ 분석 시작</span>
           </div>
@@ -726,9 +726,9 @@ function printReport() {
     styles,
     '<style>',
     '@page { size:A4 portrait; margin:0; }',
-    'html,body { margin:0; padding:0; background:white; }',
-    '#rptPageWrap { display:block !important; padding:0 !important; gap:0 !important; width:794px; }',
-    '.page { width:794px !important; height:1123px !important; box-shadow:none !important; border-radius:0 !important; overflow:hidden !important; page-break-after:always; break-after:page; margin:0 !important; flex-shrink:0; }',
+    'html,body { margin:0; padding:0; background:white; width:794px; }',
+    '#rptPageWrap { display:block !important; padding:0 !important; gap:0 !important; }',
+    '.page { width:794px !important; min-height:1123px !important; height:1123px !important; box-shadow:none !important; border-radius:0 !important; overflow:visible !important; page-break-after:always; break-after:page; margin:0 !important; display:flex !important; flex-direction:column !important; }',
     '.page:last-child { page-break-after:auto; break-after:auto; }',
     '</style>',
     '</head><body>',
