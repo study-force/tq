@@ -673,7 +673,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.4</span> · 인쇄여백근본수정
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.6</span> · 인쇄자동scale조정
     </div>
 
   </div>
@@ -706,6 +706,39 @@ details summary:hover{color:var(--tx2)}
 <script>
 
 // ── 인쇄 / PDF 저장 ──
+// ── 인쇄 자동 scale 조정 ──
+// onbeforeprint: 실제 인쇄 가능 너비를 측정해서 rptPageWrap을 자동 축소
+// onafterprint:  원상복귀
+(function(){
+  var _origWrapStyle = '';
+
+  function applyPrintScale() {
+    var wrap = document.getElementById('rptPageWrap');
+    if (!wrap) return;
+    // 인쇄 모드에서 body 너비 = 실제 인쇄 가능 너비 (여백 제외)
+    var printW = document.documentElement.clientWidth || document.body.clientWidth || 794;
+    var pageW  = 794; // .page 고정 너비
+    var scale  = printW / pageW;
+    if (scale >= 1) scale = 1; // 확대는 하지 않음
+
+    _origWrapStyle = wrap.getAttribute('style') || '';
+    wrap.style.transform       = 'scale(' + scale.toFixed(6) + ')';
+    wrap.style.transformOrigin = 'top left';
+    wrap.style.width           = pageW + 'px';
+    // scale 후 실제 점유 높이를 맞춰야 페이지 나누기가 정확함
+    // height는 .page가 직접 관리하므로 wrap은 건드리지 않음
+  }
+
+  function restorePrintScale() {
+    var wrap = document.getElementById('rptPageWrap');
+    if (!wrap) return;
+    wrap.setAttribute('style', _origWrapStyle);
+  }
+
+  window.addEventListener('beforeprint', applyPrintScale);
+  window.addEventListener('afterprint',  restorePrintScale);
+})();
+
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
 
@@ -5289,7 +5322,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.4</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.6</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
