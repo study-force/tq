@@ -593,22 +593,49 @@ details summary:hover{color:var(--tx2)}
 </div>
 
 <div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative">
-  <div style="position:sticky;top:0;z-index:50;padding:10px 22px;background:rgba(2,6,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1);display:flex;align-items:center;gap:12px">
-    <button onclick="(window.showInputPage||function(){})();" style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#A78BFA;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(139,92,246,.22)'" onmouseout="this.style.background='rgba(139,92,246,.12)'">
-      ← 새 학생
-    </button>
-    <div id="result-student-name" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)"></div>
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
-      <button id="btnB2" disabled
-        onclick="document.getElementById('btnB').click()"
-        style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.5;transition:all .2s"
-        onmouseover="if(!this.disabled)this.style.opacity='1'"
-        onmouseout="if(!this.disabled)this.style.opacity='0.9'">
-        ✦ 판독문 생성
+  <!-- 상단 탑바 -->
+  <div style="position:sticky;top:0;z-index:50;background:rgba(2,6,23,.95);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1)">
+    <!-- 1행: 새 학생 / 이름 / 판독문 생성 -->
+    <div style="padding:10px 22px;display:flex;align-items:center;gap:12px">
+      <button onclick="(window.showInputPage||function(){})();" style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#A78BFA;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(139,92,246,.22)'" onmouseout="this.style.background='rgba(139,92,246,.12)'">
+        ← 새 학생
+      </button>
+      <div id="result-student-name" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)"></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
+        <button id="btnB2" disabled
+          onclick="document.getElementById('btnB').click()"
+          style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.5;transition:all .2s"
+          onmouseover="if(!this.disabled)this.style.opacity='1'"
+          onmouseout="if(!this.disabled)this.style.opacity='0.9'">
+          ✦ 판독문 생성
+        </button>
+      </div>
+    </div>
+    <!-- 2행: 판독 / 리포트 탭 -->
+    <div style="display:flex;padding:0 22px;gap:0;border-top:1px solid rgba(255,255,255,.05)">
+      <button id="resultTab_판독" onclick="switchResultTab('판독')" style="padding:8px 20px;font-size:12px;font-weight:600;color:#A78BFA;background:transparent;border:none;border-bottom:2px solid #8B5CF6;cursor:pointer;font-family:inherit;transition:all .15s">
+        📊 판독
+      </button>
+      <button id="resultTab_리포트" onclick="switchResultTab('리포트')" style="padding:8px 20px;font-size:12px;font-weight:600;color:rgba(255,255,255,.35);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s">
+        📄 리포트
       </button>
     </div>
   </div>
-  <div id="resultView" style="padding:20px 0"></div>
+  <!-- 판독 탭 컨텐츠 -->
+  <div id="resultPane_판독" style="display:block">
+    <div id="resultView" style="padding:20px 0"></div>
+  </div>
+  <!-- 리포트 탭 컨텐츠 -->
+  <div id="resultPane_리포트" style="display:none;background:#f8fafc;min-height:calc(100vh - 100px);display:none">
+    <div style="max-width:860px;margin:0 auto;padding:28px 24px 48px">
+      <div id="reportInlineView" style="box-shadow:0 8px 40px rgba(0,0,0,.15);border-radius:4px;overflow:hidden"></div>
+      <div id="reportInlinePlaceholder" style="text-align:center;padding:80px 0;color:#94A3B8">
+        <div style="font-size:32px;margin-bottom:12px">📄</div>
+        <div style="font-size:14px;font-weight:600;color:#64748B;margin-bottom:6px">판독문 생성 후 리포트가 표시됩니다</div>
+        <div style="font-size:12px;color:#94A3B8">✦ 판독문 생성 버튼을 눌러주세요</div>
+      </div>
+    </div>
+  </div>
 </div></div>
 
 <!-- 학부모 리포트 모달 -->
@@ -1367,9 +1394,7 @@ function renderResult(e,nm){
       +'</div>'
     :"";
 
-  const slotsH=["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"].map((t,i)=>
-    `<div class="slot"><div class="slot-h"><div class="sn" style="background:${SC[i]}">${i+1}</div><span style="font-size:12px;font-weight:600;color:#4C1D95">${nm} — ${t}</span></div><div class="slot-b" id="sl${i+1}"><span style="color:#CBD5E1;font-size:11px">판독문 생성 후 표시됩니다</span></div></div>`
-  ).join("");
+
 
   var html=`
   <!-- ══ 학생 정보 — 중앙 카드 좌측 absolute ══ -->
@@ -1571,21 +1596,6 @@ function renderResult(e,nm){
       <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
     </div>
 
-    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08);max-width:1180px;margin-left:auto;margin-right:auto">
-      <div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px">
-        <span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span>
-      </div>
-      ${slotsH}
-    </div>
-
-
-    <div style="padding-top:16px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1;max-width:1180px;margin-left:auto;margin-right:auto">
-      <button id="btnR2"
-        style="width:100%;padding:12px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;box-shadow:0 4px 14px rgba(139,92,246,.35)"
-        onclick="openReport()">
-        📄 학부모 리포트 출력
-      </button>
-    </div>
   </div>
 
 
@@ -1695,10 +1705,7 @@ gv("btnB").addEventListener("click",async function(){
   hideErr();
   const btnB=gv("btnB");
   btnB.disabled=true; btnB.textContent="판독문 생성 중...";
-  for(var i=1;i<=4;i++){
-    var el=gv("sl"+i);
-    if(el)el.innerHTML='<div style="display:flex;gap:4px;align-items:center"><span style="font-size:11px;color:#B4B2A9">생성 중...</span></div>';
-  }
+
 
   try{
     const resp=await fetch(TQ_API_URL,{
@@ -1728,8 +1735,17 @@ gv("btnB").addEventListener("click",async function(){
       });
       if(!slots.slot1)throw new Error("응답 파싱 실패");
     }
-    for(var i=1;i<=4;i++){var el=gv("sl"+i);if(el)el.textContent=slots["slot"+i]||"";}
     window.__TQ_SLOTS=slots;
+    // 리포트 탭 인라인 렌더 갱신
+    if (window.__eng && window.__inp) {
+      var _repView = document.getElementById('reportInlineView');
+      var _repPH   = document.getElementById('reportInlinePlaceholder');
+      if (_repView) {
+        _repView.innerHTML = rpBuildReportWithSlots(window.__eng, window.__inp, slots);
+        _repView.style.display = 'block';
+      }
+      if (_repPH) _repPH.style.display = 'none';
+    }
 
     // ── 베타 피드백 UI 삽입 ──
     // 1) 각 슬롯 헤더에 🚩 버튼 추가
@@ -1774,13 +1790,18 @@ gv("btnB").addEventListener("click",async function(){
       }
     }
     gv("btnR").disabled=false;
+    // 리포트 탭 버튼 활성화 (시각적 강조)
+    var tabRpt = document.getElementById('resultTab_리포트');
+    if (tabRpt) {
+      tabRpt.style.color = '#34D399';
+      tabRpt.innerHTML = '📄 리포트 <span style="background:#34D399;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px">NEW</span>';
+    }
+    // 자동으로 리포트 탭으로 전환
+    switchResultTab('리포트');
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
     console.error("[TQ generate error]", err);
-    for(var i=1;i<=4;i++){
-      var el=gv("sl"+i);
-      if(el)el.innerHTML='<span style="color:#A32D2D;font-size:11px">오류: '+err.message+'</span>';
-    }
+
   }finally{btnB.disabled=false;btnB.textContent="② 판독문 생성 — Claude AI";}
 });
 
@@ -2396,6 +2417,77 @@ function runEntryAnimation(rv, eng, inp) {
   }, t);
 }
 
+
+// ════════════════════════════════════════════════
+// 결과 페이지 판독 / 리포트 탭 전환
+// ════════════════════════════════════════════════
+function switchResultTab(tab) {
+  var panes = ['판독','리포트'];
+  panes.forEach(function(t) {
+    var pane = document.getElementById('resultPane_'+t);
+    var btn  = document.getElementById('resultTab_'+t);
+    if (!pane || !btn) return;
+    var isActive = (t === tab);
+    pane.style.display = isActive ? 'block' : 'none';
+    if (isActive) {
+      btn.style.color = '#A78BFA';
+      btn.style.borderBottomColor = '#8B5CF6';
+    } else {
+      btn.style.color = 'rgba(255,255,255,.35)';
+      btn.style.borderBottomColor = 'transparent';
+    }
+  });
+  // 리포트 탭으로 전환 시 인라인 렌더
+  if (tab === '리포트') {
+    var eng = window.__eng, inp = window.__inp;
+    var slots = window.__TQ_SLOTS;
+    var view = document.getElementById('reportInlineView');
+    var placeholder = document.getElementById('reportInlinePlaceholder');
+    if (eng && inp && slots && view) {
+      // 리포트 인라인 렌더 (rpBuildResultHTML 활용)
+      var html = rpBuildReportWithSlots(eng, inp, slots);
+      view.innerHTML = html;
+      view.style.display = 'block';
+      if (placeholder) placeholder.style.display = 'none';
+    }
+  }
+  // 리포트 탭 → page-result 스크롤 최상단
+  var pr = document.getElementById('page-result');
+  if (pr) pr.scrollTop = 0;
+}
+window.switchResultTab = switchResultTab;
+
+// 리포트 탭용 HTML 빌더 (rpBuildResultHTML + 판독문 슬롯 포함)
+function rpBuildReportWithSlots(eng, inp, slots) {
+  // 기존 결과지 HTML
+  var baseHTML = rpBuildResultHTML(eng, inp);
+
+  // 판독문 슬롯 섹션
+  var SC_R = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
+  var TITLES = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
+  var slotsHTML = '<div style="background:#ffffff;border-top:3px solid #E2E8F0;padding:32px 36px">'
+    + '<div style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px">'
+    + '<span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span></div>';
+  for (var i=0; i<4; i++) {
+    var slotText = slots["slot"+(i+1)] || "";
+    slotsHTML += '<div style="border-bottom:1px solid #E2E8F0;padding:16px 0' + (i===3?';border-bottom:none':'') + '">'
+      + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">'
+      + '<div style="width:22px;height:22px;border-radius:50%;background:'+SC_R[i]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+(i+1)+'</div>'
+      + '<span style="font-size:12px;font-weight:700;color:#1E293B">'+(inp.name||"")+" — "+TITLES[i]+'</span>'
+      + '</div>'
+      + '<div style="font-size:13.5px;line-height:2;color:#1E293B;white-space:pre-wrap;padding-left:31px">'+slotText+'</div>'
+      + '</div>';
+  }
+  slotsHTML += '</div>';
+
+  // baseHTML 닫는 </div> 직전에 슬롯 삽입
+  var closeIdx = baseHTML.lastIndexOf('</div>');
+  if (closeIdx >= 0) {
+    baseHTML = baseHTML.slice(0, closeIdx) + slotsHTML + baseHTML.slice(closeIdx);
+  }
+  return baseHTML;
+}
+window.rpBuildReportWithSlots = rpBuildReportWithSlots;
 
 // ════════════════════════════════════════════════
 // 페이지 전환: 입력 ↔ 결과
@@ -3316,6 +3408,14 @@ function resetAll(){
   var btnB2r=document.getElementById("btnB2");
   if(btnB2r){btnB2r.disabled=true;btnB2r.style.opacity="0.5";}
   window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
+  // 리포트 탭 초기화
+  var repView = document.getElementById('reportInlineView');
+  var repPlaceholder = document.getElementById('reportInlinePlaceholder');
+  if(repView){ repView.innerHTML=''; repView.style.display='none'; }
+  if(repPlaceholder) repPlaceholder.style.display='block';
+  var tabRpt = document.getElementById('resultTab_리포트');
+  if(tabRpt){ tabRpt.style.color='rgba(255,255,255,.35)'; tabRpt.innerHTML='📄 리포트'; }
+  switchResultTab('판독');
   var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
   closeReport();
   document.querySelector(".R").scrollTop=0;
