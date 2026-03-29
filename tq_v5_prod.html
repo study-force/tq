@@ -1750,8 +1750,6 @@ gv("btnB").addEventListener("click",async function(){
       if(!slots.slot1)throw new Error("응답 파싱 실패");
     }
     window.__TQ_SLOTS=slots;
-    // 리포트 렌더
-    try { renderReportTab(); } catch(renderErr){ console.error("[renderReportTab]", renderErr); }
     gv("btnR").disabled=false;
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
@@ -2403,9 +2401,11 @@ function switchResultTab(tab) {
     btn.style.color = isActive ? '#A78BFA' : 'rgba(255,255,255,.35)';
     btn.style.borderBottomColor = isActive ? '#8B5CF6' : 'transparent';
   });
-  // 리포트 탭 전환 시 렌더
+  // 리포트 탭 전환 시 렌더 (탭 클릭할 때마다 최신 데이터로 재렌더)
   if (tab === '리포트') {
-    if (window.__TQ_SLOTS) renderReportTab();
+    if (window.__TQ_SLOTS && window.__eng && window.__inp) {
+      try { renderReportTab(); } catch(e){ console.error('[renderReportTab]', e); }
+    }
   }
   var pr = document.getElementById('page-result');
   if (pr) pr.scrollTop = 0;
@@ -6094,8 +6094,6 @@ function showEditBar() {
   // D 전역을 덮어쓰지 않고 편집바 전용 변수 사용
   // buildEditBar는 전역 D를 참조하므로, 완전한 D가 있으면 그대로 두고
   // 없을 때만 임시로 설정 후 복원
-  var _prevD = D;
-  if (!D || !D.acc) D = _D;  // D가 null이거나 불완전할 때만 임시 설정
   currentActiveKeys = (_D.presc||[]).map(function(p){ return p.c; });
   if (!currentActiveKeys.length) {
     var recCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
@@ -6103,8 +6101,11 @@ function showEditBar() {
   }
   currentCourseCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
   aiReasonCache = {};
+  // buildEditBar는 D 전역을 참조하므로 편집바 전용 임시 D 설정 후 즉시 복원
+  var _savedD = D;
+  D = _D;
   var newBar = buildEditBar();
-  D = _prevD;  // 원래 D로 복원 (renderReportTab이 덮어쓴 완전한 D 보호)
+  D = _savedD;
   newBar.style.position = 'fixed';
   newBar.style.bottom = '0';
   newBar.style.left = '0';
