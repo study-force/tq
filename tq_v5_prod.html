@@ -2765,7 +2765,7 @@ function postRenderSWOT(eng, inp) {
 
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
-  if (heroSpd) heroSpd.textContent = Number(inp.spd||0).toLocaleString() || '—';
+  if (heroSpd) heroSpd.textContent = Number(inp.spd||eng.spd||0).toLocaleString() || '—';
 
   // 학생 정보 카드 → studentInfoSlot으로 이동
   var srcCard = document.getElementById('studentInfoCard');
