@@ -5844,7 +5844,7 @@ function buildEditBar() {
       + 'style="padding:4px 10px;border-radius:4px;font-size:10.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-right:3px;margin-bottom:3px;'
       + (isAct
         ? 'background:' + col + ';color:#fff;border:1.5px solid ' + col + ';'
-        : 'background:transparent;color:#64748B;border:1.5px solid rgba(255,255,255,.12);')
+        : 'background:transparent;color:' + (editUnlocked ? '#64748B' : 'rgba(255,255,255,.25)') + ';border:1.5px solid rgba(255,255,255,.1);')
       + '">' + p.key + '</button>';
   }).join('');
 
@@ -5869,25 +5869,24 @@ function buildEditBar() {
   }
 
   bar.innerHTML =
-    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;opacity:' + wrapOpacity + ';transition:opacity .3s;">'
+    // 전체 레이아웃: 좌측 콘텐츠(opacity 조절) + 우측 버튼(항상 불투명) 분리
+    '<div style="display:flex;align-items:center;gap:16px;">'
 
-    // 레이블
-    +'<div style="font-size:11px;font-weight:700;color:#A78BFA;white-space:nowrap;flex-shrink:0;opacity:1;">권장 훈련 로드맵</div>'
-
-    // 좌측: 코스 선택
+    // 좌측: 레이블 + 코스 + 과정 (opacity로 읽기전용 표시)
+    +'<div style="display:flex;align-items:center;gap:20px;flex:1;flex-wrap:wrap;opacity:' + wrapOpacity + ';transition:opacity .3s;">'
+    +'<div style="font-size:11px;font-weight:700;color:#A78BFA;white-space:nowrap;flex-shrink:0;">권장 훈련 로드맵</div>'
     +'<div style="flex-shrink:0;">'
     +'<div style="font-size:9px;color:#64748B;letter-spacing:1px;margin-bottom:4px;">코스 선택 (★ = 자동 추천)</div>'
     +'<div style="' + lockStyle + '">' + courseBtns + '</div>'
     +'</div>'
-
-    // 가운데: 개별 과정 조정
     +'<div style="flex:1;">'
     +'<div style="font-size:9px;color:#64748B;letter-spacing:1px;margin-bottom:4px;">과정 개별 조정</div>'
     +'<div id="editBtns" style="' + lockStyle + '">' + stepBtns + '</div>'
     +'</div>'
+    +'</div>'
 
-    // 우측: 상태별 버튼
-    +'<div style="flex-shrink:0;opacity:1;">'
+    // 우측: 버튼 (opacity 1 독립 — 부모 opacity 영향 없음)
+    +'<div style="flex-shrink:0;">'
     + rightBtn
     +'</div>'
     +'</div>';
