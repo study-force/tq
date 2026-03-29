@@ -1444,16 +1444,21 @@ function renderResult(e,nm){
 
 
   <!-- ══ 메인 히어로 존 ══ -->
-  <div style="display:flex;justify-content:center;align-items:flex-start;margin-bottom:16px;position:relative;z-index:1;gap:40px">
+  <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
 
-    <!-- 좌측 컬럼: 학생정보 + 정보처리습관 — flex column으로 겹침 구조적 방지 -->
-    <div id="leftColWrap" style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;">
-      <div id="studentInfoSlot"></div>
-      <div id="ev-left-top"></div>
-    </div>
-
-    <!-- 중앙 카드 -->
+    <!-- 중앙 카드 (position:relative 기준점) -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+
+      <!-- 좌측: 학생정보 + 정보처리습관 (flex-column, position:absolute) -->
+      <div id="leftColWrap" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20;display:flex;flex-direction:column;gap:16px;">
+        <div id="studentInfoSlot"></div>
+        <div id="ev-left-top"></div>
+      </div>
+
+      <!-- 우측 카드: 성적선행지수 / 독해속도 / 독해효율성 -->
+      <div id="ev-right-top"    style="position:absolute;left:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
+      <div id="ev-right-mid"    style="position:absolute;left:calc(100% + 40px);top:220px;width:300px;z-index:10"></div>
+      <div id="ev-right-bottom" style="position:absolute;left:calc(100% + 40px);top:440px;width:300px;z-index:10"></div>
 
       <!-- 독해정확도 -->
       <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
@@ -1536,15 +1541,6 @@ function renderResult(e,nm){
     </div>
 
   </div>
-
-    <!-- 우측 컬럼: 성적선행지수 / 독해속도 / 독해효율성 -->
-    <div id="rightColWrap" style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;padding-top:20px;">
-      <div id="ev-right-top"></div>
-      <div id="ev-right-mid"></div>
-      <div id="ev-right-bottom"></div>
-    </div>
-
-  </div><!-- 히어로 flex 끝 -->
 
   <!-- ══ 유형 카드 (숨김) ══ -->
   <div id="rightPanel" style="display:none">
@@ -2694,7 +2690,18 @@ function postRenderSWOT(eng, inp) {
     });
   }
 
-  // 좌우 카드 모두 flex-column 구조로 자동 배치 — top 조작 불필요
+  // 우측 카드 top 순차 배치 (렌더 후)
+  setTimeout(function() {
+    var GAP = 12;
+    var rightIds = ['ev-right-top', 'ev-right-mid', 'ev-right-bottom'];
+    var rightY = 20;
+    rightIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el || !el.innerHTML.trim()) return;
+      el.style.top = rightY + 'px';
+      rightY += el.offsetHeight + GAP;
+    });
+  }, 600);
 
 
   var evidenceEl = document.getElementById('evidenceCards');
@@ -2840,7 +2847,32 @@ function postRenderSWOT(eng, inp) {
 
 
 
-  // cascadeRightCards/Left 제거 — flex-column 구조로 대체
+  // 우측 카드 연쇄 밀어내기 — 성적선행지수 → 독해속도 → 독해효율성
+  function cascadeRightCards() {
+    var GAP = 16;
+    var cards = [
+      document.getElementById('ev-right-top'),
+      document.getElementById('ev-right-mid'),
+      document.getElementById('ev-right-bottom')
+    ];
+    for (var i = 0; i < cards.length - 1; i++) {
+      var upper = cards[i];
+      var lower = cards[i+1];
+      if (!upper || !lower) continue;
+      var upperBottom = upper.getBoundingClientRect().bottom;
+      var lowerTop    = lower.getBoundingClientRect().top;
+      if (upperBottom + GAP > lowerTop) {
+        var diff   = upperBottom + GAP - lowerTop;
+        var curTop = parseInt(lower.style.top) || 0;
+        lower.style.top = (curTop + diff) + 'px';
+        i = -1;
+      }
+    }
+  }
+  requestAnimationFrame(function(){
+    setTimeout(cascadeRightCards, 350);
+    setTimeout(cascadeRightCards, 700);
+  });
 
   // ── 배지 → 카드 연결선 (DOM 렌더 후 실행) ──
   requestAnimationFrame(function(){
@@ -2853,8 +2885,20 @@ function postRenderSWOT(eng, inp) {
       // 좌측(studentInfoSlot + ev-left-top)은 flex-column 구조로 겹침 방지 (CSS)    // 우측 카드 포지셔닝만 처리
       window.positionLeftCard = function positionLeftCard() {
         var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
+        var effTitle = document.getElementById('effTitle');
+        var rightCard= document.getElementById('ev-right-bottom');
         if (!heroBox) return;
-        // 우측 카드도 flex-column(rightColWrap) 구조로 자동 배치
+        var heroRect = heroBox.getBoundingClientRect();
+        if (effTitle && rightCard) {
+          var effRect = effTitle.getBoundingClientRect();
+          rightCard.style.top = Math.round(effRect.top - heroRect.top) + 'px';
+        }
+        var topCard = document.getElementById('ev-right-top');
+        var midCard = document.getElementById('ev-right-mid');
+        if (topCard && midCard) {
+          var topBottom = topCard.getBoundingClientRect().bottom;
+          midCard.style.top = Math.round(topBottom - heroRect.top + 20) + 'px';
+        }
       }
       setTimeout(positionLeftCard, 250);
       setTimeout(positionLeftCard, 600);
@@ -5696,7 +5740,7 @@ function buildLastPage(total) {
     +'<div style="font-size:11.5px;color:#94A3B8;line-height:1.9;text-align:center;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'
     +'<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 20px;">'
     +'<div style="font-size:11.5px;color:#94A3B8;line-height:2.0;text-align:center;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'
-    +'훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다.<br><br>'
+    +''
     +'<span style="color:#64748B;font-weight:600;">★ 독해력은 공부가 심화되는 고등학교 진학 후에 더 큰 영향을 미치기 때문에<br>중학교 졸업 전에 고급과정을 마치는 것을 최종 목표로 삼아야 합니다.</span>'
     +'</div>'
     +'</div>'
