@@ -2704,24 +2704,7 @@ function postRenderSWOT(eng, inp) {
       rightY += el.offsetHeight + GAP;
     });
 
-    // 좌측 카드: ev-left-top (정보처리습관) — voc-left/doj-left 총 높이 + padding-top 고려
-    var leftEl = document.getElementById('ev-left-top');
-    if (leftEl && leftEl.innerHTML.trim()) {
-      var vocEl = document.getElementById('voc-left');
-      var dojEl = document.getElementById('doj-left');
-      // voc-left 컬럼의 padding-top이 80px, 카드간 gap 16px
-      var vocColPaddingTop = 80;
-      var vocH = (vocEl && vocEl.offsetHeight) ? vocEl.offsetHeight : 0;
-      var dojH = (dojEl && dojEl.offsetHeight) ? dojEl.offsetHeight : 0;
-      var gapBetween = (vocH > 0 && dojH > 0) ? 16 : 0;
-      var totalLeftColH = vocColPaddingTop + vocH + gapBetween + dojH;
-      // 기본 위치: -50px (70px 위로). 겹치면 총 높이 + GAP으로 밀림
-      var startY = -50;
-      if (totalLeftColH > 0) {
-        startY = Math.max(startY, totalLeftColH + GAP);
-      }
-      leftEl.style.top = startY + 'px';
-    }
+    // ev-left-top은 flex-column(leftColWrap) 구조로 자동 배치 — top 조작 불필요
   }, 600);
 
 
@@ -5775,8 +5758,7 @@ function buildLastPage(total) {
     +'</div>'
     +'<div style="margin:0 72px 20px;border:1px solid #E2E8F0;background:#F8FAFC;padding:10px 18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'
     +'<div style="font-size:11px;font-weight:700;color:#475569;letter-spacing:.4px;font-family:\'Noto Sans KR\',sans-serif;white-space:nowrap;flex-shrink:0;margin-right:10px;">상담 안내</div>'
-    +'<div style="font-size:11px;color:#64748B;line-height:1.6;font-family:\'Noto Sans KR\',sans-serif;">구체적인 수강 일정과 세부 내용은 상담 후 결정하시기 바랍니다.</div>'
-    +'</div>'
+    +'<div style="font-size:11px;color:#64748B;line-height:1.6;font-family:\'Noto Sans KR\',sans-serif;">훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다. 구체적인 수강 일정과 세부 내용은 상담 후 결정하시기 바랍니다./div>'
     +buildFooter(total, total);
   return div;
 }
