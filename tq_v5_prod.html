@@ -561,23 +561,21 @@ details summary:hover{color:var(--tx2)}
 </style>
 </head>
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:1px solid rgba(139,92,246,.15);position:fixed;top:0;left:0;right:0;z-index:200">
-  <!-- 로고 -->
-  <div style="display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0">
-    <div style="width:22px;height:22px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">TQ</div>
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 TQ TEST 결과 분석 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
+  <!-- 로고 (좌측 고정) -->
+  <div style="display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0;min-width:200px">
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 <span style="color:#EF4444;font-weight:800;font-size:12px">【 <span style="color:#fff">TQ TEST</span> 】</span> 결과 분석 시스템</span>
   </div>
-  <!-- 구분선 -->
-  <div style="width:1px;height:20px;background:rgba(255,255,255,.1);flex-shrink:0;margin:0 4px"></div>
-  <!-- 학생이름 헤더 표시 제거 (판독 페이지에 이름 있음) -->
-  <div id="result-student-name" style="display:none"></div>
-  <!-- 판독/리포트 탭 (결과 페이지에서만 표시) -->
-  <div id="resultTabBar" style="display:none;align-items:stretch;gap:0;height:100%">
-    <button id="resultTab_판독" onclick="switchResultTab('판독')" style="padding:0 16px;font-size:11px;font-weight:600;color:#A78BFA;background:transparent;border:none;border-bottom:2px solid #8B5CF6;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
-      📊 판독
-    </button>
-    <button id="resultTab_리포트" onclick="switchResultTab('리포트')" style="padding:0 16px;font-size:11px;font-weight:600;color:rgba(255,255,255,.35);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
-      📄 리포트
-    </button>
+  <!-- 중앙: 학생명 + 탭 -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;height:100%;gap:0">
+    <div id="result-student-name" style="display:none;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);margin-right:12px;white-space:nowrap"></div>
+    <div id="resultTabBar" style="display:none;align-items:stretch;gap:0;height:100%">
+      <button id="resultTab_판독" onclick="switchResultTab('판독')" style="padding:0 16px;font-size:11px;font-weight:600;color:#A78BFA;background:transparent;border:none;border-bottom:2px solid #8B5CF6;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
+        📊 판독
+      </button>
+      <button id="resultTab_리포트" onclick="switchResultTab('리포트')" style="padding:0 16px;font-size:11px;font-weight:600;color:rgba(255,255,255,.35);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
+        📄 리포트
+      </button>
+    </div>
   </div>
   <!-- 우측: 인쇄 버튼 (리포트 탭에서만 표시) -->
   <div id="headerPrintBtn" style="display:none;margin-left:auto;padding-right:16px">
@@ -678,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.46</span> · 코스버튼동기화완성</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.50</span> · 헤더타이틀스페이스</div>
 
   </div>
 </div>
@@ -2569,9 +2567,20 @@ function showResultPage(nm) {
   var inp  = document.getElementById('page-input');
   var res  = document.getElementById('page-result');
   if (!inp || !res) return;
-  // 헤더에 학생이름 + 탭바 표시
+  // 헤더에 학생명 + 학교/학년 + 검사일 표시
   var nameEl = document.getElementById('result-student-name');
-  if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+  if (nameEl && nm) {
+    var _inp = window.__inp || {};
+    var _lvMap = {초등:'초등학교',초저:'초등학교',초고:'초등학교',중등:'중학교',고등:'고등학교',일반:''};
+    var _lv = _lvMap[_inp.uiLevel||_inp.level] || '';
+    var _gr = _inp.grade ? _inp.grade+'학년' : '';
+    var _dt = (function(){
+      var d = _inp.test_date ? new Date(_inp.test_date) : new Date();
+      return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+    })();
+    nameEl.textContent = nm + ' ' + _lv + ' ' + _gr + ' · ' + _dt + ' 검사';
+    nameEl.style.display = 'block';
+  }
   var tabBar = document.getElementById('resultTabBar');
   if (tabBar) tabBar.style.display = 'flex';
   // 전환 애니메이션
@@ -5532,7 +5541,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.46</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.50</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6110,7 +6119,7 @@ function buildEditBar() {
   var rightBtn;
   if (editUnlocked) {
     // 편집 중: 완료 버튼
-    rightBtn = '<button onclick="lockEditBar()" style="padding:7px 16px;background:rgba(255,255,255,.1);color:#94A3B8;border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">✓ 완료</button>';
+    rightBtn = '<button onclick="lockEditBar()" style="padding:7px 16px;background:#22C55E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">✓ 완료</button>';
   } else if (editBarReady) {
     // 리포트 완료 + 읽기전용: 수정하기 활성
     rightBtn = '<button onclick="unlockEditBar()" style="padding:7px 16px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ 수정하기</button>';
