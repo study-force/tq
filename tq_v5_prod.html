@@ -2912,8 +2912,7 @@ function postRenderSWOT(eng, inp) {
   requestAnimationFrame(function(){
     setTimeout(cascadeRightCards, 350);
     setTimeout(cascadeRightCards, 700);
-    setTimeout(cascadeLeftCards, 400);   // studentInfoSlot 렌더 완료 후
-    setTimeout(cascadeLeftCards, 800);   // 재확인
+    // 좌측 카드 겹침 방지는 아래 positionLeftCard() 에서 통합 처리
   });
 
   // ── 배지 → 카드 연결선 (DOM 렌더 후 실행) ──
@@ -2932,8 +2931,8 @@ function postRenderSWOT(eng, inp) {
         infoSlot.style.top = '0px';
       }
 
-      // ev-left-top (정보처리습관): habTitle 위치에 정확히 맞춤
-      setTimeout(function(){
+      // ev-left-top (정보처리습관): studentInfoSlot 하단 아래에 배치 (겹침 방지 통합)
+      function positionLeftCard() {
         var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
         var habTitle = document.getElementById('habTitle');
         var effTitle = document.getElementById('effTitle');
@@ -2943,18 +2942,22 @@ function postRenderSWOT(eng, inp) {
 
         var heroRect = heroBox.getBoundingClientRect();
 
-        // 정보처리습관 카드: habTitle 높이 vs studentInfoSlot 하단 중 더 아래에 배치
-        if (habTitle && leftCard) {
-          var habRect = habTitle.getBoundingClientRect();
-          var habTop  = Math.round(habRect.top - heroRect.top);
-          // studentInfoSlot 하단 + 간격 확인
-          var infoBot = 0;
+        // ── 좌측: habTitle 위치 vs studentInfoSlot 하단 중 더 아래로 ──
+        if (leftCard) {
+          var habTop = 400; // 기본값
+          if (habTitle) {
+            var habRect = habTitle.getBoundingClientRect();
+            habTop = Math.round(habRect.top - heroRect.top);
+          }
+          // studentInfoSlot 실제 하단 측정
           var infoSlotEl = document.getElementById('studentInfoSlot');
           if (infoSlotEl) {
-            var infoRect = infoSlotEl.getBoundingClientRect();
-            infoBot = Math.round(infoRect.bottom - heroRect.top) + 16; // 16px 여백
+            // offsetHeight: getBoundingClientRect보다 안정적 (렌더 전 측정 오류 방지)
+            var infoBottom = infoSlotEl.getBoundingClientRect().bottom;
+            var infoBot = Math.round(infoBottom - heroRect.top) + 24; // 24px 여백
+            habTop = Math.max(habTop, infoBot);
           }
-          leftCard.style.top = Math.max(habTop, infoBot) + 'px';
+          leftCard.style.top = habTop + 'px';
           leftCard.style.marginTop = '0';
         }
 
@@ -2972,7 +2975,10 @@ function postRenderSWOT(eng, inp) {
           var heroTop   = heroRect.top;
           midCard.style.top = Math.round(topBottom - heroTop + 20) + 'px';
         }
-      }, 250);
+      }
+      // 250ms: 기본 렌더 후 / 600ms: 플래그 배지 등 동적 추가 완료 후 재확인
+      setTimeout(positionLeftCard, 250);
+      setTimeout(positionLeftCard, 600);
     }, 120);
   });
 
