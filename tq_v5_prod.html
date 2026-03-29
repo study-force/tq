@@ -655,7 +655,7 @@ details summary:hover{color:var(--tx2)}
 
         <button onclick="runSampleDirect(3)" style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(37,99,235,.16)';this.style.borderColor='rgba(37,99,235,.4)'" onmouseout="this.style.background='rgba(37,99,235,.07)';this.style.borderColor='rgba(37,99,235,.2)'">
           <div style="font-size:13px;font-weight:700;color:#93C5FD;margin-bottom:4px">김민서</div>
-          <div style="font-size:9.5px;color:rgba(255,255,255,.4);line-height:1.6">고등학교 1학년<br>성실한 암기 의존형 · 중장기</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">고등학교 1학년<br>성실한 암기 의존형 · 중장기</div>
           <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(37,99,235,.13);border-radius:4px;padding:2px 7px">
             <span style="font-size:9px;font-weight:700;color:#93C5FD">▶ 분석 시작</span>
           </div>
@@ -698,45 +698,71 @@ details summary:hover{color:var(--tx2)}
 
 <script>
 
-// ── 인쇄 / PDF 저장 — Blob URL 방식 (여백 설정 무관) ──
+// ── 인쇄 / PDF 저장 — Blob URL + XMLSerializer 방식 ──
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
   var wrap = document.getElementById('rptPageWrap');
-  if (!wrap || !wrap.innerHTML.trim()) {
+  if (!wrap || !wrap.children.length) {
     alert('리포트가 생성되지 않았습니다. 판독문 생성을 먼저 실행하세요.');
     return;
   }
 
-  // 현재 페이지 스타일 수집
+  // 스타일 수집
   var styles = '';
-  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
-    styles += l.outerHTML;
-  });
-  document.querySelectorAll('style').forEach(function(s){
-    styles += s.outerHTML;
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){ styles += l.outerHTML + '\n'; });
+  document.querySelectorAll('style').forEach(function(s){ styles += s.outerHTML + '\n'; });
+
+  // 각 .page 요소를 XMLSerializer로 정확히 직렬화
+  var xs = new XMLSerializer();
+  var pagesHTML = '';
+  Array.from(wrap.children).forEach(function(page) {
+    try {
+      pagesHTML += xs.serializeToString(page);
+    } catch(e) {
+      pagesHTML += page.outerHTML;
+    }
   });
 
   var title = nm ? ('스터디포스 TQ TEST 분석 결과 : ' + nm) : '스터디포스 TQ TEST 분석 결과';
-  var pageHTML = wrap.innerHTML;
 
-  var html = [
-    '<!DOCTYPE html><html lang="ko"><head>',
-    '<meta charset="UTF-8">',
-    '<title>' + title + '</title>',
-    styles,
-    '<style>',
-    '@page { size:A4 portrait; margin:0; }',
-    'html,body { margin:0; padding:0; background:white; width:794px; }',
-    '#rptPageWrap { display:block !important; padding:0 !important; gap:0 !important; }',
-    '.page { width:794px !important; min-height:1123px !important; height:1123px !important; box-shadow:none !important; border-radius:0 !important; overflow:visible !important; page-break-after:always; break-after:page; margin:0 !important; display:flex !important; flex-direction:column !important; }',
-    '.page:last-child { page-break-after:auto; break-after:auto; }',
-    '</style>',
-    '</head><body>',
-    '<div id="rptPageWrap">' + pageHTML + '</div>',
-    '</body></html>'
-  ].join('');
+  var html = '<!DOCTYPE html><html lang="ko"><head>'
+    + '<meta charset="UTF-8">'
+    + '<title>' + title + '</title>'
+    + styles
+    + '<style>'
+    + '@page { size:A4 portrait; margin:0; }'
+    + 'html,body { margin:0; padding:0; background:white; }'
+    + '#rptPageWrap { display:block !important; padding:0 !important; gap:0 !important; }'
+    + '.page {'
+    +   'width:794px !important; height:1123px !important;'
+    +   'box-shadow:none !important; border-radius:0 !important;'
+    +   'overflow:hidden !important;'
+    +   'page-break-after:always !important; break-after:page !important;'
+    +   'display:flex !important; flex-direction:column !important;'
+    +   'margin:0 !important; flex-shrink:0 !important;'
+    + '}'
+    + '.page:last-child { page-break-after:auto !important; break-after:auto !important; }'
+    // flex:1 자식이 높이를 제대로 먹도록
+    + '.page > div:not([style*="flex-shrink:0"]) { flex:1 !important; min-height:0 !important; }'
+    + '</style>'
+    + '</head><body>'
+    + '<div id="rptPageWrap">' + pagesHTML + '</div>'
+    + '<script>'
+    + '(function(){'
+    + '  function doPrint(){'
+    + '    window.focus(); window.print();'
+    + '    window.onafterprint = function(){ window.close(); };'
+    + '  }'
+    // 폰트 로드 완료 후 인쇄
+    + '  if(document.fonts && document.fonts.ready){'
+    + '    document.fonts.ready.then(function(){ setTimeout(doPrint, 300); });'
+    + '  } else {'
+    + '    window.onload = function(){ setTimeout(doPrint, 500); };'
+    + '  }'
+    + '})();'
+    + '<\/script>'
+    + '</body></html>';
 
-  // Blob URL로 새 창 열기 — document.write보다 안정적
   var blob = new Blob([html], { type: 'text/html; charset=utf-8' });
   var url  = URL.createObjectURL(blob);
   var pw   = window.open(url, '_blank');
@@ -745,14 +771,7 @@ function printReport() {
     alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.');
     return;
   }
-  // 창 로드 후 자동 인쇄
-  pw.addEventListener('load', function() {
-    setTimeout(function() {
-      pw.focus();
-      pw.print();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 3000);
-    }, 800); // 폰트 로드 대기
-  });
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
 }
 window.printReport = printReport;
 
