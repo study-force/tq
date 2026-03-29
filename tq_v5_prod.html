@@ -5077,6 +5077,7 @@ function injectTqDataAndRun(d) {
       window.__eng         = saved.eng;
       window.__TQ_SLOTS    = saved.slots;
       window.__TQ_SAVED_ID = saved.id;
+      console.log("[TQ] 로드된 slots:", saved.slots ? Object.keys(saved.slots) : "없음");
 
       // 2단계: 폼 필드 복원 (검사일 포함)
       if (saved.inp) injectTqDataAndRun.__formOnly(saved.inp);
