@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.45</span> · buildEditBar-D-null수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.46</span> · 코스버튼동기화완성</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.45</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.46</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6519,10 +6519,8 @@ function showEditBar() {
       _mc = code;
     }
   });
-  currentCourseCode = _mc || recommendCourse(
-    window.__inp.uiLevel||window.__inp.level,
-    window.__inp.grade, window.__eng.acc, window.__inp.kor
-  );
+  // 매칭 코스 없으면 빈 값 (어떤 코스버튼도 활성화 안 함)
+  currentCourseCode = _mc;
 
   // editBar 생성 후 body에 고정
   var _savedD = D;
