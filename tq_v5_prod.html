@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.22</span> · 검사일필드추가
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.24</span> · 로드시판독문재생성방지
     </div>
 
   </div>
@@ -1826,8 +1826,11 @@ gv("btnA").addEventListener("click",async function(){
     gv("btnB").disabled=false;
     // 분석 완료 → 편집바 즉시 표시 (적용 버튼은 판독 완료 전까지 비활성)
     try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
-    // 판독문 자동 생성
-    setTimeout(function(){ gv("btnB").click(); }, 200);
+    // 판독문 자동 생성 — 기존 결과 로드 시에는 건너뜀
+    if (!window.__SKIP_AUTO_GENERATE) {
+      setTimeout(function(){ gv("btnB").click(); }, 200);
+    }
+    window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
   finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
 });
@@ -5063,39 +5066,35 @@ function injectTqDataAndRun(d) {
 
   // 기존 판독 결과 조회 → 있으면 복원, 없으면 엔진 실행
   if (d.name && d.spd && d.test_date) {
+    var _loaded = false;  // 로드 완료 플래그
     loadTqResult(d.name, d.grade, d.spd, function(saved) {
-      // 기존 결과 발견 — 엔진+슬롯 복원 후 결과 페이지 표시
-      window.__inp        = saved.inp;
-      window.__eng        = saved.eng;
-      window.__nm         = d.name;
-      window.__TQ_SLOTS   = saved.slots;
-      window.__TQ_SAVED_ID= saved.id;
-      // 엔진 실행 (renderResult용) 후 판독문은 저장된 것으로 덮어씀
+      _loaded = true;
+      // 기존 결과 발견 — 엔진만 실행 (판독문 자동 생성 건너뜀)
+      window.__nm                  = d.name;
+      window.__TQ_SAVED_ID         = saved.id;
+      window.__SKIP_AUTO_GENERATE  = true;  // btnB 자동 클릭 방지
+      var btnA = document.getElementById('btnA');
+      if (btnA) btnA.click();
+      // 엔진 완료 후 저장된 슬롯 + 리포트 복원
       setTimeout(function() {
-        var btnA = document.getElementById('btnA');
-        if (btnA) btnA.click();
-        // 엔진 실행 완료 후 저장된 슬롯 복원
-        setTimeout(function() {
-          window.__TQ_SLOTS = saved.slots;
-          if (!window.__reportRendered) {
-            try { renderReportTab(); window.__reportRendered = true; } catch(e){}
-          }
-          // 판독문 버튼 활성화
-          var btnR = document.getElementById('btnR');
-          if (btnR) btnR.disabled = false;
-          showSavedResultToast(saved.test_date);
-        }, 800);
-      }, 80);
+        window.__eng      = saved.eng;
+        window.__inp      = saved.inp;
+        window.__TQ_SLOTS = saved.slots;
+        window.__reportRendered = false;  // 리포트 재렌더 허용
+        try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+        var btnR = document.getElementById('btnR');
+        if (btnR) btnR.disabled = false;
+        showSavedResultToast(saved.test_date);
+      }, 1200);
     });
-    // loadTqResult는 비동기 — 결과 없을 때는 일반 엔진 실행
+    // 2초 후에도 로드 안 됐으면 → 새로 엔진 실행
     setTimeout(function() {
-      if (!window.__TQ_SLOTS) {
+      if (!_loaded) {
         var btnA = document.getElementById('btnA');
         if (btnA) btnA.click();
       }
-    }, 1500);
+    }, 2000);
   } else {
-    // test_date 없으면 바로 엔진 실행
     setTimeout(function() {
       var btnA = document.getElementById('btnA');
       if (btnA) btnA.click();
@@ -5407,7 +5406,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.22</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.24</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6189,6 +6188,11 @@ function applyEdit() {
     wrap.replaceChild(newPage, firstPage);
   }
   showToastRM('로드맵이 업데이트되었습니다.');
+
+  // 로드맵 변경 즉시 저장
+  if (window.__inp && window.__eng && window.__TQ_SLOTS) {
+    saveTqResult(window.__inp, window.__eng, window.__TQ_SLOTS);
+  }
 }
 
 function showToastRM(msg) {
