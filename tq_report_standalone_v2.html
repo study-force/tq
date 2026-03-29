@@ -506,7 +506,16 @@ function buildPrescFromCourse(courseCode) {
 }
 
 function buildLastPage(total) {
-  var activeKeys = (D.presc||[]).map(function(p){ return p.c; });
+  var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
+  var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
+  var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
+  var activeKeys;
+  if (validPresc.length > 0) {
+    activeKeys = validPresc;
+  } else {
+    var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
+    activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+  }
 
   // 모던 그라디언트 팔레트 — 활성 단계 공통 색 (진행감)
   var STEP_COLORS = [
