@@ -625,16 +625,14 @@ details summary:hover{color:var(--tx2)}
   <div id="resultPane_판독" style="display:block">
     <div id="resultView" style="padding:20px 0"></div>
   </div>
-  <!-- 리포트 탭 컨텐츠 -->
-  <div id="resultPane_리포트" style="display:none;background:#f8fafc;min-height:calc(100vh - 100px);display:none">
-    <div style="max-width:860px;margin:0 auto;padding:28px 24px 48px">
-      <div id="reportInlineView" style="box-shadow:0 8px 40px rgba(0,0,0,.15);border-radius:4px;overflow:hidden"></div>
-      <div id="reportInlinePlaceholder" style="text-align:center;padding:80px 0;color:#94A3B8">
-        <div style="font-size:32px;margin-bottom:12px">📄</div>
-        <div style="font-size:14px;font-weight:600;color:#64748B;margin-bottom:6px">판독문 생성 후 리포트가 표시됩니다</div>
-        <div style="font-size:12px;color:#94A3B8">✦ 판독문 생성 버튼을 눌러주세요</div>
-      </div>
+  <!-- 리포트 탭 컨텐츠 (iframe) -->
+  <div id="resultPane_리포트" style="display:none">
+    <div id="reportInlinePlaceholder" style="text-align:center;padding:80px 0;color:#94A3B8">
+      <div style="font-size:32px;margin-bottom:12px">📄</div>
+      <div style="font-size:14px;font-weight:600;color:#64748B;margin-bottom:6px">판독문 생성 후 리포트가 표시됩니다</div>
+      <div style="font-size:12px;color:#94A3B8">✦ 판독문 생성 버튼을 눌러주세요</div>
     </div>
+    <iframe id="reportIframe" src="" style="display:none;width:100%;height:calc(100vh - 100px);border:none;background:#CBD5E1"></iframe>
   </div>
 </div></div>
 
@@ -1692,6 +1690,8 @@ gv("btnA").addEventListener("click",async function(){
     gv("btnB").disabled=false;
     var btnB2=document.getElementById("btnB2");
     if(btnB2){btnB2.disabled=false;btnB2.style.opacity="0.9";}
+    // 판독문 자동 생성
+    setTimeout(function(){ gv("btnB").click(); }, 200);
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
   finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
 });
@@ -1736,15 +1736,10 @@ gv("btnB").addEventListener("click",async function(){
       if(!slots.slot1)throw new Error("응답 파싱 실패");
     }
     window.__TQ_SLOTS=slots;
-    // 리포트 탭 인라인 렌더 갱신
-    if (window.__eng && window.__inp) {
-      var _repView = document.getElementById('reportInlineView');
-      var _repPH   = document.getElementById('reportInlinePlaceholder');
-      if (_repView) {
-        _repView.innerHTML = rpBuildReportWithSlots(window.__eng, window.__inp, slots);
-        _repView.style.display = 'block';
-      }
-      if (_repPH) _repPH.style.display = 'none';
+    // 리포트 탭 iframe 갱신 (이미 리포트 탭이 열려있으면 리로드)
+    var _activePane = document.getElementById('resultPane_리포트');
+    if (_activePane && _activePane.style.display !== 'none') {
+      loadReportIframe();
     }
 
     // ── 베타 피드백 UI 삽입 ──
@@ -2422,72 +2417,76 @@ function runEntryAnimation(rv, eng, inp) {
 // 결과 페이지 판독 / 리포트 탭 전환
 // ════════════════════════════════════════════════
 function switchResultTab(tab) {
-  var panes = ['판독','리포트'];
-  panes.forEach(function(t) {
+  ['판독','리포트'].forEach(function(t) {
     var pane = document.getElementById('resultPane_'+t);
     var btn  = document.getElementById('resultTab_'+t);
     if (!pane || !btn) return;
     var isActive = (t === tab);
     pane.style.display = isActive ? 'block' : 'none';
-    if (isActive) {
-      btn.style.color = '#A78BFA';
-      btn.style.borderBottomColor = '#8B5CF6';
-    } else {
-      btn.style.color = 'rgba(255,255,255,.35)';
-      btn.style.borderBottomColor = 'transparent';
-    }
+    btn.style.color = isActive ? '#A78BFA' : 'rgba(255,255,255,.35)';
+    btn.style.borderBottomColor = isActive ? '#8B5CF6' : 'transparent';
   });
-  // 리포트 탭으로 전환 시 인라인 렌더
+  // 리포트 탭 전환 시 iframe 로드
   if (tab === '리포트') {
-    var eng = window.__eng, inp = window.__inp;
-    var slots = window.__TQ_SLOTS;
-    var view = document.getElementById('reportInlineView');
-    var placeholder = document.getElementById('reportInlinePlaceholder');
-    if (eng && inp && slots && view) {
-      // 리포트 인라인 렌더 (rpBuildResultHTML 활용)
-      var html = rpBuildReportWithSlots(eng, inp, slots);
-      view.innerHTML = html;
-      view.style.display = 'block';
-      if (placeholder) placeholder.style.display = 'none';
-    }
+    loadReportIframe();
   }
-  // 리포트 탭 → page-result 스크롤 최상단
   var pr = document.getElementById('page-result');
   if (pr) pr.scrollTop = 0;
 }
 window.switchResultTab = switchResultTab;
 
-// 리포트 탭용 HTML 빌더 (rpBuildResultHTML + 판독문 슬롯 포함)
-function rpBuildReportWithSlots(eng, inp, slots) {
-  // 기존 결과지 HTML
-  var baseHTML = rpBuildResultHTML(eng, inp);
+// iframe에 standalone_v2 로드
+function loadReportIframe() {
+  var eng   = window.__eng;
+  var inp   = window.__inp;
+  var slots = window.__TQ_SLOTS;
+  if (!eng || !inp || !slots) return;
 
-  // 판독문 슬롯 섹션
-  var SC_R = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
-  var TITLES = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
-  var slotsHTML = '<div style="background:#ffffff;border-top:3px solid #E2E8F0;padding:32px 36px">'
-    + '<div style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px">'
-    + '<span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span></div>';
-  for (var i=0; i<4; i++) {
-    var slotText = slots["slot"+(i+1)] || "";
-    slotsHTML += '<div style="border-bottom:1px solid #E2E8F0;padding:16px 0' + (i===3?';border-bottom:none':'') + '">'
-      + '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">'
-      + '<div style="width:22px;height:22px;border-radius:50%;background:'+SC_R[i]+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+(i+1)+'</div>'
-      + '<span style="font-size:12px;font-weight:700;color:#1E293B">'+(inp.name||"")+" — "+TITLES[i]+'</span>'
-      + '</div>'
-      + '<div style="font-size:13.5px;line-height:2;color:#1E293B;white-space:pre-wrap;padding-left:31px">'+slotText+'</div>'
-      + '</div>';
-  }
-  slotsHTML += '</div>';
+  var iframe      = document.getElementById('reportIframe');
+  var placeholder = document.getElementById('reportInlinePlaceholder');
+  if (!iframe) return;
 
-  // baseHTML 닫는 </div> 직전에 슬롯 삽입
-  var closeIdx = baseHTML.lastIndexOf('</div>');
-  if (closeIdx >= 0) {
-    baseHTML = baseHTML.slice(0, closeIdx) + slotsHTML + baseHTML.slice(closeIdx);
+  // openReport()와 동일한 데이터 패키징
+  var imgEl  = document.getElementById('imgPreview');
+  var imgSrc = imgEl && imgEl.src && imgEl.src.startsWith('data:') ? imgEl.src : null;
+  var d = {
+    name:       inp.name || '',
+    level:      inp.uiLevel || inp.level,
+    grade:      inp.grade,
+    uiLevel:    inp.uiLevel || inp.level,
+    kor:        inp.kor,
+    eng_score:  inp.eng,
+    math:       inp.math,
+    bt:  eng.btDisplay || eng.bt,
+    st:  eng.stDisplay || eng.st,
+    urg: eng.urg,
+    flagC: eng.flagC, flagO: eng.flagO,
+    acc:  eng.acc, fct: eng.fct, str_: eng.str_,
+    spd:  parseInt(eng.spd || (inp && inp.spd)) || 0,
+    inf:  eng.inf, voc: eng.voc, wm: eng.wm,
+    hab:  eng.hab, eff: eng.eff,
+    habChecked: eng.habChecked || [],
+    effChecked: eng.effChecked || [],
+    exStr: eng.inten ? eng.inten.ex : '',
+    presc: eng.presc || [],
+    slots: slots,
+    imgSrc: imgSrc
+  };
+
+  try {
+    sessionStorage.setItem('__TQ_REPORT__', JSON.stringify(d));
+  } catch(e) { return; }
+
+  if (placeholder) placeholder.style.display = 'none';
+  iframe.style.display = 'block';
+  // 이미 같은 URL이면 reload, 아니면 src 설정
+  if (iframe.src && iframe.src.indexOf('tq_report_standalone_v2') >= 0) {
+    iframe.contentWindow.location.reload();
+  } else {
+    iframe.src = 'tq_report_standalone_v2.html';
   }
-  return baseHTML;
 }
-window.rpBuildReportWithSlots = rpBuildReportWithSlots;
+window.loadReportIframe = loadReportIframe;
 
 // ════════════════════════════════════════════════
 // 페이지 전환: 입력 ↔ 결과
@@ -3409,10 +3408,10 @@ function resetAll(){
   if(btnB2r){btnB2r.disabled=true;btnB2r.style.opacity="0.5";}
   window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
   // 리포트 탭 초기화
-  var repView = document.getElementById('reportInlineView');
   var repPlaceholder = document.getElementById('reportInlinePlaceholder');
-  if(repView){ repView.innerHTML=''; repView.style.display='none'; }
   if(repPlaceholder) repPlaceholder.style.display='block';
+  var repIframe = document.getElementById('reportIframe');
+  if(repIframe){ repIframe.src=''; repIframe.style.display='none'; }
   var tabRpt = document.getElementById('resultTab_리포트');
   if(tabRpt){ tabRpt.style.color='rgba(255,255,255,.35)'; tabRpt.innerHTML='📄 리포트'; }
   switchResultTab('판독');
