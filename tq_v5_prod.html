@@ -1086,6 +1086,7 @@ function loadSampleParam(d) {
   var url = window.location.pathname + '?tqdata=' + encodeURIComponent(JSON.stringify(d));
   window.location.href = url;
 }
+window.loadSampleParam = loadSampleParam;
 
 
 // 전역 변수 노출
@@ -4308,3 +4309,5 @@ if (DEV_BYPASS) {
 </script>
 </body>
 </html>
+
+       
