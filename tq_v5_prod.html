@@ -1449,11 +1449,11 @@ function renderResult(e,nm){
     <!-- 중앙 카드 (position:relative 기준점) -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
-      <!-- 학생 정보 카드 — 좌측 상단 -->
-      <div id="studentInfoSlot" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20"></div>
-
-      <!-- 좌측 카드: 정보처리습관 — JS가 habTitle 위치로 이동시킴 -->
-      <div id="ev-left-top" style="position:absolute;right:calc(100% + 40px);top:400px;width:300px;z-index:10"></div>
+      <!-- 좌측 컬럼: 학생정보 + 정보처리습관 — flex column으로 겹침 구조적 방지 -->
+      <div id="leftColWrap" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20;display:flex;flex-direction:column;gap:16px;">
+        <div id="studentInfoSlot"></div>
+        <div id="ev-left-top"></div>
+      </div>
 
       <!-- 우측 카드: 성적선행지수 / 독해속도 / 독해효율성 -->
       <div id="ev-right-top"    style="position:absolute;left:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
@@ -2863,11 +2863,7 @@ function postRenderSWOT(eng, inp) {
     flagDiv.appendChild(sp);
   });
   dstSlot.appendChild(flagDiv);
-  // flagDiv 삽입 완료 = studentInfoSlot 높이 최종 확정 → ev-left-top 즉시 재배치
-  requestAnimationFrame(function(){
-    if (typeof positionLeftCard === 'function') positionLeftCard();
-    setTimeout(function(){ if (typeof positionLeftCard === 'function') positionLeftCard(); }, 100);
-  });
+
   }
 
 
@@ -2896,23 +2892,7 @@ function postRenderSWOT(eng, inp) {
       }
     }
   }
-  // 좌측 카드 연쇄 밀어내기: studentInfoSlot → ev-left-top
-  function cascadeLeftCards() {
-    var GAP = 16;
-    var upper = document.getElementById('studentInfoSlot');
-    var lower  = document.getElementById('ev-left-top');
-    if (!upper || !lower) return;
-    var upperBottom = upper.getBoundingClientRect().bottom;
-    var lowerTop    = lower.getBoundingClientRect().top;
-    if (upperBottom + GAP > lowerTop) {
-      var heroBox = lower.offsetParent; // position:relative 부모
-      if (!heroBox) return;
-      var heroRect    = heroBox.getBoundingClientRect();
-      var curTop      = parseInt(lower.style.top) || 0;
-      var neededTop   = Math.round(upperBottom - heroRect.top) + GAP;
-      if (neededTop > curTop) lower.style.top = neededTop + 'px';
-    }
-  }
+  // cascadeLeftCards 제거 (flex-column 구조로 대체)
 
   requestAnimationFrame(function(){
     setTimeout(cascadeRightCards, 350);
@@ -2928,78 +2908,26 @@ function postRenderSWOT(eng, inp) {
       drawConnector('effDot',    'ev-right-bottom', 'left-to-left');
       drawConnectorToRightTop('habDot', 'ev-left-top');
 
-      // ── 좌측 카드 포지셔닝 (단순화) ──
-      // studentInfoSlot: top:0 고정 유지 (학생 정보 카드)
-      var infoSlot = document.getElementById('studentInfoSlot');
-      if (infoSlot) {
-        infoSlot.style.display = '';
-        infoSlot.style.top = '0px';
-      }
-
-      // ev-left-top (정보처리습관): studentInfoSlot 하단 아래에 배치 (겹침 방지 통합)
+      // 좌측(studentInfoSlot + ev-left-top)은 flex-column 구조로 겹침 방지 (CSS)    // 우측 카드 포지셔닝만 처리
       window.positionLeftCard = function positionLeftCard() {
         var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
-        var habTitle = document.getElementById('habTitle');
         var effTitle = document.getElementById('effTitle');
-        var leftCard = document.getElementById('ev-left-top');
         var rightCard= document.getElementById('ev-right-bottom');
         if (!heroBox) return;
-
         var heroRect = heroBox.getBoundingClientRect();
-
-        // ── 좌측: habTitle 위치 vs studentInfoSlot 하단 중 더 아래로 ──
-        if (leftCard) {
-          var habTop = 400; // 기본값
-          if (habTitle) {
-            var habRect = habTitle.getBoundingClientRect();
-            habTop = Math.round(habRect.top - heroRect.top);
-          }
-          // studentInfoSlot 실제 하단 측정
-          var infoSlotEl = document.getElementById('studentInfoSlot');
-          if (infoSlotEl) {
-            // offsetHeight: getBoundingClientRect보다 안정적 (렌더 전 측정 오류 방지)
-            var infoBottom = infoSlotEl.getBoundingClientRect().bottom;
-            var infoBot = Math.round(infoBottom - heroRect.top) + 24; // 24px 여백
-            habTop = Math.max(habTop, infoBot);
-          }
-          leftCard.style.top = habTop + 'px';
-          leftCard.style.marginTop = '0';
-        }
-
-        // 독해효율성 카드: effTitle과 같은 높이에 시작
         if (effTitle && rightCard) {
           var effRect = effTitle.getBoundingClientRect();
           rightCard.style.top = Math.round(effRect.top - heroRect.top) + 'px';
         }
-
-        // 독해속도 카드 — 성적선행지수 카드 하단 + 20px 간격
         var topCard = document.getElementById('ev-right-top');
         var midCard = document.getElementById('ev-right-mid');
         if (topCard && midCard) {
           var topBottom = topCard.getBoundingClientRect().bottom;
-          var heroTop   = heroRect.top;
-          midCard.style.top = Math.round(topBottom - heroTop + 20) + 'px';
+          midCard.style.top = Math.round(topBottom - heroRect.top + 20) + 'px';
         }
       }
-      // 초기 배치
-      setTimeout(positionLeftCard, 100);
-      setTimeout(positionLeftCard, 400);
-      setTimeout(positionLeftCard, 900);
-
-      // studentInfoSlot 크기 변화 감지 → ev-left-top 즉시 재조정
-      (function() {
-        var infoSlot = document.getElementById('studentInfoSlot');
-        var leftCard = document.getElementById('ev-left-top');
-        if (!infoSlot || !leftCard || typeof MutationObserver === 'undefined') return;
-        var obs = new MutationObserver(function() {
-          // 크기 변화 후 다음 프레임에 재측정
-          requestAnimationFrame(positionLeftCard);
-          setTimeout(positionLeftCard, 50);
-        });
-        obs.observe(infoSlot, { childList: true, subtree: true, attributes: true, characterData: true });
-        // 2초 후 감시 종료 (메모리 누수 방지)
-        setTimeout(function(){ obs.disconnect(); }, 2000);
-      })();
+      setTimeout(positionLeftCard, 250);
+      setTimeout(positionLeftCard, 600);
     }, 120);
   });
 
@@ -5838,7 +5766,7 @@ function buildLastPage(total) {
     +'<div style="font-size:11.5px;color:#94A3B8;line-height:1.9;text-align:center;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'
     +'<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 20px;">'
     +'<div style="font-size:11.5px;color:#94A3B8;line-height:2.0;text-align:center;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'
-    +'권장훈련은 TQ테스트 결과를 기반으로 추천된 최초 3과정입니다.<br>훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다.<br><br>'
+    +'훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다.<br><br>'
     +'<span style="color:#64748B;font-weight:600;">★ 독해력은 공부가 심화되는 고등학교 진학 후에 더 큰 영향을 미치기 때문에<br>중학교 졸업 전에 고급과정을 마치는 것을 최종 목표로 삼아야 합니다.</span>'
     +'</div>'
     +'</div>'
