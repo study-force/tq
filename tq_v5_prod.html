@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.38</span> · evidence재생성+슬롯제거</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.39</span> · 편집바동기화완성</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.38</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.39</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6153,6 +6153,17 @@ function unlockEditBar() {
         var rc = recommendCourse(_src.uiLevel||_src.level, _src.grade, _src.acc, _src.kor);
         currentActiveKeys = buildPrescFromCourse(rc).map(function(p){ return p.c; });
         currentCourseCode = rc;
+      } else {
+        // currentActiveKeys와 일치하는 코스 찾아 currentCourseCode 동기화
+        var _mc = '';
+        Object.keys(COURSES).forEach(function(code) {
+          var steps = COURSES[code].steps;
+          if (steps.length === currentActiveKeys.length &&
+              steps.every(function(s){ return currentActiveKeys.indexOf(s) > -1; })) {
+            _mc = code;
+          }
+        });
+        currentCourseCode = _mc;
       }
     }
   }
@@ -6215,8 +6226,8 @@ function selectCourse(code) {
   currentCourseCode = code;
   currentActiveKeys = course.steps.slice();
   aiReasonCache = {};
-  // 편집바 재렌더링
-  rebuildEditBar();
+  // 로드맵 반영 + 저장
+  applyEdit();
 }
 
 function renderEditBtns(container) {
@@ -6254,7 +6265,6 @@ function toggleProgram(key) {
   });
   currentCourseCode = matchedCode; // 정확히 일치하는 코스가 있으면 표시, 없으면 해제
   aiReasonCache = {};
-  rebuildEditBar();
   applyEdit();
 }
 
