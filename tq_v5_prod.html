@@ -1764,9 +1764,9 @@ gv("btnB").addEventListener("click",async function(){
         _tabRpt.style.color = '#34D399';
         _tabRpt.style.borderBottomColor = 'transparent';
         _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
-        // 판독 완료 → 적용 버튼 활성화
-        var _applyBtn = document.getElementById('btnApplyEdit');
-        if (_applyBtn) { _applyBtn.disabled=false; _applyBtn.style.opacity='1'; }
+        // 판독 완료 → 수정하기 버튼 활성화
+        editBarReady = true;
+        rebuildEditBar();
       } else {
         _tabRpt.style.color = 'rgba(255,255,255,.35)';
         _tabRpt.innerHTML = '📄 리포트';
@@ -3342,6 +3342,8 @@ function resetAll(){
   var oldEditBar = document.getElementById('editBar');
   if (oldEditBar) oldEditBar.remove();
   editMode = false;
+  editUnlocked = false;
+  editBarReady = false;
   switchResultTab('판독');
   var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
   closeReport();
@@ -5838,14 +5840,31 @@ function buildEditBar() {
       + '">' + p.key + '</button>';
   }).join('');
 
-  // 편집 잠금 시 버튼 비활성 스타일
-  var lockStyle = editUnlocked ? '' : 'pointer-events:none;';
+  // 읽기전용: 전체 알파 처리 / 편집 시: 불투명
+  var wrapOpacity  = editUnlocked ? '1' : '0.5';
+  var lockStyle    = editUnlocked ? '' : 'pointer-events:none;';
+
+  // 우측 버튼 — 3가지 상태
+  var rightBtn;
+  if (editUnlocked) {
+    // 편집 중: 완료 버튼
+    rightBtn = '<button onclick="lockEditBar()" style="padding:7px 16px;background:rgba(255,255,255,.1);color:#94A3B8;border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">✓ 완료</button>';
+  } else if (editBarReady) {
+    // 리포트 완료 + 읽기전용: 수정하기 활성
+    rightBtn = '<button onclick="unlockEditBar()" style="padding:7px 16px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">✏️ 수정하기</button>';
+  } else {
+    // 리포트 생성 전: 수정하기 비활성
+    rightBtn = '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">'
+      + '<button disabled style="padding:7px 16px;background:rgba(99,102,241,.25);color:rgba(255,255,255,.3);border:1px solid rgba(99,102,241,.2);border-radius:6px;font-size:11px;font-weight:600;cursor:not-allowed;font-family:inherit;white-space:nowrap;">✏️ 수정하기</button>'
+      + '<span style="font-size:9px;color:rgba(255,255,255,.3);white-space:nowrap;">판독 완료 후 수정 가능</span>'
+      + '</div>';
+  }
 
   bar.innerHTML =
-    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">'
+    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;opacity:' + wrapOpacity + ';transition:opacity .3s;">'
 
     // 레이블
-    +'<div style="font-size:11px;font-weight:700;color:#A78BFA;white-space:nowrap;flex-shrink:0;">권장 훈련 로드맵</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#A78BFA;white-space:nowrap;flex-shrink:0;opacity:1;">권장 훈련 로드맵</div>'
 
     // 좌측: 코스 선택
     +'<div style="flex-shrink:0;">'
@@ -5859,12 +5878,9 @@ function buildEditBar() {
     +'<div id="editBtns" style="' + lockStyle + '">' + stepBtns + '</div>'
     +'</div>'
 
-    // 우측: 편집 버튼
-    +'<div style="flex-shrink:0;">'
-    +(editUnlocked
-      ? '<button onclick="lockEditBar()" style="padding:7px 14px;background:rgba(255,255,255,.08);color:#94A3B8;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">완료</button>'
-      : '<button onclick="unlockEditBar()" style="padding:7px 14px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">✏️ 수정하기</button>'
-    )
+    // 우측: 상태별 버튼
+    +'<div style="flex-shrink:0;opacity:1;">'
+    + rightBtn
     +'</div>'
     +'</div>';
 
@@ -5929,17 +5945,23 @@ function toggleProgram(key) {
   if (idx > -1) {
     currentActiveKeys.splice(idx, 1);
   } else {
-    // 최대 7단계
     if (currentActiveKeys.length >= 7) { alert('최대 7단계까지 선택 가능합니다.'); return; }
-    // 전체 목록 순서 유지하며 삽입
     var allKeys = ALL_PROGRAMS.map(function(p){ return p.key; });
     var newList = allKeys.filter(function(k){ return currentActiveKeys.indexOf(k) > -1 || k === key; });
     currentActiveKeys = newList;
   }
-  // 선택 즉시 리포트에 반영
+  // 개별 조정 시 코스 선택 표시 해제 (어떤 묶음 코스와도 일치하지 않을 수 있음)
+  var matchedCode = '';
+  Object.keys(COURSES).forEach(function(code) {
+    var steps = COURSES[code].steps;
+    if (steps.length === currentActiveKeys.length &&
+        steps.every(function(s){ return currentActiveKeys.indexOf(s) > -1; })) {
+      matchedCode = code;
+    }
+  });
+  currentCourseCode = matchedCode; // 정확히 일치하는 코스가 있으면 표시, 없으면 해제
   aiReasonCache = {};
-  var container = document.querySelector('#editBtns');
-  if (container) renderEditBtns(container);
+  rebuildEditBar();
   applyEdit();
 }
 
@@ -6026,6 +6048,7 @@ function showToastRM(msg) {
 // 편집 모드 토글
 var editMode = false;
 var editUnlocked = false; // 읽기전용/편집모드 토글
+var editBarReady = false;  // 리포트 생성 완료 후 true
 function toggleEditMode(on) {
   editMode = (on !== undefined) ? on : !editMode;
   var existing = document.getElementById('editBar');
