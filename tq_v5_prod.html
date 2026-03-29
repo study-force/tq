@@ -674,7 +674,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.14</span> · 바그래프폭확대
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.16</span> · 블록위치이동
     </div>
 
   </div>
@@ -5290,7 +5290,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.14</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.16</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5327,7 +5327,7 @@ function buildPage1() {
     var on=habChecked[i];
     return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
       +'<span style="color:'+(on?"#cc0000":"#CBD5E1")+';font-size:15px;min-width:13px;line-height:1">'+(on?"●":"○")+'</span>'
-      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:'+(item==="모르는 단어가 없어도 이해가 잘 안됨"?"-0.05em":"-0.02em")+';white-space:nowrap">'+item+'</span></div>';
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:'+(item==="모르는 단어가 없어도 이해가 잘 안됨"?"-0.08em":"-0.02em")+';white-space:nowrap">'+item+'</span></div>';
   }).join('');
 
   var effRows = EFF_ITEMS.map(function(item,i){
@@ -5390,14 +5390,14 @@ function buildPage1() {
     +'</div></div>'
 
     // 열2
-    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em">'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:20px">'
     +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해습관</span></div>'
     +habitRows
     +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
     +'<span style="color:#1E293B;font-size:15px">잘못된 독해습관</span><span style="margin-left:auto;color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span></div></div></div>'
 
     // 열3
-    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em">'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:20px">'
     +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해효율성</span></div>'
     +effRows
     +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
@@ -5410,7 +5410,7 @@ function buildPage1() {
     // 하단: 차트 + 요인분석
     +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
     +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'+buildPolar(FACTORS,317)+'</div>'
-    +'<div style="padding-right:20px;padding-top:30px">'
+    +'<div style="padding-right:20px;padding-top:30px;padding-left:15px">'
     +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px">독해역량 요인분석</div>'
     +factorRows
     +'</div></div>'
