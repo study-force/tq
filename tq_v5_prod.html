@@ -578,8 +578,8 @@ details summary:hover{color:var(--tx2)}
   </div>
   <!-- 우측: 인쇄 버튼 (리포트 탭에서만 표시) -->
   <div id="headerPrintBtn" style="display:none;margin-left:auto;padding-right:16px">
+    <span style="font-size:10px;color:rgba(255,255,255,.4);margin-right:10px">여백: <strong style="color:rgba(255,255,255,.7)">없음</strong> 또는 <strong style="color:rgba(255,255,255,.7)">기본</strong> 권장</span>
     <button onclick="printReport()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
-    <span style="font-size:10px;color:rgba(255,255,255,.4);margin-left:8px">여백: <strong style="color:rgba(255,255,255,.7)">없음</strong> 또는 <strong style="color:rgba(255,255,255,.7)">기본</strong> 권장</span>
   </div>
 </div>
 <div id="v5panel_판독" style="display:block">
@@ -674,7 +674,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.18</span> · 슬롯박스높이균등
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.19</span> · 슬롯높이재조정+안내이동
     </div>
 
   </div>
@@ -5290,7 +5290,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.18</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.19</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5449,10 +5449,7 @@ function buildSlotBlock(i) {
     +'<div style="font-size:15.5px;line-height:2.1;color:#1A2332;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
     +(txt||'<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>')
     +'</div>'
-    +'</div>'
-    +'<div style="height:48px;flex-shrink:0;"></div>';
-    +'</div>'
-    +'<div style="height:48px;flex-shrink:0;"></div>';
+    +'</div>';
 }
 
 function buildDualSlotPage(a, b, pageNum, total) {
@@ -5467,12 +5464,12 @@ function buildDualSlotPage(a, b, pageNum, total) {
     +'<div style="height:62px;flex-shrink:0;"></div>'
 
     // 슬롯 A — 고정 높이로 B와 동일하게
-    +'<div style="height:475px;display:flex;flex-direction:column;">'
+    +'<div style="height:475px;display:flex;flex-direction:column;padding-bottom:12px;">'
     +buildSlotBlock(a)
     +'</div>'
 
     // 슬롯 B — 고정 높이
-    +'<div style="height:475px;display:flex;flex-direction:column;">'
+    +'<div style="height:475px;display:flex;flex-direction:column;padding-bottom:12px;">'
     +buildSlotBlock(b)
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 72px 44px;flex-shrink:0;">'
     +''
