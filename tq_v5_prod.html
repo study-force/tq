@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.33</span> · regex수정+판독슬롯+편집바동기화</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.34</span> · 백틱regex수정</div>
 
   </div>
 </div>
@@ -1256,7 +1256,7 @@ async function processOcrFile(file){
     });
     if(!resp.ok)throw new Error("OCR 서버 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
     let raw=await resp.text();
-    raw=raw.trim().replace(/^```[a-z]*\s*/,"").replace(/\s*```$/,"");
+    raw=raw.trim().replace(/^\x60\x60\x60[a-z]*\s*/,"").replace(/\s*\x60\x60\x60$/,"");
     const parsed=JSON.parse(raw);
     // 폼에 값 적용
     if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
@@ -1911,7 +1911,7 @@ gv("btnB").addEventListener("click",async function(){
       throw new Error(errMsg);
     }
     let raw=await resp.text();
-    raw=raw.trim().replace(/^```[a-z]*\s*/,"").replace(/\s*```$/,"");
+    raw=raw.trim().replace(/^\x60\x60\x60[a-z]*\s*/,"").replace(/\s*\x60\x60\x60$/,"");
     var _s=raw.indexOf("{"),_e=raw.lastIndexOf("}");
     if(_s>=0&&_e>_s)raw=raw.slice(_s,_e+1);
     var slots;
@@ -5558,7 +5558,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.33</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.34</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
