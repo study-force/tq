@@ -721,11 +721,14 @@ function showSavedResultToast(testDate) {
 
 // ── 판독 결과 저장 ──
 function saveTqResult(inp, eng, slots) {
-  if (!inp || !eng || !slots) return;
+  if (!inp || !eng) return;
+  // slots 없으면 빈 객체 전달 — DB의 기존 slot은 덮어쓰지 않도록 index.ts에서 처리
+  // (slots가 없을 땐 권장훈련 변경만 저장)
+  var _slots = slots || {};
   fetch(TQ_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
-    body: JSON.stringify({ action: "save", inp: inp, eng: eng, slots: slots })
+    body: JSON.stringify({ action: "save", inp: inp, eng: eng, slots: _slots })
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
@@ -5091,6 +5094,7 @@ function injectTqDataAndRun(d) {
         var rv = document.getElementById('resultView');
         if (rv && saved.eng && saved.inp) {
           try { rv.innerHTML = renderResult(saved.eng, saved.inp.name || d.name); } catch(e){ console.error('[renderResult]',e); }
+          try { runEntryAnimation(rv, saved.eng, saved.inp); } catch(e){ console.error('[runEntryAnimation]',e); }
         }
 
         // 5단계: 버튼 활성화
@@ -5116,7 +5120,18 @@ function injectTqDataAndRun(d) {
 
         // 8단계: 리포트 렌더
         window.__reportRendered = false;
-        try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]',e); }
+        // slots 유효성 보장: window.__TQ_SLOTS가 비어있으면 saved.slots로 재세팅
+        if (!window.__TQ_SLOTS || !window.__TQ_SLOTS.slot1) {
+          if (saved.slots && saved.slots.slot1) {
+            window.__TQ_SLOTS = saved.slots;
+            console.log('[TQ] slots 재세팅 완료');
+          }
+        }
+        if (window.__TQ_SLOTS && window.__TQ_SLOTS.slot1) {
+          try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]',e); }
+        } else {
+          console.warn('[TQ] slots 없음 — renderReportTab 건너뜀');
+        }
 
         // 9단계: 탭 상태 재확인 (renderReportTab이 덮어쓸 수 있으므로 한 번 더)
         setTimeout(function() {
