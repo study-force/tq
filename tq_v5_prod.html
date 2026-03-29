@@ -2891,9 +2891,29 @@ function postRenderSWOT(eng, inp) {
       }
     }
   }
+  // 좌측 카드 연쇄 밀어내기: studentInfoSlot → ev-left-top
+  function cascadeLeftCards() {
+    var GAP = 16;
+    var upper = document.getElementById('studentInfoSlot');
+    var lower  = document.getElementById('ev-left-top');
+    if (!upper || !lower) return;
+    var upperBottom = upper.getBoundingClientRect().bottom;
+    var lowerTop    = lower.getBoundingClientRect().top;
+    if (upperBottom + GAP > lowerTop) {
+      var heroBox = lower.offsetParent; // position:relative 부모
+      if (!heroBox) return;
+      var heroRect    = heroBox.getBoundingClientRect();
+      var curTop      = parseInt(lower.style.top) || 0;
+      var neededTop   = Math.round(upperBottom - heroRect.top) + GAP;
+      if (neededTop > curTop) lower.style.top = neededTop + 'px';
+    }
+  }
+
   requestAnimationFrame(function(){
     setTimeout(cascadeRightCards, 350);
-    setTimeout(cascadeRightCards, 700); // 렌더 완료 후 재확인
+    setTimeout(cascadeRightCards, 700);
+    setTimeout(cascadeLeftCards, 400);   // studentInfoSlot 렌더 완료 후
+    setTimeout(cascadeLeftCards, 800);   // 재확인
   });
 
   // ── 배지 → 카드 연결선 (DOM 렌더 후 실행) ──
