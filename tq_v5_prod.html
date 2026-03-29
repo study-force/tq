@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.40</span> · 편집바-리포트동기화완성</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.41</span> · applyEdit단순화</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.40</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.41</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6324,27 +6324,49 @@ function requestAiReasons() {
 }
 
 function applyEdit() {
+  if (!currentActiveKeys.length) return;
   var TOTAL = 4;
+
+  // 1. currentActiveKeys → newPresc 변환
   var newPresc = currentActiveKeys.map(function(k, i){ return { p: i+1, c: k }; });
 
-  // 모든 D 소스에 presc 동기화 (renderReportTab이 덮어쓰지 못하도록)
+  // 2. 모든 presc 소스 동기화
   if (D) D.presc = newPresc;
   if (window.__RPT_D) window.__RPT_D.presc = newPresc;
   if (window.__eng) window.__eng.presc = newPresc;
 
-  // rptPageWrap이 있으면 로드맵 페이지 재렌더링
+  // 3. currentCourseCode 동기화 (currentActiveKeys와 일치하는 코스 찾기)
+  var _mc = '';
+  Object.keys(COURSES).forEach(function(code) {
+    var steps = COURSES[code].steps;
+    if (steps.length === currentActiveKeys.length &&
+        steps.every(function(s){ return currentActiveKeys.indexOf(s) > -1; })) {
+      _mc = code;
+    }
+  });
+  currentCourseCode = _mc;
+
+  // 4. 리포트 로드맵 페이지 재렌더 (rptPageWrap에 children 있으면)
   var wrap = document.getElementById('rptPageWrap');
   if (wrap && wrap.children.length > 0) {
-    var firstPage = wrap.lastChild;
     var newPage = buildLastPage(TOTAL, currentActiveKeys.slice());
-    wrap.replaceChild(newPage, firstPage);
+    wrap.replaceChild(newPage, wrap.lastChild);
   }
+
+  // 5. 편집바 재렌더 (editBar가 DOM에 있으면)
+  var existingBar = document.getElementById('editBar');
+  if (existingBar) {
+    var _savedD = D;
+    D = window.__RPT_D || _savedD;
+    var newBar = buildEditBar();
+    D = _savedD;
+    newBar.style.cssText = existingBar.style.cssText;
+    existingBar.replaceWith(newBar);
+  }
+
   showToastRM('로드맵이 업데이트되었습니다.');
 
-  // 편집바 최신 presc 반영 (코스 선택 버튼 동기화 포함)
-  try { if (document.getElementById('editBar')) rebuildEditBar(); } catch(e){}
-
-  // 로드맵 변경 즉시 저장
+  // 6. DB 저장
   if (window.__inp && window.__eng && window.__TQ_SLOTS) {
     saveTqResult(window.__inp, window.__eng, window.__TQ_SLOTS);
   }
