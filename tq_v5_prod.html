@@ -579,6 +579,7 @@ details summary:hover{color:var(--tx2)}
   <!-- 우측: 인쇄 버튼 (리포트 탭에서만 표시) -->
   <div id="headerPrintBtn" style="display:none;margin-left:auto;padding-right:16px">
     <button onclick="printReport()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
+    <span style="font-size:10px;color:rgba(255,255,255,.4);margin-left:8px">여백: <strong style="color:rgba(255,255,255,.7)">없음</strong> 또는 <strong style="color:rgba(255,255,255,.7)">기본</strong> 권장</span>
   </div>
 </div>
 <div id="v5panel_판독" style="display:block">
@@ -673,7 +674,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.10</span> · 헤더높이+로고폰트+로고크기
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.11</span> · 인쇄안내+바그래프수정
     </div>
 
   </div>
@@ -3130,22 +3131,22 @@ function rpBuildResultHTML(eng, inp) {
           +'</div>'
           +'<div style="font-size:128px;font-weight:900;color:'+accColor+';line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif;">'+avgAcc+'</div>'
           +'<div style="margin-top:8px;width:calc(65% - 30px);">'
-            +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
-              +'<span style="font-size:23px;color:#111;font-weight:400;line-height:1;font-family:Tahoma,sans-serif;">'+fct+'</span>'
-              +'<span style="font-size:23px;color:#111;font-weight:400;line-height:1;font-family:Tahoma,sans-serif;">'+str_+'</span>'
+            +'<div style="display:flex;justify-content:space-between;margin-bottom:3px;">'
+              +'<span style="font-size:11px;color:#64748B;">사실적 이해</span>'
+              +'<span style="font-size:11px;color:#64748B;">구조적 이해</span>'
             +'</div>'
-            +'<div style="width:100%;display:flex;height:10px;border-radius:4px;overflow:hidden;background:#E2E8F0;">'
-              +'<div style="flex:1;display:flex;justify-content:flex-end;background:transparent;">'
-                +'<div style="width:'+fct+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px;"></div>'
+            +'<div style="display:flex;align-items:center;gap:6px;">'
+              +'<span style="font-size:20px;font-weight:700;color:#3B82F6;font-family:Tahoma,sans-serif;min-width:28px;text-align:right;">'+fct+'</span>'
+              +'<div style="flex:1;display:flex;height:8px;border-radius:4px;overflow:hidden;background:#E2E8F0;">'
+                +'<div style="flex:1;display:flex;justify-content:flex-end;background:transparent;">'
+                  +'<div style="width:'+fct+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px;"></div>'
+                +'</div>'
+                +'<div style="width:2px;background:#fff;flex-shrink:0;"></div>'
+                +'<div style="flex:1;display:flex;justify-content:flex-start;background:transparent;">'
+                  +'<div style="width:'+str_+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0;"></div>'
+                +'</div>'
               +'</div>'
-              +'<div style="width:1px;background:#94A3B8;flex-shrink:0;"></div>'
-              +'<div style="flex:1;display:flex;justify-content:flex-start;background:transparent;">'
-                +'<div style="width:'+str_+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0;"></div>'
-              +'</div>'
-            +'</div>'
-            +'<div style="display:flex;justify-content:space-between;margin-top:4px;">'
-              +'<span style="font-size:12px;color:#666;font-weight:400;">사실적 이해</span>'
-              +'<span style="font-size:12px;color:#666;font-weight:400;">구조적 이해</span>'
+              +'<span style="font-size:20px;font-weight:700;color:#84CC16;font-family:Tahoma,sans-serif;min-width:28px;text-align:left;">'+str_+'</span>'
             +'</div>'
           +'</div>'
         +'</div>'
@@ -5289,7 +5290,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.10</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.11</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
