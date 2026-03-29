@@ -2423,7 +2423,7 @@ function showResultPage(nm) {
   if (!inp || !res) return;
   // 헤더에 학생이름 + 탭바 표시
   var nameEl = document.getElementById('result-student-name');
-  if (nameEl) { nameEl.textContent = nm || ''; nameEl.style.display = nm ? 'block' : 'none'; }
+  if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
   var tabBar = document.getElementById('resultTabBar');
   if (tabBar) tabBar.style.display = 'flex';
   // 전환 애니메이션
