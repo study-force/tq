@@ -1443,22 +1443,17 @@ function renderResult(e,nm){
 
 
 
-  <!-- ══ 메인 히어로 존 ══ -->
-  <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
+  <!-- ══ 메인 히어로 존 — radarZone과 동일한 flex 구조 ══ -->
+  <div id="heroZone" style="position:relative;padding:0;z-index:1;margin-bottom:24px;display:flex;justify-content:center">
 
-    <!-- 중앙 카드 (position:relative 기준점) -->
+    <!-- 좌측: 학생정보 + 정보처리습관 (flex-column 형제, 겹침 불가) -->
+    <div id="leftColWrap" style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-right:40px;padding-top:0;">
+      <div id="studentInfoSlot"></div>
+      <div id="ev-left-top"></div>
+    </div>
+
+    <!-- 중앙 카드 -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
-
-      <!-- 좌측: 학생정보 + 정보처리습관 (flex-column, position:absolute) -->
-      <div id="leftColWrap" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20;display:flex;flex-direction:column;gap:16px;">
-        <div id="studentInfoSlot"></div>
-        <div id="ev-left-top"></div>
-      </div>
-
-      <!-- 우측 카드: 성적선행지수 / 독해속도 / 독해효율성 -->
-      <div id="ev-right-top"    style="position:absolute;left:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
-      <div id="ev-right-mid"    style="position:absolute;left:calc(100% + 40px);top:220px;width:300px;z-index:10"></div>
-      <div id="ev-right-bottom" style="position:absolute;left:calc(100% + 40px);top:440px;width:300px;z-index:10"></div>
 
       <!-- 독해정확도 -->
       <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
@@ -1538,6 +1533,13 @@ function renderResult(e,nm){
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 우측: 성적선행지수 / 독해속도 / 독해효율성 (flex-column 형제, 겹침 불가) -->
+    <div id="rightColWrap" style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-left:40px;padding-top:20px;">
+      <div id="ev-right-top"></div>
+      <div id="ev-right-mid"></div>
+      <div id="ev-right-bottom"></div>
     </div>
 
   </div>
@@ -2690,18 +2692,7 @@ function postRenderSWOT(eng, inp) {
     });
   }
 
-  // 우측 카드 top 순차 배치 (렌더 후)
-  setTimeout(function() {
-    var GAP = 12;
-    var rightIds = ['ev-right-top', 'ev-right-mid', 'ev-right-bottom'];
-    var rightY = 20;
-    rightIds.forEach(function(id) {
-      var el = document.getElementById(id);
-      if (!el || !el.innerHTML.trim()) return;
-      el.style.top = rightY + 'px';
-      rightY += el.offsetHeight + GAP;
-    });
-  }, 600);
+  // 우측 카드: rightColWrap flex-column 자동 배치
 
 
   var evidenceEl = document.getElementById('evidenceCards');
@@ -2847,32 +2838,7 @@ function postRenderSWOT(eng, inp) {
 
 
 
-  // 우측 카드 연쇄 밀어내기 — 성적선행지수 → 독해속도 → 독해효율성
-  function cascadeRightCards() {
-    var GAP = 16;
-    var cards = [
-      document.getElementById('ev-right-top'),
-      document.getElementById('ev-right-mid'),
-      document.getElementById('ev-right-bottom')
-    ];
-    for (var i = 0; i < cards.length - 1; i++) {
-      var upper = cards[i];
-      var lower = cards[i+1];
-      if (!upper || !lower) continue;
-      var upperBottom = upper.getBoundingClientRect().bottom;
-      var lowerTop    = lower.getBoundingClientRect().top;
-      if (upperBottom + GAP > lowerTop) {
-        var diff   = upperBottom + GAP - lowerTop;
-        var curTop = parseInt(lower.style.top) || 0;
-        lower.style.top = (curTop + diff) + 'px';
-        i = -1;
-      }
-    }
-  }
-  requestAnimationFrame(function(){
-    setTimeout(cascadeRightCards, 350);
-    setTimeout(cascadeRightCards, 700);
-  });
+  // cascadeRightCards 제거 — rightColWrap flex-column 자동 배치
 
   // ── 배지 → 카드 연결선 (DOM 렌더 후 실행) ──
   requestAnimationFrame(function(){
@@ -2885,20 +2851,8 @@ function postRenderSWOT(eng, inp) {
       // 좌측(studentInfoSlot + ev-left-top)은 flex-column 구조로 겹침 방지 (CSS)    // 우측 카드 포지셔닝만 처리
       window.positionLeftCard = function positionLeftCard() {
         var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
-        var effTitle = document.getElementById('effTitle');
-        var rightCard= document.getElementById('ev-right-bottom');
         if (!heroBox) return;
-        var heroRect = heroBox.getBoundingClientRect();
-        if (effTitle && rightCard) {
-          var effRect = effTitle.getBoundingClientRect();
-          rightCard.style.top = Math.round(effRect.top - heroRect.top) + 'px';
-        }
-        var topCard = document.getElementById('ev-right-top');
-        var midCard = document.getElementById('ev-right-mid');
-        if (topCard && midCard) {
-          var topBottom = topCard.getBoundingClientRect().bottom;
-          midCard.style.top = Math.round(topBottom - heroRect.top + 20) + 'px';
-        }
+        // 우측 카드: rightColWrap flex-column 자동 배치
       }
       setTimeout(positionLeftCard, 250);
       setTimeout(positionLeftCard, 600);
