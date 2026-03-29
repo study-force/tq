@@ -495,828 +495,41 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
+<div id="page-input" style="display:flex;align-items:center;justify-content:center;height:calc(100vh - 40px);background:var(--bg)">
+  <div style="text-align:center;color:#94A3B8;padding:40px;max-width:480px">
+    <div style="font-size:48px;margin-bottom:16px">🔒</div>
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">접근 권한이 없습니다</div>
+    <div style="font-size:13px;line-height:1.8;margin-bottom:32px">학원 관리 시스템에서 [결과판독] 버튼을 통해 접근해 주세요.</div>
+    <div style="font-size:11px;font-weight:700;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">테스트용 샘플</div>
+    <div id="sampleBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px">실제 운영 시 학원 관리 시스템에서 자동으로 데이터가 전달됩니다</div>
+  </div>
+</div>
 
 <div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative">
-  <div style="position:sticky;top:0;z-index:50;padding:10px 22px;background:rgba(2,6,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1);display:flex;align-items:center;gap:12px">
-
+  <div style="position:sticky;top:0;z-index:50;padding:10px 22px;background:rgba(2,6,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1);display:flex;align-items:center;gap:8px">
     <div id="result-student-name" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)"></div>
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
-      <button id="btnB2" disabled
-        onclick="document.getElementById('btnB').click()"
-        style="background:linear-gradient(135deg,#7C3AED,#8B5CF6);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.5;transition:all .2s"
-        onmouseover="if(!this.disabled)this.style.opacity='1'"
-        onmouseout="if(!this.disabled)this.style.opacity='0.9'">
-        ✦ 판독문 생성
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <button class="btn bB" id="btnB" disabled style="margin:0;padding:7px 14px;font-size:12px">② 판독문 생성 — Claude AI</button>
+      <button id="btnR" disabled
+        style="margin:0;padding:7px 14px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;opacity:.95">
+        📄 학부모 리포트 출력
+      </button>
+      <button id="btnReset"
+        style="margin:0;padding:7px 12px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit">
+        🔄 다음 학생
       </button>
     </div>
   </div>
+  <div id="emptyView" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--tx3)">
+    <div style="font-size:32px;margin-bottom:12px">⏳</div>
+    <div style="font-size:14px">분석 중...</div>
+  </div>
+  <div class="err" id="errBox" style="margin:8px 22px"></div>
   <div id="resultView" style="padding:20px 0"></div>
 </div></div>
 
 <!-- 학부모 리포트 모달 -->
-
-<!-- 이미지 미리보기 전역 컨테이너 (JS로 resultView 안으로 이동) -->
-<div id="imgPreviewWrap" style="display:none"><img id="imgPreview" src="" alt=""><button onclick="clearImg()" style="display:none">✕</button></div>
-
-<script>
-
-// ══════════════════════════════════════════════════════
-// ★ 배포 설정 — 이 두 줄만 수정하면 됩니다 ★
-// ══════════════════════════════════════════════════════
-var TQ_API_URL   = "https://dtktaemqssvglwgvttqq.supabase.co/functions/v1/tq-engine";
-var TQ_API_TOKEN = "sf_internal_2024";
-
-// ── 설정 검증 ──
-(function() {
-  if(TQ_API_URL.indexOf("YOUR_PROJECT") > -1 || TQ_API_TOKEN === "YOUR_ACADEMY_TOKEN") {
-    document.addEventListener("DOMContentLoaded", function() {
-      var overlay = document.createElement("div");
-      overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:'Noto Sans KR',sans-serif";
-      overlay.innerHTML = '<div style="width:48px;height:48px;background:linear-gradient(135deg,#8B5CF6,#0BA98E);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">TQ</div>'
-        + '<div style="font-size:18px;font-weight:700;color:#fff">설정이 필요합니다</div>'
-        + '<div style="font-size:13px;color:#94A3B8;text-align:center;line-height:1.8">tq_v5_prod.html 파일을 열어<br><span style="color:#A78BFA;font-weight:600">TQ_API_URL</span> 과 <span style="color:#A78BFA;font-weight:600">TQ_API_TOKEN</span> 을<br>본사에서 발급받은 값으로 수정해주세요.</div>'
-        + '<div style="font-size:11px;color:#475569;background:#0c1427;padding:10px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">배포 가이드 문서 참조 → 724번째 줄 수정</div>';
-      document.body.appendChild(overlay);
-    });
-  }
-})();
-// ══════════════════════════════════════════════════════
-
-
-// ── 프로그램 데이터 ──
-const PROGRAMS = {
-  // 국어
-  독해포스_초급_예비:  { name:"독해포스 - 초급", course:"예비", area:"국어", sessions:60, period:"3~5개월", grade:"초등 전체" },
-  독해포스_초급_기본:  { name:"독해포스 - 초급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"초등 3~4학년" },
-  독해포스_초급_심화:  { name:"독해포스 - 초급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"초등 5~6학년" },
-  독해포스_중급_예비:  { name:"독해포스 - 중급", course:"예비", area:"국어", sessions:60, period:"3~5개월", grade:"중등 전체" },
-  독해포스_중급_기본:  { name:"독해포스 - 중급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"중등 1~2학년" },
-  독해포스_중급_심화:  { name:"독해포스 - 중급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"중등 2~3학년" },
-  독해포스_중급_예비보완:{ name:"독해포스 - 중급", course:"예비 보완", area:"국어", sessions:60, period:"3~5개월", grade:"고등 전체" },
-  독해포스_고급_기본:  { name:"독해포스 - 고급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"고등 1~2학년" },
-  독해포스_고급_심화:  { name:"독해포스 - 고급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"고등 2~3학년" },
-  비문학독서클럽:      { name:"비문학 독서클럽", course:"분야 선택", area:"국어", sessions:50, period:"2개월", grade:"초등 2~4학년" },
-  // 수학
-  수리포스_직관연산: { name:"수리포스", course:"직관력 연산", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
-  수리포스_사고연산: { name:"수리포스", course:"사고력 연산", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
-  수리포스_직관도형: { name:"수리포스", course:"직관력 도형", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
-  수리포스_사고도형: { name:"수리포스", course:"사고력 도형", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
-  // 영어
-  영어독해포스_중급_기본: { name:"영어독해포스 - 중급", course:"기본", area:"영어", sessions:60, period:"3~5개월", grade:"중등 1~2학년" },
-  영어독해포스_중급_심화: { name:"영어독해포스 - 중급", course:"심화", area:"영어", sessions:60, period:"3~5개월", grade:"중등 2~3학년" },
-  영어독해포스_고급_기본: { name:"영어독해포스 - 고급", course:"기본", area:"영어", sessions:60, period:"3~5개월", grade:"고등 1~2학년" },
-  영어독해포스_고급_심화: { name:"영어독해포스 - 고급", course:"심화", area:"영어", sessions:60, period:"3~5개월", grade:"고등 2~3학년" },
-  리스닝포스_1: { name:"리스닝포스", course:"세션 1", area:"영어", sessions:30, period:"2개월", grade:"초등" },
-  빈칸추론_베이직: { name:"빈칸추론", course:"베이직코스", area:"영어", sessions:30, period:"2개월", grade:"고등" },
-  // 보카
-  매직보카_초등1: { name:"매직보카 초등", course:"레벨1", area:"어휘", sessions:15, period:"1개월", grade:"초등 3~5학년" },
-  매직보카_초등2: { name:"매직보카 초등", course:"레벨2", area:"어휘", sessions:15, period:"1개월", grade:"초등 6학년" },
-  매직보카_중학1: { name:"매직보카 중학", course:"레벨1~2", area:"어휘", sessions:50, period:"2개월", grade:"중1" },
-  매직보카_중학3: { name:"매직보카 중학", course:"레벨3~4", area:"어휘", sessions:50, period:"2개월", grade:"중2" },
-  매직보카_중학5: { name:"매직보카 중학", course:"레벨5~6", area:"어휘", sessions:50, period:"2개월", grade:"중3" },
-  매직보카_고등1: { name:"매직보카 고등", course:"레벨1~2", area:"어휘", sessions:60, period:"2개월", grade:"고1~2" },
-  매직보카_고등3: { name:"매직보카 고등", course:"레벨3~4", area:"어휘", sessions:60, period:"2개월", grade:"고1~2" },
-  매직보카_고등파이널: { name:"매직보카 고등", course:"파이널", area:"어휘", sessions:15, period:"1개월", grade:"수능 준비" },
-  // 특목
-  후엠아이_1: { name:"후엠아이 (Who Am I)", course:"시즌 1", area:"특목", sessions:50, period:"6개월", grade:"특목고 준비", special:true },
-  딥앤와이드_1: { name:"딥앤와이드 (Deep & Wide)", course:"시즌 1", area:"특목", sessions:50, period:"6개월", grade:"특목고 준비", special:true },
-};
-
-// ── 프로그램 추천 엔진 ──
-// 기준: acc 낮음(<50) / 보통(50~79) / 높음(80+) × 학제·학년
-function recommendPrograms(eng) {
-  var level = eng.uiLevel || eng.level || "중등";
-  var grade = parseInt(eng.grade) || 1;
-  var acc   = eng.acc || 0;
-  var inf   = eng.inf || 0;
-  var wm    = eng.wm  || 0;
-  var recs  = [];
-
-  // acc 구간
-  var accLow  = acc < 50;
-  var accMid  = acc >= 50 && acc < 80;
-  var accHigh = acc >= 80;
-
-  // 초등: 1~4학년 vs 5~6학년
-  var isElemLow  = (level === "초등" && grade <= 4);
-  var isElemHigh = (level === "초등" && grade >= 5);
-  var isMiddle   = (level === "중등");
-  var isHigh     = (level === "고등");
-  var grade12    = (grade <= 2);
-  var grade23    = (grade >= 2);
-
-  function add(key, reason) {
-    var p = PROGRAMS[key];
-    if (p) recs.push(Object.assign({}, p, {key, reason}));
-  }
-
-  // ── 독해포스 ──
-  // 초등 학년별 세분화
-  // 1~2학년: 테스트 대상 외 → 독해포스 없음 (비문학독서클럽만)
-  // 3학년: acc<80 → 비문학독서클럽만 / acc≥80 → 독해포스 초급
-  // 4학년 이상: acc<50 → 예비+비문학병행 / acc 50~79 → 기본/심화 / acc≥80 → 중급예비
-  if (isElemLow || isElemHigh) {
-    if (grade <= 2) {
-      // 독해포스 없음, 비문학독서클럽만 (아래 섹션에서 처리)
-    } else if (grade === 3) {
-      if (accHigh) {
-        add("독해포스_초급_예비", "3학년 고역량 — 초급 예비 과정으로 독해 훈련 시작");
-      }
-      // acc<80이면 비문학독서클럽만 (아래 섹션에서 처리)
-    } else if (grade <= 4) {
-      // 4학년: acc 무관 초급 예비
-      add("독해포스_초급_예비", "초등 독해 훈련 시작 — 초급 예비 과정");
-    } else if (grade === 5) {
-      // 5학년
-      if (accHigh) {
-        add("독해포스_중급_예비", "5학년 고역량 — 중등 수준 독해력 선행 준비 권장");
-      } else {
-        add("독해포스_초급_예비", "5학년 독해 기초 훈련 — 초급 예비 과정");
-      }
-    } else {
-      // 6학년
-      if (accHigh && wm >= 40) {
-        add("독해포스_중급_예비", "6학년 고역량 — 중등 수준 독해력 선행 준비 권장");
-      } else {
-        add("독해포스_초급_예비", "6학년 독해 기초 훈련 — 초급 예비 과정");
-      }
-    }
-
-  } else if (isMiddle) {
-    // acc ≤ 40: 학년 무관 중급 예비
-    // 중1 + acc 50~79: 중급 예비
-    // 중1 + acc ≥ 80: 예비보완 + 중급 기본
-    // 중2,3 + acc 50~79: 예비보완 + 중급 기본
-    // 중2,3 + acc ≥ 80: 예비보완 + 중급 심화
-    if (acc <= 40) {
-      add("독해포스_중급_예비", "독해 기초 역량 형성 훈련");
-    } else if (grade === 1) {
-      if (accHigh) {
-        add("독해포스_중급_예비보완", "중1 고역량 — 중급 심화 대비 예비 보완");
-        add("독해포스_중급_기본",    "중급 기본 과정 병행 훈련");
-      } else {
-        add("독해포스_중급_예비", "중1 — 중급 예비 과정으로 탄탄하게 시작");
-      }
-    } else {
-      // 중2, 중3
-      if (accHigh) {
-        add("독해포스_중급_예비보완", "중2~3 고역량 — 고급 과정 대비 예비 보완");
-        add("독해포스_중급_심화",    "중급 심화 과정 병행 훈련");
-      } else {
-        add("독해포스_중급_예비보완", "중2~3 — 예비 보완 후 기본 과정 진입");
-        add("독해포스_중급_기본",    "중급 기본 과정 병행 훈련");
-      }
-    }
-
-  } else if (isHigh) {
-    if (acc <= 40) {
-      // 고1,2,3 공통 — 예비보완 + 중급기본 (몰입훈련 권장)
-      add("독해포스_중급_예비보완", "고등 독해 기초 보완 훈련");
-      add("독해포스_중급_기본",    "예비보완과 병행하는 중급 기본 과정");
-    } else if (accHigh) {
-      // 80 이상 — 고급기본
-      add("독해포스_고급_기본", "고역량 — 고급 독해 과정");
-    } else if (grade === 1) {
-      // 고1 + 50~79 — 예비보완 + 중급심화
-      add("독해포스_중급_예비보완", "고1 — 예비 보완 후 심화 과정 진입");
-      add("독해포스_중급_심화",    "중급 심화 과정 병행 훈련");
-    } else {
-      // 고2,3 + 50~79 — 중급심화
-      add("독해포스_중급_심화", "고2~3 — 중급 심화 독해 훈련");
-    }
-  }
-
-  // ── 비문학 독서클럽 ──
-  // 1~2학년: 항상 추천
-  // 3학년: acc < 80일 때 추천
-  // 4학년 이상: acc < 50일 때 독해포스와 병행 추천
-  if ((isElemLow || isElemHigh) && grade <= 2) {
-    add("비문학독서클럽", "초등 1~2학년 — 독해 훈련 전 비문학 독서 경험 쌓기 권장");
-  } else if ((isElemLow || isElemHigh) && grade === 3 && !accHigh) {
-    add("비문학독서클럽", "3학년 권장 — 비문학 독서 경험을 먼저 쌓아 독해력의 기반 형성");
-  } else if (isElemLow && grade === 4 && accLow) {
-    add("비문학독서클럽", "독해 기초 훈련과 병행하여 비문학 독서 경험 확장");
-  } else if (isElemLow && grade === 5 && acc <= 30) {
-    add("비문학독서클럽", "5학년 독해 기초 훈련과 병행하여 비문학 독서 경험 확장");
-  }
-
-  // ── 특목: acc 80+ + inf 65+ ──
-  if (accHigh && inf >= 65 && (isMiddle || isElemHigh)) {
-    add("후엠아이_1", "높은 독해역량과 추론능력 — 특목고 진학 준비 가능 (별도 상담 필요)");
-  }
-
-  return recs;
-}
-window.recommendPrograms = recommendPrograms;
-
-(function(){
-
-// ── 상수 ──
-const SE=["매우잘함","잘함","보통","노력요함","-"];
-const SM=["90점 이상","80~89점","70~79점","60~69점","60점 미만","-"];
-const SH=["1등급","2등급","3등급","4등급","5등급 이하","-"];
-const SMAP={"90점 이상":90,"80~89점":80,"70~79점":70,"60~69점":60,"60점 미만":50,"1등급":90,"2등급":80,"3등급":70,"4등급":60,"5등급 이하":50,"매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null};
-
-const FACTORS=[
-  {id:"sVoc",lb:"어휘능력",min:0,max:100,step:5,def:45},
-  {id:"sWm", lb:"워킹메모리",min:20,max:100,step:10,def:30},
-  {id:"sInf",lb:"추론능력",min:0,max:100,step:5,def:50}
-];
-
-const HAB_ITEMS=[
-  "이미 읽은 곳을 다시 읽음",
-  "읽다가 글줄을 자주 놓침",
-  "짚어가며 읽거나 밑줄을 그음",
-  "단어 단위로 또박또박 읽음",
-  "소리 내어 읽거나 속발음을 함",
-  "긴 문장은 이해가 잘 안됨",
-  "긴 문장은 훑어 읽기를 함",
-  "긴 글은 내용 기억이 잘 안남",
-  "모르는 단어가 없어도 이해가 잘 안됨",
-  "글 읽는 속도가 느린 편임"
-];
-const EFF_ITEMS=[
-  "독서량이 많이 부족한 편이다",
-  "비문학 책은 어렵게 느껴진다",
-  "이해력이 부족한 편이다",
-  "시험에서 시간에 쫓긴다",
-  "문제를 이해를 못해서 틀린다",
-  "서술형 평가 시험 점수가 낮다",
-  "지문형 수학문제가 어렵다",
-  "국어 시험 점수가 유난히 낮다",
-  "두꺼운 책을 읽은 경험이 없다",
-  "밤새워 책을 읽은 경험이 없다"
-];
-
-// ── 초기화 ──
-// 학년 드롭다운 — 학제별
-function buildGrade(){
-  var lv=document.getElementById("iLevel").value;
-  var gradeEl=document.getElementById("iGrade");
-  var cur=gradeEl.value;
-  var opts;
-  if(lv==="초등") opts=["1학년","2학년","3학년","4학년","5학년","6학년"];
-  else if(lv==="중등") opts=["1학년","2학년","3학년"];
-  else if(lv==="고등") opts=["1학년","2학년","3학년"];
-  else opts=["해당없음"];
-  gradeEl.innerHTML=opts.map(function(o,i){
-    var v=lv==="일반"?"0":(i+1).toString();
-    return'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+(lv==="일반"?"해당없음":o)+'</option>';
-  }).join("");
-  // 기본값 설정
-  if(!gradeEl.value) gradeEl.selectedIndex=0;
-}
-
-// 내부 매핑: UI 학제값 → 엔진 레벨 키
-function uiLevelToEngineLevel(uiLv, gradeNum){
-  if(uiLv==="초등"){return gradeNum<=4?"초저":"초고";}
-  if(uiLv==="중등")return "중등";
-  if(uiLv==="고등")return "고등";
-  return "일반";
-}
-
-function onLevelChange(){
-  buildScores();
-  buildGrade();
-  document.getElementById("btnB").disabled=true;
-}
-
-function buildScores(){
-  var lv=document.getElementById("iLevel").value;
-  const opts=lv==="고등"?SH:lv==="초등"?SE:lv==="중등"?SM:SE;
-  document.getElementById("scoreArea").innerHTML=["국어","영어","수학"].map((n,i)=>
-    `<div><label>${n}</label><select id="sS${i}">${opts.map(o=>`<option${o==="-"?" selected":""}>${o}</option>`).join("")}</select></div>`
-  ).join("");
-}
-
-function buildFactors(){
-  document.getElementById("factorSliders").innerHTML=FACTORS.map(f=>
-    `<div style="margin-bottom:9px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-        <label style="margin:0">${f.lb}</label>
-        <span id="${f.id}V" style="font-size:10px;font-weight:500;background:#F1EFE8;padding:1px 5px;border-radius:3px">${f.def}</span>
-      </div>
-      <input type="range" id="${f.id}" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.def}">
-    </div>`
-  ).join("");
-  FACTORS.forEach(function(f){
-    var el=document.getElementById(f.id);
-    if(el) el.addEventListener("input",function(){
-      var vEl=document.getElementById(f.id+"V");
-      if(vEl) vEl.textContent=this.value;
-      var btnB=document.getElementById("btnB");
-      if(btnB) btnB.disabled=true;
-    });
-  });
-}
-
-function buildChecklists(){
-  document.getElementById("habChecks").innerHTML=HAB_ITEMS.map((item,i)=>
-    `<label class="chk-item"><input type="checkbox" id="h${i}" onchange="updateChkScore()"><span>${item}</span></label>`
-  ).join("");
-  document.getElementById("effChecks").innerHTML=EFF_ITEMS.map((item,i)=>
-    `<label class="chk-item"><input type="checkbox" id="e${i}" onchange="updateChkScore()"><span>${item}</span></label>`
-  ).join("");
-}
-
-function updateChkScore(){
-  const hCount=HAB_ITEMS.filter(function(_,i){return document.getElementById("h"+i)&&document.getElementById("h"+i).checked;}).length;
-  const eCount=EFF_ITEMS.filter(function(_,i){return document.getElementById("e"+i)&&document.getElementById("e"+i).checked;}).length;
-  const hScore=Math.max(0,Math.round((1-hCount/HAB_ITEMS.length)*10)*10);
-  const eScore=Math.max(0,Math.round((1-eCount/EFF_ITEMS.length)*10)*10);
-  document.getElementById("habScore").textContent="점수: "+hScore;
-  document.getElementById("effScore").textContent="점수: "+eScore;
-  document.getElementById("btnB").disabled=true;
-  document.getElementById("btnR").disabled=true;
-  // 결과가 이미 표시 중이면 재분석 배너 표시
-  if(document.getElementById("resultView").style.display!=="none"){
-    showReanalyzeBanner();
-  }
-}
-
-function showReanalyzeBanner(){
-  var existing=document.getElementById("reanalyzeBanner");
-  if(existing)return;
-  var rv=document.getElementById("resultView");
-  var banner=document.createElement("div");
-  banner.id="reanalyzeBanner";
-  banner.style.cssText="position:sticky;top:0;z-index:10;background:#FEF3C7;border:1.5px solid #FDE68A;border-radius:8px;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#92400E;";
-  banner.innerHTML='<span>⚠ 체크리스트가 변경되었습니다. <strong>① 분석</strong>을 다시 실행하면 결과가 갱신됩니다.</span>'
-    +'<button onclick="doReanalyze()" style="background:#D97706;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer">재분석</button>';
-  rv.insertBefore(banner,rv.firstChild);
-}
-window.updateChkScore=updateChkScore;
-window.onLevelChange=onLevelChange;
-window.buildGrade=buildGrade;
-
-function doReanalyze(){
-  var b=document.getElementById("reanalyzeBanner");
-  if(b)b.remove();
-  document.getElementById("btnA").click();
-}
-window.doReanalyze=doReanalyze;
-
-function clearImg(){
-  var wrap=gv("imgPreviewWrap");
-  wrap.style.display="none";
-  gv("imgPreview").src="";
-  gv("imgFull").src="";
-  gv("imgPreviewLeft").style.display="none";
-  gv("imgPreviewLeftImg").src="";
-  gv("ocrPlaceholder").style.display="block";
-  gv("ocrStatus").textContent="";
-  gv("imgInput").value="";
-  var slot=document.getElementById("imgSlot");
-  if(slot) slot.style.display="none";
-  document.body.appendChild(wrap);
-}
-window.clearImg=clearImg;
-
-function toggleImgFull(){
-  const wrap=gv("imgFullWrap");
-  wrap.style.display=wrap.style.display==="none"?"flex":"none";
-  if(wrap.style.display==="flex") wrap.style.display="block";
-}
-window.toggleImgFull=toggleImgFull;
-
-// 정확도 자동산출
-function updateAccuracy(){
-  const fct=+document.getElementById("sFct").value;
-  const str=+document.getElementById("sStr").value;
-  const acc=Math.round((fct+str)/2/10)*10;
-  document.getElementById("accVal").textContent=acc;
-  document.getElementById("btnB").disabled=true;
-}
-
-["sFct","sStr"].forEach(function(id){
-  document.getElementById(id).addEventListener("input",function(){
-    document.getElementById(id+"V").textContent=this.value;
-    updateAccuracy();
-  });
-});
-
-document.getElementById("iLevel").addEventListener("change",onLevelChange);
-buildScores(); buildGrade(); buildFactors(); buildChecklists(); updateAccuracy();
-// 초기 학년 기본값 = 중등 2학년
-document.getElementById("iGrade").value="2";
-
-// ── 입력값 수집 ──
-function gv(id){return document.getElementById(id);}
-function getInputs(){
-  const fct=+gv("sFct").value, str=+gv("sStr").value;
-  const acc=Math.round((fct+str)/2/10)*10;
-  const hCount=HAB_ITEMS.filter((_,i)=>gv("h"+i)?.checked).length;
-  const eCount=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked).length;
-  const habScore=Math.max(0,Math.round((1-hCount/HAB_ITEMS.length)*10)*10);
-  const effScore=Math.max(0,Math.round((1-eCount/EFF_ITEMS.length)*10)*10);
-  const habChecked=HAB_ITEMS.filter((_,i)=>gv("h"+i)?.checked);
-  const effChecked=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked);
-  return{
-    name:gv("iName").value||"학생",
-        level:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
-    grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
-    kor:gv("sS0").value, eng:gv("sS1").value, math:gv("sS2").value,
-    acc, spd:parseInt(gv("sSpd").value)||0, fct, str,
-    voc:+gv("sVoc").value, wm:+gv("sWm").value, inf:+gv("sInf").value,
-    hab:habScore, eff:effScore,
-    habChecked, effChecked
-  };
-}
-
-// ── OCR ──
-async function processOcrFile(file){
-  // 이미지 미리보기 표시
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const src=e.target.result;
-    // 우측 미리보기
-    gv("imgPreview").src=src;
-    gv("imgFull").src=src;
-    gv("imgPreviewWrap").style.display="block";
-    // 좌측 미리보기
-    gv("imgPreviewLeftImg").src=src;
-    gv("imgPreviewLeft").style.display="block";
-    gv("ocrPlaceholder").style.display="none";
-  };
-  reader.readAsDataURL(file);
-
-  const status=gv("ocrStatus");
-  status.textContent="인식 중...";
-  try{
-    const b64=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=()=>res(r.result.split(",")[1]);
-      r.onerror=rej;
-      r.readAsDataURL(file);
-    });
-        const resp=await fetch(TQ_API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
-      body:JSON.stringify({action:"ocr",imageBase64:b64,imageType:file.type})
-    });
-    if(!resp.ok)throw new Error("OCR 서버 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
-    let raw=await resp.text();
-    raw=raw.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
-    const parsed=JSON.parse(raw);
-    // 폼에 값 적용
-    if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
-    if(parsed.struct_understand!=null){gv("sStr").value=parsed.struct_understand;gv("sStrV").textContent=parsed.struct_understand;}
-    if(parsed.speed!=null){gv("sSpd").value=parseInt(parsed.speed)||0;}
-    if(parsed.vocabulary!=null){gv("sVoc").value=parsed.vocabulary;gv("sVocV").textContent=parsed.vocabulary;}
-    if(parsed.working_memory!=null){gv("sWm").value=parsed.working_memory;gv("sWmV").textContent=parsed.working_memory;}
-    if(parsed.inference!=null){gv("sInf").value=parsed.inference;gv("sInfV").textContent=parsed.inference;}
-    if(parsed.student_name){gv("iName").value=parsed.student_name;}
-    if(parsed.grade){
-      // iGrade는 select — buildGrade 후 value 설정
-      buildGrade();
-      var grSel=gv("iGrade");
-      var grVal=String(parsed.grade);
-      for(var gi=0;gi<grSel.options.length;gi++){
-        if(grSel.options[gi].value===grVal){grSel.selectedIndex=gi;break;}
-      }
-    }
-    if(parsed.school_level){
-      var lvRemap={"초저":"초등","초고":"초등","중등":"중등","고등":"고등","일반":"일반"};
-      var mappedLv=lvRemap[parsed.school_level]||parsed.school_level;
-      const sel=gv("iLevel");
-      for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===mappedLv){sel.selectedIndex=i;break;}}
-      buildScores();buildGrade();
-    }
-    // 독해습관 체크리스트 — boolean 배열 + 카운트 검증
-    if(parsed.hab_checks&&parsed.hab_checks.length>0){
-      var habTrue=parsed.hab_checks.filter(Boolean).length;
-      var habTarget=parsed.hab_count||habTrue;
-      // true 개수가 카운트와 다르면 마지막 항목부터 조정
-      if(habTrue>habTarget){
-        var adjusted=parsed.hab_checks.slice();
-        for(var j=adjusted.length-1;j>=0&&habTrue>habTarget;j--){
-          if(adjusted[j]){adjusted[j]=false;habTrue--;}
-        }
-        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!adjusted[i];});
-      } else {
-        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!parsed.hab_checks[i];});
-      }
-    }
-    // 독해효율성 체크리스트 — boolean 배열 + 카운트 검증
-    if(parsed.eff_checks&&parsed.eff_checks.length>0){
-      var effTrue=parsed.eff_checks.filter(Boolean).length;
-      var effTarget=parsed.eff_count||effTrue;
-      if(effTrue>effTarget){
-        var adjusted2=parsed.eff_checks.slice();
-        for(var k=adjusted2.length-1;k>=0&&effTrue>effTarget;k--){
-          if(adjusted2[k]){adjusted2[k]=false;effTrue--;}
-        }
-        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!adjusted2[i];});
-      } else {
-        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!parsed.eff_checks[i];});
-      }
-    }
-    updateChkScore();
-    updateAccuracy();
-    status.textContent="✓ 수치 + 체크리스트 자동 입력 완료";
-    setTimeout(()=>{status.textContent="";},3000);
-  }catch(e){
-    status.textContent="인식 실패: "+e.message;
-  }
-}
-document.getElementById("imgInput").addEventListener("change",function(){
-  if(this.files[0]) processOcrFile(this.files[0]);
-});
-
-// ── 클립보드 붙여넣기 ──
-document.addEventListener("paste",function(e){
-  const items=e.clipboardData&&e.clipboardData.items;
-  if(!items)return;
-  for(var i=0;i<items.length;i++){
-    if(items[i].type.startsWith("image/")){
-      const file=items[i].getAsFile();
-      if(!file)continue;
-      const zone=document.getElementById("ocrZone");
-      zone.style.borderColor="var(--teal)";
-      zone.style.background="var(--teal-bg)";
-      setTimeout(function(){zone.style.borderColor="";zone.style.background="";},1500);
-      processOcrFile(file);
-      break;
-    }
-  }
-});
-
-// ── 규칙 엔진 ──
-// ────────────────────────────────────────────────────────────
-// Part 1. 근거자료 수집 엔진
-// TQ워크샵 판독기준자료의 8개 항목을 완전 재현
-// ────────────────────────────────────────────────────────────
-
-
-// ── MESSAGES 연동 헬퍼 ──
-function msg(id) {
-  var msgs = (typeof MESSAGES !== 'undefined') ? MESSAGES : window.MESSAGES;
-  if (!msgs) return null;
-  for (var key in msgs) {
-    if (!Array.isArray(msgs[key])) continue;
-    var found = msgs[key].find(function(m){ return m && m.id === id; });
-    if (found) return { t: found.tag, s: found.text };
-  }
-  return null;
-}
-function mpush(bullets, id, fallbackT, fallbackS) {
-  var m = msg(id);
-  if (m) bullets.push(m);
-  else bullets.push({ t: fallbackT, s: fallbackS });
-}
-// collectEvidence는 서버에서 실행됩니다 (보안)
-function collectEvidence(){ return []; }
-
-function toI(v,t){if(v>=t)return 0;const g=t-v,r=g/t;return Math.round((g<=10?r*.5:Math.min(r,1))*100)/100;}
-function nbnd(v,t){return Math.abs(v-t)<=10;}
-function cInt(acc,kv){if(kv===null||acc>40)return 0;return Math.max(Math.round(Math.min((kv-acc*.9)/70,1)*100)/100,0);}
-function exLb(i){return i>=.8?"강":i>=.5?"중":i>=.2?"약":"최약";}
-function grA(v){return v>=90?"최상":v>=70?"상":v>=50?"중":v>=30?"하":"최하";}
-function grF(v){return v>=75?"상":v>=50?"중상":v>=35?"중하":"하";}
-const SPDLIM={"초저":3000,"초고":5000,"중등":6000,"고등":8000,"일반":5000};
-const SPDTH={"초저":[300,500,700],"초고":[400,650,900],"중등":[450,700,1000],"고등":[450,700,1000],"일반":[400,650,900]};
-function grSpd(s,l){const t=SPDTH[l]||SPDTH["중등"];return s<t[0]?"느림":s<t[1]?"보통이하":s<t[2]?"보통이상":"빠름";}
-
-// 독해습관 체크 항목 분류
-function classifyHabits(checked){
-  // ── 독해습관 분류 원칙 ──
-  // 독해습관 10개 항목은 모두 음독(소리내어 읽기, 목젖 움직임, 속으로 음가를 떠올리는 것)에서
-  // 파생된 미숙한 독해 습관의 발현입니다.
-  // 소리내어 읽는 표면음독뿐 아니라 내재음독(목젖·음가)도 모두 포함됩니다.
-  //
-  // [표면음독] 눈에 보이는 음독 행동
-  //   HAB[4] 소리 내어 읽거나 속발음을 함
-  //   HAB[3] 단어 단위로 또박또박 읽음 (목젖/입술 미세 움직임 동반)
-  //
-  // [내재음독 — 재처리·반복] 음독으로 인한 처리 불완전 → 다시 읽는 행동
-  //   HAB[0] 이미 읽은 곳을 다시 읽음
-  //   HAB[1] 읽다가 글줄을 자주 놓침 (시선이 발음 속도에 종속됨)
-  //   HAB[2] 짚어가며 읽거나 밑줄을 그음 (발음 위치 추적 행동)
-  //
-  // [내재음독 — 이해결손] 음독으로 인한 처리 한계가 이해에 영향
-  //   HAB[5] 긴 문장은 이해가 잘 안됨
-  //   HAB[6] 긴 문장은 훑어 읽기를 함 (처리 포기)
-  //   HAB[7] 긴 글은 내용 기억이 잘 안남 (워킹메모리 과부하)
-  //   HAB[8] 모르는 단어가 있어도 이해가 잘 안됨
-  //
-  // [속도인지] 자각 증상
-  //   HAB[9] 글 읽는 속도가 느린 편임
-
-  const 표면음독키=["소리 내어 읽거나 속발음","단어 단위로 또박또박"];
-  const 내재음독재처리키=["이미 읽은 곳을 다시","글줄을 자주 놓침","짚어가며 읽거나"];
-  const 내재음독이해키=["긴 문장은 이해","긴 문장은 훑어","긴 글은 내용 기억","모르는 단어가"];
-  const 속도키=["글 읽는 속도가 느린"];
-
-  const 표면음독수=checked.filter(c=>표면음독키.some(k=>c.includes(k))).length;
-  const 재처리수=checked.filter(c=>내재음독재처리키.some(k=>c.includes(k))).length;
-  const 이해결손수=checked.filter(c=>내재음독이해키.some(k=>c.includes(k))).length;
-  const 속도인지수=checked.filter(c=>속도키.some(k=>c.includes(k))).length;
-
-  return{
-    // 기존 호환성 유지
-    음독습관:표면음독수,
-    재처리습관:재처리수,
-    또박또박:checked.filter(c=>c.includes("또박또박")).length,
-    이해어려움:이해결손수,
-    속도문제:속도인지수,
-    전체:checked.length,
-    // 새 분류
-    표면음독:표면음독수,
-    내재음독재처리:재처리수,
-    내재음독이해:이해결손수,
-    전체음독관련:표면음독수+재처리수+이해결손수,  // 속도인지 제외한 실질 음독 발현
-    심각도: 표면음독수>=1 && (재처리수+이해결손수)>=2 ? "심함"
-           : 표면음독수>=1 || (재처리수+이해결손수)>=3 ? "보통"
-           : checked.length>=1 ? "경미" : "없음"
-  };
-}
-
-// runEngine은 서버에서 실행됩니다 (보안)
-function runEngine(inp){ return {}; }
-
-// ── 렌더링 ──
-const TC={"최상위 완성 역량형":"#059669","고역량 잠재력 미개방형":"#0d9488","성실한 암기 의존형":"#dc2626","논리 두뇌 미발현형":"#2563eb","조용한 학습 위기형":"#e11d48","전반 역량 미완성형":"#d97706","기초 회복 가능 위기형":"#ea580c","심각한 학습 기능 마비형":"#991b1b","전반 역량 공백형":"#475569","역량 모순 붕괴 예고형":"#7c3aed"};
-const UC={"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
-const UBG={"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
-const SC=["#1E40AF","#0BA98E","#B45309","#7C3AED"];
-const FL={acc:"독해정확도",inf:"추론능력",voc:"어휘능력",wm:"워킹메모리",hab:"독해습관",eff:"독해효율성"};
-function ibc(v){return v>=.7?"#DC2626":v>=.4?"#D97706":"#0BA98E";}
-function badge(lb,on,bg,tx,bd){
-  var _bg=on?bg:'var(--surface2)';
-  var _tx=on?tx:'var(--text-muted)';
-  var _bd=on?bd:'var(--border)';
-  var _op=on?1:.3;
-  return'<span class="bdg" style="background:'+_bg+';color:'+_tx+';border-color:'+_bd+';opacity:'+_op+'">' +lb+'</span>';
-}
-
-
-function renderEvidence(evidence){
-  var dotColor={"강점":"#0BA98E","보통":"#8E9BB0","주의":"#D97706","위험":"#DC2626"};
-  var tagStyle={
-    "강점":"background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7",
-    "보통":"background:#F1F5F9;color:#475569;border:1px solid #CBD5E1",
-    "주의":"background:#FEF3C7;color:#92400E;border:1px solid #FDE68A",
-    "위험":"background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5"
-  };
-
-  var header='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
-    +'<div style="width:2px;height:16px;background:var(--purple);border-radius:2px;flex-shrink:0"></div>'
-    +'<div><span style="font-size:11px;font-weight:700;color:var(--tx1);letter-spacing:.05em;display:block">PART 1. 근거자료 수집</span>'
-    +'<span style="font-size:10px;color:var(--tx3);letter-spacing:.6px">EVIDENCE COLLECTION</span></div>'
-    +'</div>';
-
-  var cards=evidence.map(function(item){
-    var bullets=item.bullets.filter(function(b){return b.t!=='_meta';});
-    var hasDanger=bullets.some(function(b){return b.t==='위험';});
-    var hasWarn=!hasDanger&&bullets.some(function(b){return b.t==='주의';});
-    var hasGood=!hasDanger&&!hasWarn&&bullets.some(function(b){return b.t==='강점';});
-    var cls='ev-card'+(hasDanger?' has-danger':hasWarn?' has-warn':hasGood?' has-good':'');
-
-    var bulletHtml=bullets.map(function(b){
-      var dc=dotColor[b.t]||"#8E9BB0";
-      var ts=tagStyle[b.t]||tagStyle["보통"];
-      return '<div class="ev-bullet">'
-        +'<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;flex-shrink:0;'+ts+'">'
-        +(b.t==='강점'?'✓':b.t==='위험'?'●':b.t==='주의'?'△':'-')
-        +' '+b.t+'</span>'
-        +'<span style="font-size:13px;line-height:1.6;color:var(--text2)">'+b.s+'</span>'
-        +'</div>';
-    }).join("");
-
-    return '<div class="'+cls+'">'
-      +'<div class="ev-title">'+item.title+'</div>'
-      +bulletHtml
-      +'</div>';
-  }).join("");
-
-  return header+'<div class="ev-grid">'+cards+'</div>';
-}
-
-function renderResult(e,nm){
-  // 실제 수치 → 막대 표시 (0~100 스케일)
-  const rawScores={
-    "독해정확도":{v:e.acc,thresh:50},
-    "사실적 이해":{v:e.fct,thresh:50},
-    "구조적 이해":{v:e.str_,thresh:50},
-    "추론능력":{v:e.inf,thresh:50},
-    "어휘능력":{v:e.voc,thresh:50},
-    "워킹메모리":{v:e.wm,thresh:60},
-    "독해습관":{v:e.hab,thresh:50},
-    "독해효율성":{v:e.eff,thresh:50}
-  };
-  function barColor(v,t){return v>90?"#3B82F6":v>=81?"#22C55E":v>=71?"#EAB308":v>=61?"#F97316":"#EF4444";}
-  const ibars=Object.entries(rawScores).map(([lb,d])=>{
-    const pct=Math.round(d.v);
-    const col=barColor(d.v,d.thresh);
-    const near=Math.abs(d.v-d.thresh)<=10;
-    return`<div class="ib"><div class="ib-row"><span style="color:#475569">${lb}${near?" <span style='font-size:9px;background:rgba(251,191,36,.15);color:#D97706;padding:1px 4px;border-radius:3px;margin-left:4px'>경계</span>":""}</span><span style="font-weight:700;color:${pct<=60?'#EF4444':'#1E293B'}">${pct}</span></div><div class="ib-bg" style="background:#E2E8F0"><div class="ib-f" style="width:${pct}%;background:${col}"></div></div></div>`;
-  }).join("");
-
-  const defH=(!e.def||e.def.length===0)
-    ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
-    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
-
-  const prescH=(!e.presc||e.presc.length===0)
-    ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
-    :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
-
-
-  const cauH=e.cau&&e.cau.length>0
-    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
-
-  // 체크리스트 요약
-  var habSummary=(e.habChecked||[]).length>0
-    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
-      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+(e.habChecked||[]).length+'/'+HAB_ITEMS.length+'개 문제)</div>'
-      +(e.habChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
-      +'</div>':""
-  ;
-  var effSummary=(e.effChecked||[]).length>0
-    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--amber)">'
-      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+(e.effChecked||[]).length+'/'+EFF_ITEMS.length+'개 문제)</div>'
-      +(e.effChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
-      +'</div>':""
-  ;
-
-  // Part 1. 근거자료 수집 렌더링
-  const evidenceH=e.evidence?renderEvidence(e.evidence):"";
-
-  // 성적 카드
-  var scoreRows="";
-  var scoreData=[{lb:"국어",v:e.kor},{lb:"영어",v:e.eng},{lb:"수학",v:e.math}];
-  var SMAP_R={"90점 이상":93,"80~89점":85,"70~79점":75,"60~69점":65,"60점 미만":50,
-    "1등급":95,"2등급":89,"3등급":79,"4등급":65,"5등급 이하":45,
-    "매우잘함":93,"잘함":80,"보통":65,"노력요함":50};
-  scoreData.forEach(function(s){
-    if(!s.v||s.v==="-")return;
-    var sv=SMAP_R[s.v]||0;
-    var col=sv>=85?"#34D399":sv>=70?"#34D399":sv>=60?"#FBBF24":"#F87171";
-    scoreRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
-      +'<span style="font-size:12px;color:var(--text2)">'+s.lb+'</span>'
-      +'<span style="font-size:13px;font-weight:700;color:'+col+'">'+s.v+'</span>'
-      +'</div>';
-  });
-  var lvMap={"초등":"초등학생","초저":"초등학생","초고":"초등학생","중등":"중학생","고등":"고등학생","일반":"일반"};
-  var lvLabel=(lvMap[e.uiLevel||e.level]||"")+(e.grade&&e.grade>0?" "+e.grade+"학년":"");
-  var scoreCardH=scoreRows
-    ?'<div class="card" style="margin-bottom:10px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div class="sec" style="margin:0">학교 성적</div>'
-      +'<span style="font-size:10px;color:var(--purple);background:var(--purple-bg);padding:2px 8px;border-radius:6px;border:1px solid var(--purple-bd);font-weight:600">'+lvLabel+'</span>'
-      +'</div>'
-      +scoreRows
-      +'</div>'
-    :"";
-
-  const slotsH=["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"].map((t,i)=>
-    `<div class="slot"><div class="slot-h"><div class="sn" style="background:${SC[i]}">${i+1}</div><span style="font-size:12px;font-weight:600;color:#4C1D95">${nm} — ${t}</span></div><div class="slot-b" id="sl${i+1}"><span style="color:#CBD5E1;font-size:11px">판독문 생성 후 표시됩니다</span></div></div>`
-  ).join("");
-
-  var html=`
-  <!-- ══ 학생 정보 — 중앙 카드 좌측 absolute ══ -->
-  <div id="studentInfoCard" style="display:none">
-    <div style="padding:4px 2px">
-
-      <!-- 이름 크게 -->
-      <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;text-align:center;margin-top:7px;margin-bottom:27px">${nm}</div>
-
-      <!-- 유형 타이틀 배너 -->
-      <div id="type-title-banner" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:16px 18px;margin-bottom:16px;margin-top:4px">
-        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-          <div id="banner-bt" style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.3">—</div>
-          <div id="banner-urg" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1px"></div>
-        </div>
-        <div id="banner-st" style="font-size:12px;font-weight:600;color:#C4B5FD;letter-spacing:-.1px;line-height:1.5"></div>
-      </div>
-
-      <!-- 검사일 -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
-        <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
-        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date||"—"}</span>
-      </div>
-
-      <!-- 난이도 -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
-        <span style="font-size:11px;color:rgba(255,255,255,.4)">난이도</span>
-        <span style="font-size:12px;color:#A78BFA;font-weight:700">${{초등:"초등 고학년",초저:"초등 저학년",중등:"중학교",고등:"고등학교"}[e.level]||e.level||"—"}</span>
-      </div>
-
-      <!-- 학년 -->
-      ${e.grade&&e.grade>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">학년</span><span style="font-size:12px;color:#fff;font-weight:700">${e.grade}학년</span></div>`:""}
-
-      <!-- 국어 -->
-      ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
-
-      <!-- 영어 -->
-      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
-
-      <!-- 수학 -->
-      ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:12px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
-
-    </div>
-  </div>
-
-
 
   <!-- ══ 메인 히어로 존 ══ -->
   <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
@@ -1869,96 +1082,11 @@ function showFeedbackToast(msg, isErr) {
   setTimeout(function(){ t.remove(); }, 3000);
 }
 
-var SAMPLES=[
-  // 0. 진호윤 — 초고5 통합완성형, 음독+재처리 있지만 고역량
-  {
-    name:"진호윤", level:"초고", grade:5,
-    kor:"매우잘함", eng:"잘함", math:"매우잘함",
-    fct:100, str_:80, spd:1794,
-    voc:65, wm:50, inf:70,
-    habChecks:[true,false,false,false,true,false,false,false,false,false],  // 이미읽은곳, 소리내어읽기
-    effChecks:[false,false,false,false,false,false,false,false,false,false]
-  },
-  // 1. 이준혁 — 중2 모순패턴 (성적높은데 역량 낮음)
-  {
-    name:"이준혁", level:"중등", grade:2,
-    kor:"90점 이상", eng:"80~89점", math:"90점 이상",
-    fct:20, str_:20, spd:540,
-    voc:45, wm:30, inf:50,
-    habChecks:[true,false,false,false,true,true,false,true,false,false],
-    effChecks:[false,false,true,true,true,false,false,false,false,true]
-  },
-  // 2. 박서연 — 중1 추론잠재형 (추론은 괜찮은데 정확도 낮음)
-  {
-    name:"박서연", level:"중등", grade:1,
-    kor:"60~69점", eng:"70~79점", math:"60~69점",
-    fct:30, str_:40, spd:420,
-    voc:40, wm:40, inf:65,
-    habChecks:[false,true,true,false,false,true,true,false,false,false],
-    effChecks:[true,true,false,true,false,true,false,false,true,false]
-  },
-  // 3. 김민서 — 고1 사실강점형 (사실이해 강, 추론 약)
-  {
-    name:"김민서", level:"고등", grade:1,
-    kor:"70~79점", eng:"60~69점", math:"60~69점",
-    fct:70, str_:40, spd:680,
-    voc:60, wm:50, inf:35,
-    habChecks:[false,false,false,true,false,true,false,true,false,false],
-    effChecks:[false,true,false,true,true,false,true,false,false,false]
-  }
-];
-
-function loadSampleParam(enc) {
-  // 샘플 데이터를 tqdata URL 파라미터처럼 처리
-  var url = window.location.pathname + '?tqdata=' + enc;
+function loadSampleParam(d) {
+  var url = window.location.pathname + '?tqdata=' + encodeURIComponent(JSON.stringify(d));
   window.location.href = url;
 }
 
-function loadSample(idx){
-  var s=SAMPLES[idx];
-  if(!s)return;
-  // 기본 정보
-  gv("iName").value=s.name;
-  var lvRemap={"초저":"초등","초고":"초등","중등":"중등","고등":"고등","일반":"일반"};
-  var mappedLv=lvRemap[s.level]||s.level;
-  var lvSel=gv("iLevel");
-  for(var i=0;i<lvSel.options.length;i++){if(lvSel.options[i].value===mappedLv){lvSel.selectedIndex=i;break;}}
-  buildScores();buildGrade();
-  gv("iGrade").value=s.grade;
-  // 성적
-  function setScore(elId,val){
-    var el=gv(elId);if(!el)return;
-    for(var i=0;i<el.options.length;i++){if(el.options[i].value===val){el.selectedIndex=i;return;}}
-  }
-  setScore("sS0",s.kor); setScore("sS1",s.eng); setScore("sS2",s.math);
-  // 슬라이더
-  gv("sFct").value=s.fct; gv("sFctV").textContent=s.fct;
-  gv("sStr").value=s.str_; gv("sStrV").textContent=s.str_;
-  gv("sSpd").value=s.spd;
-  updateAccuracy();
-  // 요인
-  gv("sVoc").value=s.voc; gv("sVocV").textContent=s.voc;
-  gv("sWm").value=s.wm;   gv("sWmV").textContent=s.wm;
-  gv("sInf").value=s.inf; gv("sInfV").textContent=s.inf;
-  // 체크리스트
-  if(s.habChecks){
-    HAB_ITEMS.forEach(function(_,i){
-      var el=gv("h"+i);if(el)el.checked=!!s.habChecks[i];
-    });
-  }
-  if(s.effChecks){
-    EFF_ITEMS.forEach(function(_,i){
-      var el=gv("e"+i);if(el)el.checked=!!s.effChecks[i];
-    });
-  }
-  updateChkScore();
-  // 결과 초기화
-  gv("btnB").disabled=true;
-  gv("btnR").disabled=true;
-  if(gv("emptyView"))gv("emptyView").style.display="flex";
-  /* resultView display managed by page-result */
-}
-window.loadSample=loadSample;
 
 // 전역 변수 노출
 
@@ -2053,43 +1181,309 @@ function drawConnectorToRightTop(dotId, cardId) {
   rv.appendChild(svg);
 }
 
-function drawConnectorLeft(cardId) {
-  var card = document.getElementById(cardId);
-  var centerBox = document.querySelector('#resultView .ev-card')
-                  && document.querySelector('[style*="width:360px"]');
-  var rv = document.getElementById('resultView');
-  if (!card || !rv) return;
+function renderResult(e,nm){
+  // 실제 수치 → 막대 표시 (0~100 스케일)
+  const rawScores={
+    "독해정확도":{v:e.acc,thresh:50},
+    "사실적 이해":{v:e.fct,thresh:50},
+    "구조적 이해":{v:e.str_,thresh:50},
+    "추론능력":{v:e.inf,thresh:50},
+    "어휘능력":{v:e.voc,thresh:50},
+    "워킹메모리":{v:e.wm,thresh:60},
+    "독해습관":{v:e.hab,thresh:50},
+    "독해효율성":{v:e.eff,thresh:50}
+  };
+  function barColor(v,t){return v>90?"#3B82F6":v>=81?"#22C55E":v>=71?"#EAB308":v>=61?"#F97316":"#EF4444";}
+  const ibars=Object.entries(rawScores).map(([lb,d])=>{
+    const pct=Math.round(d.v);
+    const col=barColor(d.v,d.thresh);
+    const near=Math.abs(d.v-d.thresh)<=10;
+    return`<div class="ib"><div class="ib-row"><span style="color:#475569">${lb}${near?" <span style='font-size:9px;background:rgba(251,191,36,.15);color:#D97706;padding:1px 4px;border-radius:3px;margin-left:4px'>경계</span>":""}</span><span style="font-weight:700;color:${pct<=60?'#EF4444':'#1E293B'}">${pct}</span></div><div class="ib-bg" style="background:#E2E8F0"><div class="ib-f" style="width:${pct}%;background:${col}"></div></div></div>`;
+  }).join("");
 
-  var old = document.getElementById('conn_l_'+cardId);
-  if (old) old.remove();
+  const defH=(!e.def||e.def.length===0)
+    ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
+    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
 
-  var rvRect   = rv.getBoundingClientRect();
-  var cardRect = card.getBoundingClientRect();
-  var scrollTop = rv.scrollTop || 0;
+  const prescH=(!e.presc||e.presc.length===0)
+    ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
+    :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
 
-  // 카드 우측 상단 → 중앙 영역 좌측 (카드 우측 중간)
-  var x1 = cardRect.right  - rvRect.left;
-  var y1 = cardRect.top    - rvRect.top + scrollTop + 12;
-  // 중앙 컬럼 좌측 엣지 추정 (카드 우측 + gap)
-  var x2 = cardRect.right  - rvRect.left + 14;
-  var y2 = y1;
 
-  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.id = 'conn_l_' + cardId;
-  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
+  const cauH=e.cau&&e.cau.length>0
+    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
 
-  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('x1', x1.toFixed(1));
-  line.setAttribute('y1', y1.toFixed(1));
-  line.setAttribute('x2', x2.toFixed(1));
-  line.setAttribute('y2', y2.toFixed(1));
-  line.setAttribute('stroke', 'rgba(255,255,255,.2)');
-  line.setAttribute('stroke-width', '0.8');
-  line.setAttribute('stroke-opacity', '0.3');
-  svg.appendChild(line);
+  // 체크리스트 요약
+  var habSummary=(e.habChecked||[]).length>0
+    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
+      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+(e.habChecked||[]).length+'/'+HAB_ITEMS.length+'개 문제)</div>'
+      +(e.habChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
+      +'</div>':""
+  ;
+  var effSummary=(e.effChecked||[]).length>0
+    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--amber)">'
+      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+(e.effChecked||[]).length+'/'+EFF_ITEMS.length+'개 문제)</div>'
+      +(e.effChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
+      +'</div>':""
+  ;
 
-  if (window.getComputedStyle(rv).position === 'static') rv.style.position = 'relative';
-  rv.appendChild(svg);
+  // Part 1. 근거자료 수집 렌더링
+  const evidenceH=e.evidence?renderEvidence(e.evidence):"";
+
+  // 성적 카드
+  var scoreRows="";
+  var scoreData=[{lb:"국어",v:e.kor},{lb:"영어",v:e.eng},{lb:"수학",v:e.math}];
+  var SMAP_R={"90점 이상":93,"80~89점":85,"70~79점":75,"60~69점":65,"60점 미만":50,
+    "1등급":95,"2등급":89,"3등급":79,"4등급":65,"5등급 이하":45,
+    "매우잘함":93,"잘함":80,"보통":65,"노력요함":50};
+  scoreData.forEach(function(s){
+    if(!s.v||s.v==="-")return;
+    var sv=SMAP_R[s.v]||0;
+    var col=sv>=85?"#34D399":sv>=70?"#34D399":sv>=60?"#FBBF24":"#F87171";
+    scoreRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
+      +'<span style="font-size:12px;color:var(--text2)">'+s.lb+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+col+'">'+s.v+'</span>'
+      +'</div>';
+  });
+  var lvMap={"초등":"초등학생","초저":"초등학생","초고":"초등학생","중등":"중학생","고등":"고등학생","일반":"일반"};
+  var lvLabel=(lvMap[e.uiLevel||e.level]||"")+(e.grade&&e.grade>0?" "+e.grade+"학년":"");
+  var scoreCardH=scoreRows
+    ?'<div class="card" style="margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div class="sec" style="margin:0">학교 성적</div>'
+      +'<span style="font-size:10px;color:var(--purple);background:var(--purple-bg);padding:2px 8px;border-radius:6px;border:1px solid var(--purple-bd);font-weight:600">'+lvLabel+'</span>'
+      +'</div>'
+      +scoreRows
+      +'</div>'
+    :"";
+
+  const slotsH=["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"].map((t,i)=>
+    `<div class="slot"><div class="slot-h"><div class="sn" style="background:${SC[i]}">${i+1}</div><span style="font-size:12px;font-weight:600;color:#4C1D95">${nm} — ${t}</span></div><div class="slot-b" id="sl${i+1}"><span style="color:#CBD5E1;font-size:11px">판독문 생성 후 표시됩니다</span></div></div>`
+  ).join("");
+
+  var html=`
+  <!-- ══ 학생 정보 — 중앙 카드 좌측 absolute ══ -->
+  <div id="studentInfoCard" style="display:none">
+    <div style="padding:4px 2px">
+
+      <!-- 이름 크게 -->
+      <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;text-align:center;margin-top:7px;margin-bottom:27px">${nm}</div>
+
+      <!-- 유형 타이틀 배너 -->
+      <div id="type-title-banner" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:16px 18px;margin-bottom:16px;margin-top:4px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <div id="banner-bt" style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.3">—</div>
+          <div id="banner-urg" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1px"></div>
+        </div>
+        <div id="banner-st" style="font-size:12px;font-weight:600;color:#C4B5FD;letter-spacing:-.1px;line-height:1.5"></div>
+      </div>
+
+      <!-- 검사일 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date||"—"}</span>
+      </div>
+
+      <!-- 난이도 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">난이도</span>
+        <span style="font-size:12px;color:#A78BFA;font-weight:700">${{초등:"초등 고학년",초저:"초등 저학년",중등:"중학교",고등:"고등학교"}[e.level]||e.level||"—"}</span>
+      </div>
+
+      <!-- 학년 -->
+      ${e.grade&&e.grade>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">학년</span><span style="font-size:12px;color:#fff;font-weight:700">${e.grade}학년</span></div>`:""}
+
+      <!-- 국어 -->
+      ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
+
+      <!-- 영어 -->
+      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
+
+      <!-- 수학 -->
+      ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:12px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
+
+    </div>
+  </div>
+
+
+
+  <!-- ══ 메인 히어로 존 ══ -->
+  <div style="display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1">
+
+    <!-- 중앙 카드 (position:relative 기준점) -->
+    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+
+      <!-- 학생 정보 카드 — 좌측 상단 -->
+      <div id="studentInfoSlot" style="position:absolute;right:calc(100% + 40px);top:0;width:300px;z-index:20"></div>
+
+      <!-- 좌측 카드: 정보처리습관 — JS가 habTitle 위치로 이동시킴 -->
+      <div id="ev-left-top" style="position:absolute;right:calc(100% + 40px);top:400px;width:300px;z-index:10"></div>
+
+      <!-- 우측 카드: 성적선행지수 / 독해속도 / 독해효율성 -->
+      <div id="ev-right-top"    style="position:absolute;left:calc(100% + 40px);top:20px;width:300px;z-index:10"></div>
+      <div id="ev-right-mid"    style="position:absolute;left:calc(100% + 40px);top:220px;width:300px;z-index:10"></div>
+      <div id="ev-right-bottom" style="position:absolute;left:calc(100% + 40px);top:440px;width:300px;z-index:10"></div>
+
+      <!-- 독해정확도 -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-size:20px;font-weight:300;color:#64748B;letter-spacing:-.02em">독해정확도</div>
+          <div style="font-size:12px;color:#94A3B8;font-weight:300">%</div>
+          <span id="accBadge" style="padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;background:${barColor(e.acc,50)}22;color:${barColor(e.acc,50)};border:1.5px solid ${barColor(e.acc,50)}66">${e.acc>=70?'상':e.acc>=50?'중':'하'}</span>
+        </div>
+        <div style="font-size:112px;font-weight:900;color:${barColor(e.acc,50)};line-height:1;font-family:Tahoma,sans-serif;letter-spacing:-4px;margin-bottom:14px">${e.acc}</div>
+        <div style="width:100%;max-width:220px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;color:#94A3B8">사실적 이해</span>
+            <span style="font-size:10px;color:#94A3B8">구조적 이해</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:16px;font-weight:700;color:#3B82F6;font-family:Tahoma,sans-serif;min-width:24px;text-align:right">${e.fct}</span>
+            <div style="flex:1;display:flex;height:6px;border-radius:3px;overflow:hidden;background:#E2E8F0">
+              <div style="flex:1;display:flex;justify-content:flex-end">
+                <div style="width:${e.fct}%;background:#3B82F6;height:100%;border-radius:3px 0 0 3px"></div>
+              </div>
+              <div style="width:1px;background:rgba(255,255,255,.2);flex-shrink:0"></div>
+              <div style="flex:1;display:flex;justify-content:flex-start">
+                <div style="width:${e.str_}%;background:#84CC16;height:100%;border-radius:0 3px 3px 0"></div>
+              </div>
+            </div>
+            <span style="font-size:16px;font-weight:700;color:#84CC16;font-family:Tahoma,sans-serif;min-width:24px;text-align:left">${e.str_}</span>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- 독해속도 -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-size:20px;font-weight:300;color:#64748B;letter-spacing:-.02em">독해속도</div>
+          <div style="font-size:12px;color:var(--tx3);font-weight:300">자/분</div>
+          <span id="spdBadge" style="padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;background:${ {'느림':'rgba(248,113,113,.15)','보통이하':'rgba(251,191,36,.15)','보통이상':'rgba(52,211,153,.15)','빠름':'rgba(52,211,153,.15)'}[e.spdGrade]||'rgba(52,211,153,.15)' };color:${ {'느림':'#F87171','보통이하':'#FBBF24','보통이상':'#34D399','빠름':'#34D399'}[e.spdGrade]||'#34D399' };border:1.5px solid ${ {'느림':'rgba(248,113,113,.4)','보통이하':'rgba(251,191,36,.4)','보통이상':'rgba(52,211,153,.4)','빠름':'rgba(52,211,153,.4)'}[e.spdGrade]||'rgba(52,211,153,.4)' }">${e.spdGrade||"—"}</span>
+        </div>
+        <div id="heroSpd" style="font-size:92px;font-weight:900;color:#334155;line-height:1;font-family:Tahoma,sans-serif;letter-spacing:-4px;margin-bottom:14px">—</div>
+        <div style="font-size:13px;color:#64748B;text-align:center;line-height:1.6;max-width:200px">${e.spdDesc||""}</div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="height:1px;background:#E2E8F0;margin:0 -4px 16px"></div>
+
+      <!-- 독해습관 + 독해효율성 체크리스트 -->
+      <div style="display:flex;justify-content:center;gap:32px">
+        <div style="display:inline-flex;flex-direction:column">
+          <div style="margin-bottom:7px">
+            <span id="habTitle" style="font-size:12px;font-weight:700;color:#7EBF6F">독해습관</span>
+          </div>
+          ${HAB_ITEMS.map(function(item){
+            var on = e.habChecked && e.habChecked.indexOf(item) > -1;
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;white-space:nowrap">'
+              +'<span style="color:'+(on?'#EF4444':'#94A3B8')+';font-size:10px;min-width:10px">'+(on?'●':'○')+'</span>'
+              +'<span style="font-size:11px;color:#475569">'+item+'</span>'
+              +'</div>';
+          }).join('')}
+          <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
+            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?(e.habChecked||[]).length:0}</span>개</span>
+          </div>
+        </div>
+        <div style="display:inline-flex;flex-direction:column">
+          <div style="margin-bottom:7px">
+            <span id="effTitle" style="font-size:12px;font-weight:700;color:#647AB3">독해효율성</span>
+          </div>
+          ${EFF_ITEMS.map(function(item){
+            var on = e.effChecked && e.effChecked.indexOf(item) > -1;
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;white-space:nowrap">'
+              +'<span style="color:'+(on?'#EF4444':'#94A3B8')+';font-size:10px;min-width:10px">'+(on?'●':'○')+'</span>'
+              +'<span style="font-size:11px;color:#475569">'+item+'</span>'
+              +'</div>';
+          }).join('')}
+          <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
+            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?(e.effChecked||[]).length:0}</span>개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ 유형 카드 (숨김) ══ -->
+  <div id="rightPanel" style="display:none">
+    <div id="rightPanelInner"></div>
+  </div>
+
+  <!-- ══ 아래 영역 ══ -->
+  <div id="belowArea">
+
+    <!-- 레이더 + 카드 고정 배치 컨테이너 -->
+    <div id="radarZone" style="position:relative;padding:0;z-index:1;margin-bottom:24px;display:flex;justify-content:center">
+
+      <!-- 좌측 카드: 독서의양 / 독해의질 -->
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-right:40px;padding-top:80px">
+        <div id="voc-left"></div>
+        <div id="doj-left"></div>
+        <div id="cauCard" style="margin-top:16px;width:300px"></div>
+      </div>
+
+      <!-- 흰색 카드 -->
+      <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:56px 36px;width:500px;flex-shrink:0;box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
+        <!-- 타이틀: 좌측 상단 -->
+        <div style="position:absolute;top:16px;left:20px;font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.2px;text-transform:uppercase">세부역량 프로파일</div>
+        <!-- 레이더 중앙 정렬 -->
+        <div style="display:flex;justify-content:center">
+          <div id="radarWrap" style="width:420px;max-width:100%"></div>
+        </div>
+        <!-- 역량 수치 바 — 카드 안 레이더 아래 -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E2E8F0;max-width:390px;margin-left:auto;margin-right:auto">
+          ${ibars}
+        </div>
+      </div>
+
+      <!-- 우측 카드: 워킹메모리 / 추론능력 -->
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-left:40px;padding-top:80px">
+        <div id="wmCard-hero"></div>
+        <div id="reasonCard-hero"></div>
+        <div id="schoolCard-hero" style="margin-top:16px"></div>
+      </div>
+
+      <!-- 숨김 슬롯 -->
+      <div id="wmCard" style="display:none"></div>
+      <div id="vocCard" style="display:none"></div>
+      <div id="vocCard2" style="display:none"></div>
+      <div id="reasonCard" style="display:none"></div>
+    </div>
+
+
+    <!-- 원인분석 카드 그리드 -->
+    <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        <span>원인 분석</span><span style="flex:1;height:1px;background:var(--divider)"></span>
+      </div>
+      <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:24px 28px;margin-bottom:16px;position:relative;z-index:1;box-shadow:0 4px 20px rgba(0,0,0,.08);max-width:1180px;margin-left:auto;margin-right:auto">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span>판독문</span><span style="flex:1;height:1px;background:#E2E8F0"></span>
+      </div>
+      ${slotsH}
+    </div>
+
+
+    <div style="padding-top:16px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1;max-width:1180px;margin-left:auto;margin-right:auto">
+      <button id="btnR2"
+        style="width:100%;padding:12px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;box-shadow:0 4px 14px rgba(139,92,246,.35)"
+        onclick="openReport()">
+        📄 학부모 리포트 출력
+      </button>
+    </div>
+  </div>
+
+
+
+`;
+
+  // 로그 섹션을 문자열로 별도 생성 후 삽입
+  return html;
 }
 
 // ════════════════════════════════════════════════
@@ -2158,11 +1552,9 @@ function runEntryAnimation(rv, eng, inp) {
   t += 400;
   setTimeout(function(){
     var spdEl = document.getElementById('heroSpd');
-    var _rawSpd2 = (eng&&eng.spd)||(inp&&inp.spd)||0;
-    var _spd = isNaN(Number(_rawSpd2)) ? 0 : Number(_rawSpd2);
-    if (spdEl && _spd) {
+    if (spdEl && inp.spd) {
       spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
-      var start = 0, startTime = null, target = _spd;
+      var start = 0, startTime = null, target = inp.spd;
       function step(ts) {
         if (!startTime) startTime = ts;
         var p = Math.min((ts - startTime) / 900, 1);
@@ -2262,9 +1654,6 @@ function showInputPage() {
   }, 250);
 }
 window.showInputPage      = showInputPage;
-window.showResultPage     = showResultPage;
-window.renderResult       = renderResult;
-window.runEntryAnimation  = runEntryAnimation;
 
 window.HAB_ITEMS=HAB_ITEMS;
 window.EFF_ITEMS=EFF_ITEMS;
@@ -2292,9 +1681,6 @@ var tagStyle = {
   "위험":"background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.25)"
 };
 
-function buildEvBulletsOnly(item) {
-  return buildEvCardHTML(item);
-}
 
 function buildEvCardHTML(item) {
   var bullets = item.bullets.filter(function(b){ return b.t !== '_meta'; });
@@ -2608,11 +1994,7 @@ function postRenderSWOT(eng, inp) {
 
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
-  if (heroSpd) {
-    var _rawSpd = (eng&&eng.spd) || (inp&&inp.spd) || 0;
-    var _s = isNaN(Number(_rawSpd)) ? 0 : Number(_rawSpd);
-    heroSpd.textContent = _s > 0 ? _s.toLocaleString() : '—';
-  }
+  if (heroSpd) heroSpd.textContent = Number(inp.spd||0).toLocaleString() || '—';
 
   // 학생 정보 카드 → studentInfoSlot으로 이동
   var srcCard = document.getElementById('studentInfoCard');
@@ -2851,8 +2233,7 @@ function rpBuildResultHTML(eng, inp) {
   var fct      = inp.fct  > 0 ? inp.fct  : eng.acc;
   var str_     = inp.str  > 0 ? inp.str  : eng.acc;
   var avgAcc   = Math.round((fct + str_) / 2);
-  var _spdRaw = (inp&&inp.spd)||(eng&&eng.spd)||0;
-  var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
+  var spd      = inp.spd || 0;
 
   // 체크 항목
   var habChecked = HAB_ITEMS.map(function(item){ return inp.habChecked && inp.habChecked.indexOf(item) > -1; });
@@ -3081,13 +2462,6 @@ function rpBuildPolarSVG(factors, size) {
     +'</svg>';
 }
 
-function renderResultPageThumb(eng, inp) {
-  var thumb = document.getElementById('resultPageThumb');
-  var inner = document.getElementById('resultPageThumbInner');
-  if (!thumb || !inner) return;
-  inner.innerHTML = rpBuildResultHTML(eng, inp);
-  thumb.style.display = 'block';
-}
 
 function openResultPageOverlay() {
   var eng = window.__eng, inp = window.__inp;
@@ -3141,7 +2515,6 @@ function resetAll(){
   closeReport();
   document.querySelector(".R").scrollTop=0;
 }
-window.resetAll=resetAll;
 
 function resetAllFull(){
   if(!confirm("입력값과 판독 결과 모두 초기화됩니다. 계속하시겠습니까?"))return;
@@ -3173,7 +2546,6 @@ function resetAllFull(){
   document.querySelector(".R").scrollTop=0;
   document.querySelector(".L-body").scrollTop=0;
 }
-window.resetAllFull=resetAllFull;
 document.getElementById("btnReset").addEventListener("click",resetAll);
 // ── 리포트 열기 ──
 function openReport(){
@@ -3184,10 +2556,10 @@ function openReport(){
   var imgEl=document.getElementById("imgPreview");
   var imgSrc=imgEl&&imgEl.src&&imgEl.src.startsWith("data:")?imgEl.src:null;
   var d={
-    name:gv("iName").value||"학생",
-    level:gv("iLevel").value,
-    grade:parseInt(gv("iGrade").value)||0,
-    uiLevel:gv("iLevel").value,
+    name:gv("iName")?gv("iName").value||"학생":"학생",
+    level:gv("iLevel")?gv("iLevel").value:"",
+    grade:gv("iGrade")?parseInt(gv("iGrade").value)||0:0,
+    uiLevel:gv("iLevel")?gv("iLevel").value:"",
     kor:gv("sS0")?gv("sS0").value:"-",
     eng_score:gv("sS1")?gv("sS1").value:"-",
     math:gv("sS2")?gv("sS2").value:"-",
@@ -3208,7 +2580,6 @@ function openReport(){
   } catch(e) { alert("데이터 저장 실패: "+e.message); return; }
   window.open("tq_report_standalone_v2.html", "_blank");
 }
-window.openReport=openReport;
 
 gv("btnR").addEventListener("click",openReport);
 
@@ -4239,33 +3610,6 @@ function updateBadge() {
 }
 
 // ── JSON ──
-function openExport() {
-  document.getElementById('modalTitle').textContent = 'JSON 내보내기';
-  document.getElementById('jsonArea').value = JSON.stringify(MESSAGES,null,2);
-  document.getElementById('applyBtn').style.display='none';
-  document.getElementById('copyBtn').style.display='inline-block';
-  document.getElementById('jsonModal').classList.add('show');
-}
-function openImport() {
-  document.getElementById('modalTitle').textContent = 'JSON 불러오기';
-  document.getElementById('jsonArea').value = '';
-  document.getElementById('applyBtn').style.display='inline-block';
-  document.getElementById('copyBtn').style.display='none';
-  document.getElementById('jsonModal').classList.add('show');
-}
-function applyImport() {
-  try {
-    MESSAGES = JSON.parse(document.getElementById('jsonArea').value);
-    ORIG = JSON.parse(JSON.stringify(MESSAGES));
-    changedIds.clear(); editingId=null;
-    renderNav(); if(curKey&&MESSAGES[curKey]) renderEditor(curKey);
-    closeModal(); showToast('불러오기 완료');
-  } catch(e){ alert('JSON 오류: '+e.message); }
-}
-function copyJson(){
-  var ta=document.getElementById('jsonArea'); ta.select(); document.execCommand('copy');
-  showToast('복사됐습니다');
-}
 function closeModal(){
   var modal = document.getElementById('jsonModal');
   if(modal) modal.classList.remove('show');
@@ -4379,50 +3723,10 @@ function renderContraTable() {
   });
 }
 
-function editContraRow(id) {
-  contraEditId = id;
-  renderContraTable();
-}
 
-function cancelContraEdit() {
-  contraEditId = null;
-  renderContraTable();
-}
 
-function saveContraRow(id) {
-  var r = CONTRA_RULES.find(function(x){ return x.id===id; });
-  if (!r) return;
-  r.name      = document.getElementById('ce_name').value.trim();
-  r.strength  = document.getElementById('ce_str').value.trim();
-  r.weakness  = document.getElementById('ce_weak').value.trim();
-  r.condition = document.getElementById('ce_cond').value.trim();
-  r.severity  = document.getElementById('ce_sev').value;
-  r.desc      = document.getElementById('ce_desc').value.trim();
-  r.engine    = document.getElementById('ce_eng').value.trim();
-  contraEditId = null;
-  renderContraTable();
-  showToast('저장됐습니다');
-}
 
-function addContraRow() {
-  var newId = 'C' + (Date.now());
-  CONTRA_RULES.push({
-    id:newId, name:'새 패턴',
-    strength:'', weakness:'',
-    condition:'', severity:'주의',
-    desc:'패턴 설명을 입력하세요',
-    engine:'(미구현)', active:false
-  });
-  contraEditId = newId;
-  renderContraTable();
-}
 
-function delContraRow(id) {
-  if (!confirm('이 패턴을 삭제할까요?')) return;
-  CONTRA_RULES = CONTRA_RULES.filter(function(x){ return x.id!==id; });
-  renderContraTable();
-  showToast('삭제됐습니다');
-}
 
 // ── 엔진 코드 내보내기 ──
 function openEngineExport() {
@@ -4814,15 +4118,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 300);
 
   }
-  // tqdata 없음 → 샘플 테스트 버튼 표시
+  // tqdata 없음 → 샘플 버튼 렌더링
   if (!tqRaw) {
     document.addEventListener('DOMContentLoaded', function(){
-      var pi = document.getElementById('page-input');
-      if (!pi) return;
-      pi.style.display = 'flex';
-      pi.style.alignItems = 'center';
-      pi.style.justifyContent = 'center';
-
       var sampleData = [
         { name:'진호윤', label:'초등5 · 고역량 완성형', color:'#0BA98E',
           level:'초고', grade:5, fct:100, str:80, spd:1794, voc:65, wm:50, inf:70,
@@ -4845,21 +4143,16 @@ document.addEventListener('DOMContentLoaded', function() {
           hab_checks:[false,false,false,true,false,true,false,true,false,false],
           eff_checks:[false,true,false,true,true,false,true,false,false,false] }
       ];
-
-      var btns = sampleData.map(function(s) {
-        var enc = encodeURIComponent(JSON.stringify(s));
-        return '<button onclick="loadSampleParam(\'' + enc + '\')"'
-          + ' style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;min-width:200px">'
+      var btns = document.getElementById('sampleBtns');
+      if (!btns) return;
+      btns.innerHTML = sampleData.map(function(s) {
+        return '<button onclick="loadSampleParam(' + JSON.stringify(s).replace(/"/g,'&quot;') + ')"'
+          + ' style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);'
+          + 'border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">'
           + '<div style="font-size:14px;font-weight:700;color:' + s.color + ';margin-bottom:4px">' + s.name + '</div>'
           + '<div style="font-size:11px;color:rgba(255,255,255,.5)">' + s.label + '</div>'
           + '</button>';
       }).join('');
-
-      pi.innerHTML = '<div style="text-align:center;font-family:inherit;color:#94A3B8;padding:40px">'
-        + '<div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px">테스트 샘플 선택</div>'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">' + btns + '</div>'
-        + '<div style="font-size:11px;color:rgba(255,255,255,.25)">실제 운영 시 학원 관리 시스템에서 자동으로 데이터가 전달됩니다</div>'
-        + '</div>';
     });
   }
 });
