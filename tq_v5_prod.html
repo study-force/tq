@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.24</span> · 로드시판독문재생성방지
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.25</span> · 로드복원구조재설계
     </div>
 
   </div>
@@ -5069,23 +5069,38 @@ function injectTqDataAndRun(d) {
     var _loaded = false;  // 로드 완료 플래그
     loadTqResult(d.name, d.grade, d.spd, function(saved) {
       _loaded = true;
-      // 기존 결과 발견 — 엔진만 실행 (판독문 자동 생성 건너뜀)
-      window.__nm                  = d.name;
-      window.__TQ_SAVED_ID         = saved.id;
-      window.__SKIP_AUTO_GENERATE  = true;  // btnB 자동 클릭 방지
-      var btnA = document.getElementById('btnA');
-      if (btnA) btnA.click();
-      // 엔진 완료 후 저장된 슬롯 + 리포트 복원
-      setTimeout(function() {
-        window.__eng      = saved.eng;
-        window.__inp      = saved.inp;
-        window.__TQ_SLOTS = saved.slots;
-        window.__reportRendered = false;  // 리포트 재렌더 허용
-        try { renderReportTab(); window.__reportRendered = true; } catch(e){}
-        var btnR = document.getElementById('btnR');
-        if (btnR) btnR.disabled = false;
-        showSavedResultToast(saved.test_date);
-      }, 1200);
+      // ── 기존 결과 발견 ──
+      // btnA.click() 없이 저장된 데이터 직접 복원
+      window.__nm          = d.name;
+      window.__inp         = saved.inp;
+      window.__eng         = saved.eng;
+      window.__TQ_SLOTS    = saved.slots;
+      window.__TQ_SAVED_ID = saved.id;
+
+      // 저장된 inp로 폼 필드 재주입 (검사일 포함)
+      if (saved.inp) injectTqDataAndRun.__formOnly(saved.inp);
+
+      // 판독 탭 화면 렌더
+      var rv = document.getElementById('resultView');
+      if (rv && saved.eng && saved.inp) {
+        try { rv.innerHTML = renderResult(saved.eng, saved.inp.name || d.name); } catch(e){}
+      }
+      showResultPage(d.name);
+
+      // 리포트 렌더
+      window.__reportRendered = false;
+      try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+
+      // 버튼 활성화
+      var btnR = document.getElementById('btnR');
+      if (btnR) btnR.disabled = false;
+      var btnB = document.getElementById('btnB');
+      if (btnB) btnB.disabled = false;
+
+      // 편집바
+      try { showEditBar(); } catch(e){}
+
+      showSavedResultToast(saved.test_date);
     });
     // 2초 후에도 로드 안 됐으면 → 새로 엔진 실행
     setTimeout(function() {
@@ -5102,6 +5117,45 @@ function injectTqDataAndRun(d) {
   }
 }
 window.injectTqDataAndRun = injectTqDataAndRun;
+
+// 폼 필드만 채우는 헬퍼 (엔진 실행 없음) — 로드 복원용
+injectTqDataAndRun.__formOnly = function(inp) {
+  if (!inp) return;
+  var dateEl = document.getElementById('iDate');
+  if (dateEl && inp.test_date) dateEl.value = inp.test_date;
+  var nameEl = document.getElementById('iName');
+  if (nameEl && inp.name) nameEl.value = inp.name;
+  // 슬라이더 복원
+  function setSlider(id, val) {
+    if (val == null) return;
+    var el = document.getElementById(id);
+    if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+    var sp = document.getElementById(id+'V');
+    if (sp) sp.textContent = val;
+  }
+  setSlider('sFct', inp.fct);
+  setSlider('sStr', inp.str !== undefined ? inp.str : inp.str_);
+  setSlider('sVoc', inp.voc);
+  setSlider('sWm',  inp.wm);
+  setSlider('sInf', inp.inf);
+  var spdEl = document.getElementById('sSpd');
+  if (spdEl && inp.spd) spdEl.value = inp.spd;
+  // 체크리스트 복원
+  var habChecked = inp.habChecked || [];
+  var HAB = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨","긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨","글 읽는 속도가 느린 편임"];
+  HAB.forEach(function(item, i) {
+    var el = document.getElementById('h'+i);
+    if (el) el.checked = habChecked.indexOf(item) > -1;
+  });
+  var effChecked = inp.effChecked || [];
+  var EFF = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+  EFF.forEach(function(item, i) {
+    var el = document.getElementById('e'+i);
+    if (el) el.checked = effChecked.indexOf(item) > -1;
+  });
+  if (window.updateChkScore) window.updateChkScore();
+  if (window.updateAccuracy) window.updateAccuracy();
+};
 
 // 랜딩 화면의 샘플 버튼 → SAMPLES 데이터를 직접 주입 후 실행
 function runSampleDirect(idx) {
@@ -5406,7 +5460,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.24</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.25</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
