@@ -517,12 +517,19 @@ details summary:hover{color:var(--tx2)}
     display:block!important;
     padding:0!important; margin:0!important;
   }
-  /* .page: height 고정 유지 + overflow:hidden 유지 → 각 페이지 정확히 1장 */
+  /* .page: 인쇄 시 고정 크기 유지 */
   #resultPane_리포트 .page {
     box-shadow:none!important; border-radius:0!important;
     margin:0!important; padding:0!important;
     page-break-after:always!important; break-after:page!important;
-    page-break-inside:avoid!important; break-inside:avoid!important;
+    /* 본문 flex:1이 높이를 못 받는 문제 해결 */
+    height:1123px!important; width:794px!important;
+    display:flex!important; flex-direction:column!important;
+    overflow:hidden!important;
+  }
+  /* 본문 div(flex:1)가 인쇄 시에도 높이를 받도록 */
+  #resultPane_리포트 .page > div[style*="flex:1"] {
+    flex:1!important; min-height:0!important;
   }
   #resultPane_리포트 .page:last-child {
     page-break-after:auto!important; break-after:auto!important;
@@ -645,8 +652,8 @@ details summary:hover{color:var(--tx2)}
     </div>
 
     <!-- 하단 버전 표시 -->
-    <div style="margin-top:32px;font-size:9.5px;color:rgba(255,255,255,.2);letter-spacing:.5px">
-      TQ Analysis Engine v5 · StudyForce © 2025
+    <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.1</span> · 슬롯겹침수정/인쇄개선
     </div>
 
   </div>
@@ -5266,6 +5273,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.1</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
