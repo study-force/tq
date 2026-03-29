@@ -1751,6 +1751,10 @@ gv("btnB").addEventListener("click",async function(){
     }
     window.__TQ_SLOTS=slots;
     gv("btnR").disabled=false;
+    // 리포트 최초 1회 렌더 (이후 탭 전환은 display 토글만)
+    if (!window.__reportRendered) {
+      try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
+    }
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
     console.error("[TQ generate error]", err);
@@ -2408,12 +2412,7 @@ function switchResultTab(tab) {
     btn.style.color = isActive ? '#A78BFA' : 'rgba(255,255,255,.35)';
     btn.style.borderBottomColor = isActive ? '#8B5CF6' : 'transparent';
   });
-  // 리포트 탭 전환 시 렌더
-  if (tab === '리포트') {
-    if (window.__TQ_SLOTS && window.__eng && window.__inp) {
-      try { renderReportTab(); } catch(e){ console.error('[renderReportTab]', e); }
-    }
-  }
+  // 탭 전환은 display 토글만 — 렌더는 최초 1회만 (판독문 생성 완료 시)
   var pr = document.getElementById('page-result');
   if (pr) pr.scrollTop = 0;
 }
@@ -3344,6 +3343,8 @@ function resetAll(){
   if(repPlaceholder) repPlaceholder.style.display='block';
   var rptWrap = document.getElementById('rptPageWrap');
   if(rptWrap){ rptWrap.innerHTML=''; rptWrap.style.display='none'; }
+  // 리포트 렌더 초기화 플래그 (다음 판독문 생성 시 재렌더)
+  window.__reportRendered = false;
   var tabRpt = document.getElementById('resultTab_리포트');
   if(tabRpt){ tabRpt.style.color='rgba(255,255,255,.35)'; tabRpt.style.borderBottomColor='transparent'; tabRpt.innerHTML='📄 리포트'; }
   var oldEditBar = document.getElementById('editBar');
