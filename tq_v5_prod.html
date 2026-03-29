@@ -496,52 +496,56 @@ details summary:hover{color:var(--tx2)}
   margin: 0;
 }
 @media print {
-  /* 리포트 4페이지 외 모든 UI 숨김 */
+  /* ── 리포트 4페이지 외 모든 UI 숨김 ── */
   body > *:not(#v5panel_판독) { display:none!important; }
   #v5panel_판독 > *:not(#page-result) { display:none!important; }
   #page-result > *:not(#resultPane_리포트) { display:none!important; }
   #resultPane_리포트 { display:block!important; background:white!important; }
-
-  /* 고정 헤더/편집바/탭바 숨김 */
   #editBar, #resultTabBar, #headerPrintBtn { display:none!important; }
   div[style*="position:fixed"] { display:none!important; }
 
-  /* 페이지 여백 제거 */
+  /* ── html/body 리셋 ── */
   html, body {
     margin:0!important; padding:0!important;
     width:210mm!important; height:auto!important;
     overflow:visible!important; background:white!important;
   }
 
-  /* rptPageWrap: 화면용 여백/간격 제거 */
-  #rptPageWrap {
-    display:block!important;
-    padding:0!important; gap:0!important;
-    align-items:unset!important;
-    width:210mm!important;
-  }
-
-  /* 각 페이지: A4 크기 정확히 고정, 여백 없음 */
-  #resultPane_리포트 .page {
-    width:210mm!important; height:297mm!important;
-    max-height:297mm!important;
-    box-shadow:none!important; border-radius:0!important;
-    page-break-after:always!important;
-    break-after:page!important;
-    overflow:hidden!important;
-    margin:0!important; padding:0!important;
-    position:relative!important;
-  }
-  #resultPane_리포트 .page:last-child {
-    page-break-after:auto!important;
-    break-after:auto!important;
-  }
-
-  /* page-result 스크롤/고정 해제 */
+  /* ── page-result 해제 ── */
   #page-result {
     height:auto!important; overflow:visible!important;
     position:static!important; margin-top:0!important;
     padding-bottom:0!important;
+  }
+
+  /* ── 핵심: .page 크기는 건드리지 않고
+         rptPageWrap을 A4 너비(210mm)에 맞게 scale
+         794px → 210mm = 794px → 793.7px (96dpi 기준 210mm)
+         scale = 793.7 / 794 ≈ 0.9996 → 사실상 1:1
+         하지만 브라우저 margin 영향 제거를 위해
+         transform-origin top left + 정확한 scale 적용 ── */
+  #rptPageWrap {
+    display:block!important;
+    padding:0!important; gap:0!important;
+    align-items:unset!important;
+    /* 794px가 A4(210mm@96dpi=793.7px)와 거의 동일하므로
+       scale 1로 두고 left margin만 0으로 */
+    margin:0!important;
+    transform-origin: top left !important;
+  }
+
+  /* ── 각 .page: 크기 그대로 유지, 페이지 나누기만 설정 ── */
+  #resultPane_리포트 .page {
+    box-shadow:none!important;
+    border-radius:0!important;
+    page-break-after:always!important;
+    break-after:page!important;
+    /* overflow:hidden 유지 — 내용이 페이지 밖으로 나가지 않게 */
+    margin:0!important;
+  }
+  #resultPane_리포트 .page:last-child {
+    page-break-after:auto!important;
+    break-after:auto!important;
   }
 }
 </style>
@@ -694,16 +698,41 @@ details summary:hover{color:var(--tx2)}
 
 <script>
 
-// ── 인쇄 / PDF 저장 — 파일명 동적 설정 ──
+// ── 인쇄 / PDF 저장 — 파일명 동적 설정 + scale 보정 ──
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
   var orig = document.title;
-  if (nm) {
-    document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
+  var origStyle = '';
+
+  if (nm) document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
+
+  // .page 기준 너비(794px)를 실제 인쇄 너비(A4=210mm)에 맞게 scale 계산
+  // 브라우저 1mm = 96/25.4 ≈ 3.7795px → 210mm ≈ 793.7px
+  // 즉 794px ≈ 210mm → scale ≈ 1 이지만
+  // 실제 화면 dpr/zoom에 따라 보정이 필요하므로 body 너비 기준으로 계산
+  var wrap = document.getElementById('rptPageWrap');
+  if (wrap) {
+    var bodyW = document.documentElement.clientWidth || window.innerWidth;
+    var pageW = 794; // .page 고정 너비
+    // A4 인쇄 너비(여백 0) = body clientWidth가 210mm = 793.7px 기준
+    // scale = 용지너비 / page너비
+    var a4px = Math.round(210 * 96 / 25.4); // 793px
+    var scale = Math.min(1, a4px / pageW);
+    origStyle = wrap.getAttribute('style') || '';
+    wrap.style.transform = 'scale(' + scale.toFixed(4) + ')';
+    wrap.style.transformOrigin = 'top left';
+    wrap.style.width = (pageW * scale) + 'px';
   }
+
   window.print();
-  // 인쇄 다이얼로그 닫힌 후 원래 title 복원
-  setTimeout(function(){ document.title = orig; }, 1000);
+
+  // 인쇄 후 원상복귀
+  setTimeout(function(){
+    document.title = orig;
+    if (wrap) {
+      wrap.setAttribute('style', origStyle);
+    }
+  }, 1000);
 }
 window.printReport = printReport;
 
