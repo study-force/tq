@@ -2401,7 +2401,7 @@ function switchResultTab(tab) {
     btn.style.color = isActive ? '#A78BFA' : 'rgba(255,255,255,.35)';
     btn.style.borderBottomColor = isActive ? '#8B5CF6' : 'transparent';
   });
-  // 리포트 탭 전환 시 렌더 (탭 클릭할 때마다 최신 데이터로 재렌더)
+  // 리포트 탭 전환 시 렌더
   if (tab === '리포트') {
     if (window.__TQ_SLOTS && window.__eng && window.__inp) {
       try { renderReportTab(); } catch(e){ console.error('[renderReportTab]', e); }
@@ -5299,6 +5299,7 @@ function buildFooter(pageNum, total) {
 // 페이지 1 — TQ 결과지
 // ══════════════════════════
 function buildPage1() {
+  var TOTAL = 4;
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
   var factual    = D.fct>0 ? D.fct : D.acc;
   var structural = D.str_>0 ? D.str_ : D.acc;
@@ -5445,6 +5446,8 @@ function buildSlotBlock(i) {
 }
 
 function buildDualSlotPage(a, b, pageNum, total) {
+  var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
+  var RPT_dateStr = (function(){ var d=new Date(); return d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일"; })();
   var div = document.createElement('div');
   div.className = 'page';
   div.innerHTML =
@@ -5950,6 +5953,8 @@ function requestAiReasons() {
 }
 
 function applyEdit() {
+  var TOTAL = 4;
+  var wrap = document.getElementById('rptPageWrap');
   // presc 업데이트
   D.presc = currentActiveKeys.map(function(k, i){ return { p: i+1, c: k }; });
   // AI 이유가 있으면 D.roadmapReasons와 ALL_PROGRAMS 모두에 반영
