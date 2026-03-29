@@ -5812,6 +5812,11 @@ var currentActiveKeys = [];
 function buildEditBar() {
   var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
   var recCourse = COURSES[recCode];
+  // currentActiveKeys가 비어있으면 추천 코스로 채움 (어떤 경로로 호출되든 보장)
+  if (!currentActiveKeys.length) {
+    currentActiveKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+    currentCourseCode = recCode;
+  }
 
   var bar = document.createElement('div');
   bar.id = 'editBar';
@@ -5924,7 +5929,7 @@ function lockEditBar() {
 function rebuildEditBar() {
   var old = document.getElementById('editBar');
   if (!old) return;
-  // D 안전하게 확보: __RPT_D → __eng/__inp 최소 조립 순서
+  // D 안전하게 확보
   var _savedD = D;
   var _useD = window.__RPT_D;
   if (!_useD && window.__eng && window.__inp) {
@@ -5936,6 +5941,12 @@ function rebuildEditBar() {
     };
   }
   if (!_useD) return;
+  // currentActiveKeys가 비어있으면 추천 과정으로 채움
+  if (!currentActiveKeys.length) {
+    var _rc = recommendCourse(_useD.uiLevel||_useD.level, _useD.grade, _useD.acc, _useD.kor);
+    currentActiveKeys = buildPrescFromCourse(_rc).map(function(p){ return p.c; });
+    currentCourseCode = _rc;
+  }
   D = _useD;
   var newBar = buildEditBar();
   D = _savedD;
@@ -6163,12 +6174,8 @@ function renderReportTab() {
   try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
   try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); }
 
-  // currentActiveKeys 초기화
-  currentActiveKeys = D.presc.map(function(p){ return p.c; });
-  if (!currentActiveKeys.length) {
-    var recCode = recommendCourse(D.uiLevel || D.level, D.grade, D.acc, D.kor);
-    currentActiveKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
-  }
+  // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
+  // renderReportTab은 덮어쓰지 않음
 
 }
 window.renderReportTab = renderReportTab;
