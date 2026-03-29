@@ -639,7 +639,7 @@ details summary:hover{color:var(--tx2)}
 
         <button onclick="runSampleDirect(1)" style="background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(220,38,38,.16)';this.style.borderColor='rgba(220,38,38,.4)'" onmouseout="this.style.background='rgba(220,38,38,.07)';this.style.borderColor='rgba(220,38,38,.2)'">
           <div style="font-size:13px;font-weight:700;color:#FCA5A5;margin-bottom:4px">이준혁</div>
-          <div style="font-size:9.5px;color:rgba(255,255,255,.4);line-height:1.6">중학교 2학년<br>역량 모순 · 즉각 개입 필요</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">중학교 2학년<br>역량 모순 · 즉각 개입 필요</div>
           <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(220,38,38,.13);border-radius:4px;padding:2px 7px">
             <span style="font-size:9px;font-weight:700;color:#FCA5A5">▶ 분석 시작</span>
           </div>
@@ -698,8 +698,7 @@ details summary:hover{color:var(--tx2)}
 
 <script>
 
-// ── 인쇄 / PDF 저장 — 인쇄 전용 창 생성 방식 ──
-// 별도 파일 없이 현재 파일에서 동적으로 인쇄 창 생성
+// ── 인쇄 / PDF 저장 — Blob URL 방식 (여백 설정 무관) ──
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
   var wrap = document.getElementById('rptPageWrap');
@@ -708,36 +707,52 @@ function printReport() {
     return;
   }
 
-  // 현재 페이지의 모든 <style> 수집
+  // 현재 페이지 스타일 수집
   var styles = '';
-  document.querySelectorAll('style').forEach(function(s){ styles += s.outerHTML; });
-  // 구글 폰트 링크 수집
-  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){ styles += l.outerHTML; });
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
+    styles += l.outerHTML;
+  });
+  document.querySelectorAll('style').forEach(function(s){
+    styles += s.outerHTML;
+  });
 
-  // 인쇄 전용 HTML 구성
   var title = nm ? ('스터디포스 TQ TEST 분석 결과 : ' + nm) : '스터디포스 TQ TEST 분석 결과';
-  var html = '<!DOCTYPE html><html lang="ko"><head>'
-    + '<meta charset="UTF-8">'
-    + '<title>' + title + '</title>'
-    + styles
-    + '<style>'
-    + '@page { size:A4 portrait; margin:0; }'
-    + 'html,body { margin:0; padding:0; background:white; }'
-    + '#rptPageWrap { display:block; padding:0; gap:0; }'
-    + '.page { box-shadow:none !important; border-radius:0 !important; page-break-after:always; break-after:page; }'
-    + '.page:last-child { page-break-after:auto; break-after:auto; }'
-    + '</style>'
-    + '</head><body>'
-    + '<div id="rptPageWrap">' + wrap.innerHTML + '</div>'
-    + '<script>window.onload=function(){ window.print(); window.onafterprint=function(){ window.close(); }; };<\/script>'
-    + '</body></html>';
+  var pageHTML = wrap.innerHTML;
 
-  // 인쇄 전용 창 열기
-  var pw = window.open('', '_blank', 'width=900,height=700');
-  if (!pw) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.'); return; }
-  pw.document.open();
-  pw.document.write(html);
-  pw.document.close();
+  var html = [
+    '<!DOCTYPE html><html lang="ko"><head>',
+    '<meta charset="UTF-8">',
+    '<title>' + title + '</title>',
+    styles,
+    '<style>',
+    '@page { size:A4 portrait; margin:0; }',
+    'html,body { margin:0; padding:0; background:white; }',
+    '#rptPageWrap { display:block !important; padding:0 !important; gap:0 !important; width:794px; }',
+    '.page { width:794px !important; height:1123px !important; box-shadow:none !important; border-radius:0 !important; overflow:hidden !important; page-break-after:always; break-after:page; margin:0 !important; flex-shrink:0; }',
+    '.page:last-child { page-break-after:auto; break-after:auto; }',
+    '</style>',
+    '</head><body>',
+    '<div id="rptPageWrap">' + pageHTML + '</div>',
+    '</body></html>'
+  ].join('');
+
+  // Blob URL로 새 창 열기 — document.write보다 안정적
+  var blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var pw   = window.open(url, '_blank');
+  if (!pw) {
+    URL.revokeObjectURL(url);
+    alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.');
+    return;
+  }
+  // 창 로드 후 자동 인쇄
+  pw.addEventListener('load', function() {
+    setTimeout(function() {
+      pw.focus();
+      pw.print();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 3000);
+    }, 800); // 폰트 로드 대기
+  });
 }
 window.printReport = printReport;
 
