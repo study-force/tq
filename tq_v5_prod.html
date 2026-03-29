@@ -1081,7 +1081,7 @@ function getInputs(){
         level:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
     grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
     kor:gv("sS0").value, eng:gv("sS1").value, math:gv("sS2").value,
-    acc, spd:+gv("sSpd").value, fct, str,
+    acc, spd:parseInt(gv("sSpd").value)||0, fct, str,
     voc:+gv("sVoc").value, wm:+gv("sWm").value, inf:+gv("sInf").value,
     hab:habScore, eff:effScore,
     habChecked, effChecked
@@ -1369,7 +1369,7 @@ function renderResult(e,nm){
     "독해습관":{v:e.hab,thresh:50},
     "독해효율성":{v:e.eff,thresh:50}
   };
-  function barColor(v,t){return v>=90?"#10B981":v>=70?"#3B82F6":v>=50?"#FBBF24":"#F87171";}
+  function barColor(v,t){return v>90?"#3B82F6":v>=81?"#22C55E":v>=71?"#EAB308":v>=61?"#F97316":"#EF4444";}
   const ibars=Object.entries(rawScores).map(([lb,d])=>{
     const pct=Math.round(d.v);
     const col=barColor(d.v,d.thresh);
@@ -2317,9 +2317,10 @@ function runEntryAnimation(rv, eng, inp) {
   t += 400;
   setTimeout(function(){
     var spdEl = document.getElementById('heroSpd');
-    if (spdEl && inp.spd) {
+    var _spd = (eng.spd||inp.spd||0);
+    if (spdEl && _spd) {
       spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
-      var start = 0, startTime = null, target = inp.spd;
+      var start = 0, startTime = null, target = _spd;
       function step(ts) {
         if (!startTime) startTime = ts;
         var p = Math.min((ts - startTime) / 900, 1);
@@ -2765,7 +2766,7 @@ function postRenderSWOT(eng, inp) {
 
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
-  if (heroSpd) heroSpd.textContent = Number(inp.spd||eng.spd||0).toLocaleString() || '—';
+  if (heroSpd) { var _s=eng.spd||inp.spd||0; heroSpd.textContent = _s ? _s.toLocaleString() : '—'; }
 
   // 학생 정보 카드 → studentInfoSlot으로 이동
   var srcCard = document.getElementById('studentInfoCard');
