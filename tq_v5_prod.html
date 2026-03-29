@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.52</span> · 판독탭학생명중앙+탭위치고정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.53</span> · 판독학생명제거+리포트날짜중앙</div>
 
   </div>
 </div>
@@ -685,7 +685,6 @@ details summary:hover{color:var(--tx2)}
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
   <div id="resultPane_판독" style="display:block">
-    <div id="pandok-student-banner" style="display:none;text-align:center;padding:14px 0 6px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:-.1px"></div>
     <div id="resultView" style="padding:20px 0"></div>
   </div>
   <!-- 리포트 탭 컨텐츠 -->
@@ -2570,20 +2569,6 @@ function showResultPage(nm) {
   if (!inp || !res) return;
   // 헤더에 학생명 + 학교/학년 + 검사일 표시
   var nameEl = document.getElementById('result-student-name');
-  // 판독 탭 상단 학생명+검사일 배너 표시
-  var _banner = document.getElementById('pandok-student-banner');
-  if (_banner && nm) {
-    var _inp = window.__inp || {};
-    var _lvMap = {초등:'초등학교',초저:'초등학교',초고:'초등학교',중등:'중학교',고등:'고등학교',일반:''};
-    var _lv = _lvMap[_inp.uiLevel||_inp.level] || '';
-    var _gr = _inp.grade ? _inp.grade+'학년' : '';
-    var _dt = (function(){
-      var d = _inp.test_date ? new Date(_inp.test_date) : new Date();
-      return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
-    })();
-    _banner.textContent = nm + ' ' + _lv + (_gr ? ' ' + _gr : '') + ' · ' + _dt + ' 검사';
-    _banner.style.display = 'block';
-  }
   var tabBar = document.getElementById('resultTabBar');
   if (tabBar) tabBar.style.display = 'flex';
   // 전환 애니메이션
@@ -3416,8 +3401,7 @@ function resetAll(){
   if (_tabBar) _tabBar.style.display = 'none';
   var _nm = document.getElementById('result-student-name');
   if (_nm) { _nm.textContent=''; _nm.style.display='none'; }
-  var _bnr = document.getElementById('pandok-student-banner');
-  if (_bnr) { _bnr.textContent=''; _bnr.style.display='none'; }
+
   var _pb = document.getElementById('headerPrintBtn');
   if (_pb) _pb.style.display = 'none';
   var oldEditBar = document.getElementById('editBar');
@@ -5546,7 +5530,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.52</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.53</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5735,7 +5719,7 @@ function buildDualSlotPage(a, b, pageNum, total) {
 
     // 날짜 영역 — 슬롯 밖, 하단 고정
     +'<div style="padding:10px 72px 16px;flex-shrink:0;">'
-    +'<p style="font-size:11.5px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;margin:0;">'+D.name+' '+RPT_lvLabel+' - '+RPT_dateStr+' 검사</p>'
+    +'<p style="font-size:11.5px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;margin:0;text-align:center;">'+D.name+' '+RPT_lvLabel+' - '+RPT_dateStr+' 검사</p>'
     +'</div>'
 
     +'</div>'
