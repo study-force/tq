@@ -5714,29 +5714,37 @@ function buildLastPage(total) {
   svgParts.push('</svg>');
   var svgHtml = svgParts.join('');
 
-  // Card block
+  // Card block: 3개까지 풀카드, 4개 이상 간략 표시
   var detailCards = activePrograms.map(function(step, k){
     var absIdx = ALL_PROGRAMS.indexOf(step);
     var col = STEP_COLORS[absIdx >= 0 ? absIdx : k] || '#F47A20';
-    var reason = (typeof aiReasonCache !== 'undefined' && aiReasonCache[step.key]) ? aiReasonCache[step.key] : ((D.roadmapReasons && D.roadmapReasons[step.key]) ? D.roadmapReasons[step.key] : (typeof step.reasonFn === 'function' ? step.reasonFn(D) : (step._aiReason || step.desc || '')));
+    if (k >= 3) {
+      // 4번째 이상: 이름 + 기간만
+      return '<div style="border:1px solid '+col+'55;background:#fff;padding:8px 16px 8px 18px;position:relative;display:flex;align-items:center;gap:10px;">'
+        +'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+col+';"></div>'
+        +'<span style="font-size:12px;font-weight:700;color:#64748B;font-family:Noto Sans KR,sans-serif;">'+(k+1)+'. '+step.key+'</span>'
+        +'<span style="margin-left:auto;font-size:11px;color:#94A3B8;white-space:nowrap;">'+step.sessions+'회 · '+step.period+'</span>'
+        +'</div>';
+    }
+    var reason = (D.roadmapReasons && D.roadmapReasons[step.key]) ? D.roadmapReasons[step.key] : (typeof step.reasonFn === 'function' ? step.reasonFn(D) : (step.desc || ''));
     return '<div style="border:1px solid '+col+';background:#fff;padding:13px 20px 13px 18px;position:relative;">'
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+col+';"></div>'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">'
       +'<svg width="25" height="24" viewBox="0 0 25 24" style="flex-shrink:0;overflow:visible;">'
       +'<path d="M 0 0 L 17 0 L 25 12 L 17 24 L 0 24 Z" fill="'+col+'" stroke="'+(col==="#F5C518"?"#C89B00":col==="#F47A20"?"#C85F00":col==="#7CB342"?"#5A8A1E":col==="#4A90D9"?"#2B6BAD":"#C8D0DC")+'" stroke-width="1.2"/>'
-      +'<text x="10" y="12" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="#fff" font-family="\'Noto Sans KR\',sans-serif">'+(k+1)+'</text>'
+      +'<text x="10" y="12" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="#fff" font-family="Noto Sans KR,sans-serif">'+(k+1)+'</text>'
       +'</svg>'
-      +'<span style="font-size:14px;font-weight:700;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;letter-spacing:-.3px;">'+step.key+'</span>'
-      +'<span style="margin-left:auto;font-size:11px;color:'+(col==="#F5C518"?"#B8860B":col)+';padding:2px 10px;border:1px solid '+col+';font-family:\'Noto Sans KR\',sans-serif;white-space:nowrap;font-weight:600;">'+step.sessions+'\ud68c \u00b7 '+step.period+'</span>'
+      +'<span style="font-size:14px;font-weight:700;color:#1A2332;font-family:Noto Sans KR,sans-serif;letter-spacing:-.3px;">'+step.key+'</span>'
+      +'<span style="margin-left:auto;font-size:11px;color:'+(col==="#F5C518"?"#B8860B":col)+';padding:2px 10px;border:1px solid '+col+';font-family:Noto Sans KR,sans-serif;white-space:nowrap;font-weight:600;">'+step.sessions+'회 · '+step.period+'</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">'
       +'<div style="border-right:1px solid '+col+'15;padding-right:20px;">'
-      +'<div style="font-size:10px;font-weight:700;color:'+(col==="#F5C518"?"#B8860B":col)+';letter-spacing:1.2px;margin-bottom:6px;font-family:\'Noto Sans KR\',sans-serif;">\ud6c8\ub828 \ubaa9\ud45c</div>'
-      +'<div style="font-size:12px;color:#374151;line-height:1.7;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'+(step.goal||step.desc)+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:'+(col==="#F5C518"?"#B8860B":col)+';letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
+      +'<div style="font-size:12px;color:#374151;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;">'+(step.goal||step.desc)+'</div>'
       +'</div>'
       +'<div style="padding-left:4px;">'
-      +'<div style="font-size:10px;font-weight:700;color:'+(col==="#F5C518"?"#B8860B":col)+';letter-spacing:1.2px;margin-bottom:6px;font-family:\'Noto Sans KR\',sans-serif;">\uad8c\uc7a5 \uc774\uc720</div>'
-      +'<div style="font-size:12px;color:#475569;line-height:1.7;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'+reason+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:'+(col==="#F5C518"?"#B8860B":col)+';letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">권장 이유</div>'
+      +'<div style="font-size:12px;color:#475569;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;">'+reason+'</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -5830,31 +5838,65 @@ function buildEditBar() {
       + '">' + p.key + '</button>';
   }).join('');
 
+  // 편집 잠금 시 버튼 비활성 스타일
+  var lockStyle = editUnlocked ? '' : 'opacity:0.45;pointer-events:none;';
+
   bar.innerHTML =
-    '<div style="display:flex;align-items:flex-start;gap:24px;">'
+    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">'
+
+    // 레이블
+    +'<div style="font-size:11px;font-weight:700;color:#A78BFA;white-space:nowrap;flex-shrink:0;">권장 훈련 로드맵</div>'
 
     // 좌측: 코스 선택
-    +'<div style="flex-shrink:0;min-width:260px;">'
-    +'<div style="font-size:10px;color:#94A3B8;letter-spacing:1px;margin-bottom:6px;">코스 선택 (★ = 자동 추천)</div>'
-    +'<div>' + courseBtns + '</div>'
+    +'<div style="flex-shrink:0;">'
+    +'<div style="font-size:9px;color:#64748B;letter-spacing:1px;margin-bottom:4px;">코스 선택 (★ = 자동 추천)</div>'
+    +'<div style="' + lockStyle + '">' + courseBtns + '</div>'
     +'</div>'
 
     // 가운데: 개별 과정 조정
     +'<div style="flex:1;">'
-    +'<div style="font-size:10px;color:#94A3B8;letter-spacing:1px;margin-bottom:6px;">과정 개별 조정</div>'
-    +'<div id="editBtns">' + stepBtns + '</div>'
+    +'<div style="font-size:9px;color:#64748B;letter-spacing:1px;margin-bottom:4px;">과정 개별 조정</div>'
+    +'<div id="editBtns" style="' + lockStyle + '">' + stepBtns + '</div>'
     +'</div>'
 
-    // 우측: 액션
-    +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">'
-    +'<button id="btnAiReason" onclick="requestAiReasons()" style="padding:7px 16px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">AI 추천 이유 생성</button>'
-    +'<button id="btnApplyEdit" onclick="applyEdit()" style="padding:7px 16px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;opacity:0.4;" disabled>적용</button>'
-
+    // 우측: 편집 버튼
+    +'<div style="flex-shrink:0;">'
+    +(editUnlocked
+      ? '<button onclick="lockEditBar()" style="padding:7px 14px;background:rgba(255,255,255,.08);color:#94A3B8;border:1px solid rgba(255,255,255,.15);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">완료</button>'
+      : '<button onclick="unlockEditBar()" style="padding:7px 14px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">✏️ 수정하기</button>'
+    )
     +'</div>'
     +'</div>';
 
   return bar;
 }
+
+
+// 편집 잠금 해제 / 잠금
+function unlockEditBar() {
+  editUnlocked = true;
+  rebuildEditBar();
+}
+function lockEditBar() {
+  editUnlocked = false;
+  rebuildEditBar();
+}
+function rebuildEditBar() {
+  var old = document.getElementById('editBar');
+  if (!old) return;
+  var _savedD = D;
+  D = window.__RPT_D || D;
+  var newBar = buildEditBar();
+  D = _savedD;
+  newBar.style.position = 'fixed';
+  newBar.style.bottom = '0';
+  newBar.style.left = '0';
+  newBar.style.right = '0';
+  newBar.style.zIndex = '200';
+  old.replaceWith(newBar);
+}
+window.unlockEditBar = unlockEditBar;
+window.lockEditBar = lockEditBar;
 
 // 코스 단위 선택
 var currentCourseCode = '';
@@ -5865,8 +5907,7 @@ function selectCourse(code) {
   currentActiveKeys = course.steps.slice();
   aiReasonCache = {};
   // 편집바 재렌더링
-  var old = document.getElementById('editBar');
-  if (old) { old.remove(); var _eb2=buildEditBar(); document.getElementById('resultPane_판독').appendChild(_eb2); }
+  rebuildEditBar();
 }
 
 function renderEditBtns(container) {
@@ -5895,11 +5936,11 @@ function toggleProgram(key) {
     var newList = allKeys.filter(function(k){ return currentActiveKeys.indexOf(k) > -1 || k === key; });
     currentActiveKeys = newList;
   }
-  // AI 이유 캐시 초기화
+  // 선택 즉시 리포트에 반영
   aiReasonCache = {};
-  // 버튼 UI 갱신
   var container = document.querySelector('#editBtns');
   if (container) renderEditBtns(container);
+  applyEdit();
 }
 
 // AI 추천 이유 캐시
@@ -5984,6 +6025,7 @@ function showToastRM(msg) {
 
 // 편집 모드 토글
 var editMode = false;
+var editUnlocked = false; // 읽기전용/편집모드 토글
 function toggleEditMode(on) {
   editMode = (on !== undefined) ? on : !editMode;
   var existing = document.getElementById('editBar');
