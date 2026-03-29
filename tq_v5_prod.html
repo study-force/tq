@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.28</span> · UPSERT오류수정+탭재확인
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.29</span> · 슬롯/파이그래프 에러추적+재렌더수정
     </div>
 
   </div>
@@ -1885,7 +1885,7 @@ gv("btnB").addEventListener("click",async function(){
     }
     window.__TQ_SLOTS=slots;
     gv("btnR").disabled=false;
-    // 판독문 생성 완료 시 항상 재렌더 (slots가 새로 생성됨)
+    // 판독문 생성 완료 시 항상 재렌더
     window.__reportRendered = false;
     try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
     // 판독 결과 자동 저장
@@ -5508,7 +5508,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.28</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.29</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6291,6 +6291,11 @@ function applyEdit() {
   }
   showToastRM('로드맵이 업데이트되었습니다.');
 
+  // 편집바 최신 presc로 갱신
+  try {
+    if (document.getElementById('editBar')) rebuildEditBar();
+  } catch(e){}
+
   // 로드맵 변경 즉시 저장
   if (window.__inp && window.__eng && window.__TQ_SLOTS) {
     saveTqResult(window.__inp, window.__eng, window.__TQ_SLOTS);
@@ -6339,8 +6344,7 @@ function renderReportTab() {
   var inp   = window.__inp;
   var slots = window.__TQ_SLOTS;
   console.log('[RPT] renderReportTab 호출 — eng:', !!eng, 'inp:', !!inp, 'slots:', slots ? Object.keys(slots) : null);
-  if (!eng || !inp) { console.warn('[RPT] eng 또는 inp 없음'); return; }
-  if (!slots || !slots.slot1) { console.warn('[RPT] slots 없음 또는 slot1 비어있음', slots); return; }
+  if (!eng || !inp || !slots) { console.warn('[RPT] 조기 return'); return; }
 
   // D 조립 (standalone 형식)
   var imgEl  = document.getElementById('imgPreview');
@@ -6388,16 +6392,18 @@ function renderReportTab() {
 
   // 페이지 빌드
   var TOTAL = 4;
-  function errDiv(label, e) {
+  function _errAlert(label, e) {
+    var msg = '[' + label + '] 오류: ' + (e && e.message ? e.message : String(e));
+    alert(msg + (e && e.stack ? '\n\n' + e.stack.slice(0, 400) : ''));
     var d = document.createElement('div');
-    d.style.cssText = 'background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:16px;color:#991B1B;font-size:13px;font-family:monospace;width:760px;margin:0 auto';
-    d.textContent = '[' + label + '] 오류: ' + (e && e.message ? e.message : String(e));
+    d.style.cssText = 'background:#FEF2F2;border:2px solid #EF4444;border-radius:8px;padding:20px;color:#991B1B;font-size:13px;font-family:monospace;width:760px;margin:16px auto;white-space:pre-wrap';
+    d.textContent = msg;
     return d;
   }
-  try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); wrap.appendChild(errDiv('buildPage1', e)); }
-  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); wrap.appendChild(errDiv('buildDualSlotPage 1-2', e)); }
-  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); wrap.appendChild(errDiv('buildDualSlotPage 3-4', e)); }
-  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); wrap.appendChild(errDiv('buildLastPage', e)); }
+  try { wrap.appendChild(buildPage1()); } catch(e){ wrap.appendChild(_errAlert('buildPage1', e)); }
+  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ wrap.appendChild(_errAlert('buildDualSlotPage 1-2', e)); }
+  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ wrap.appendChild(_errAlert('buildDualSlotPage 3-4', e)); }
+  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ wrap.appendChild(_errAlert('buildLastPage', e)); }
 
   // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
   // renderReportTab은 덮어쓰지 않음
