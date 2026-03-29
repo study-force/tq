@@ -631,7 +631,7 @@ details summary:hover{color:var(--tx2)}
 
         <button onclick="runSampleDirect(0)" style="background:rgba(139,92,246,.09);border:1px solid rgba(139,92,246,.22);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(139,92,246,.18)';this.style.borderColor='rgba(139,92,246,.4)'" onmouseout="this.style.background='rgba(139,92,246,.09)';this.style.borderColor='rgba(139,92,246,.22)'">
           <div style="font-size:13px;font-weight:700;color:#C4B5FD;margin-bottom:4px">진호윤</div>
-          <div style="font-size:9.5px;color:rgba(255,255,255,.4);line-height:1.6">초등 5학년<br>고역량 · 잠재력 미개방형</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">초등 5학년<br>고역량 · 잠재력 미개방형</div>
           <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(139,92,246,.15);border-radius:4px;padding:2px 7px">
             <span style="font-size:9px;font-weight:700;color:#A78BFA">▶ 분석 시작</span>
           </div>
@@ -698,41 +698,46 @@ details summary:hover{color:var(--tx2)}
 
 <script>
 
-// ── 인쇄 / PDF 저장 — 파일명 동적 설정 + scale 보정 ──
+// ── 인쇄 / PDF 저장 — 인쇄 전용 창 생성 방식 ──
+// 별도 파일 없이 현재 파일에서 동적으로 인쇄 창 생성
 function printReport() {
   var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
-  var orig = document.title;
-  var origStyle = '';
-
-  if (nm) document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
-
-  // .page 기준 너비(794px)를 실제 인쇄 너비(A4=210mm)에 맞게 scale 계산
-  // 브라우저 1mm = 96/25.4 ≈ 3.7795px → 210mm ≈ 793.7px
-  // 즉 794px ≈ 210mm → scale ≈ 1 이지만
-  // 실제 화면 dpr/zoom에 따라 보정이 필요하므로 body 너비 기준으로 계산
   var wrap = document.getElementById('rptPageWrap');
-  if (wrap) {
-    var bodyW = document.documentElement.clientWidth || window.innerWidth;
-    var pageW = 794; // .page 고정 너비
-    // A4 인쇄 너비(여백 0) = body clientWidth가 210mm = 793.7px 기준
-    // scale = 용지너비 / page너비
-    var a4px = Math.round(210 * 96 / 25.4); // 793px
-    var scale = Math.min(1, a4px / pageW);
-    origStyle = wrap.getAttribute('style') || '';
-    wrap.style.transform = 'scale(' + scale.toFixed(4) + ')';
-    wrap.style.transformOrigin = 'top left';
-    wrap.style.width = (pageW * scale) + 'px';
+  if (!wrap || !wrap.innerHTML.trim()) {
+    alert('리포트가 생성되지 않았습니다. 판독문 생성을 먼저 실행하세요.');
+    return;
   }
 
-  window.print();
+  // 현재 페이지의 모든 <style> 수집
+  var styles = '';
+  document.querySelectorAll('style').forEach(function(s){ styles += s.outerHTML; });
+  // 구글 폰트 링크 수집
+  document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){ styles += l.outerHTML; });
 
-  // 인쇄 후 원상복귀
-  setTimeout(function(){
-    document.title = orig;
-    if (wrap) {
-      wrap.setAttribute('style', origStyle);
-    }
-  }, 1000);
+  // 인쇄 전용 HTML 구성
+  var title = nm ? ('스터디포스 TQ TEST 분석 결과 : ' + nm) : '스터디포스 TQ TEST 분석 결과';
+  var html = '<!DOCTYPE html><html lang="ko"><head>'
+    + '<meta charset="UTF-8">'
+    + '<title>' + title + '</title>'
+    + styles
+    + '<style>'
+    + '@page { size:A4 portrait; margin:0; }'
+    + 'html,body { margin:0; padding:0; background:white; }'
+    + '#rptPageWrap { display:block; padding:0; gap:0; }'
+    + '.page { box-shadow:none !important; border-radius:0 !important; page-break-after:always; break-after:page; }'
+    + '.page:last-child { page-break-after:auto; break-after:auto; }'
+    + '</style>'
+    + '</head><body>'
+    + '<div id="rptPageWrap">' + wrap.innerHTML + '</div>'
+    + '<script>window.onload=function(){ window.print(); window.onafterprint=function(){ window.close(); }; };<\/script>'
+    + '</body></html>';
+
+  // 인쇄 전용 창 열기
+  var pw = window.open('', '_blank', 'width=900,height=700');
+  if (!pw) { alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도하세요.'); return; }
+  pw.document.open();
+  pw.document.write(html);
+  pw.document.close();
 }
 window.printReport = printReport;
 
