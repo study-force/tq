@@ -592,6 +592,7 @@ details summary:hover{color:var(--tx2)}
     <div id="imgPreviewLeft"><img id="imgPreviewLeftImg" src=""></div>
     <div id="ocrZone"><input type="file" id="imgInput" accept="image/*"><span id="ocrStatus"></span><div id="ocrPlaceholder"></div></div>
     <input type="text" id="iName" value="" autocomplete="off">
+    <input type="date" id="iDate" value="">
     <select id="iLevel" onchange="onLevelChange()">
       <option value="초등">초등학생</option>
       <option value="중등" selected>중학생</option>
@@ -674,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.20</span> · 슬롯구조재설계
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.22</span> · 검사일필드추가
     </div>
 
   </div>
@@ -705,6 +706,58 @@ details summary:hover{color:var(--tx2)}
 <div id="imgPreviewWrap" style="display:none"><img id="imgPreview" src="" alt=""><button onclick="clearImg()" style="display:none">✕</button></div>
 
 <script>
+
+// ── 저장된 결과 알림 토스트 ──
+function showSavedResultToast(testDate) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);'
+    + 'background:#0F172A;color:#fff;padding:10px 20px;border-radius:8px;'
+    + 'font-size:12px;font-weight:500;z-index:99999;'
+    + 'border:1px solid rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap;';
+  t.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 4000);
+}
+
+// ── 판독 결과 저장 ──
+function saveTqResult(inp, eng, slots) {
+  if (!inp || !eng || !slots) return;
+  fetch(TQ_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
+    body: JSON.stringify({ action: "save", inp: inp, eng: eng, slots: slots })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok) {
+      window.__TQ_SAVED_ID = d.id;
+      console.log("[TQ] 저장 완료 id:", d.id);
+    } else {
+      console.warn("[TQ] 저장 실패:", d.error);
+    }
+  })
+  .catch(function(e){ console.warn("[TQ] 저장 오류:", e); });
+}
+
+// ── 판독 결과 조회 — 외부연동 진입 시 기존 결과 로드 ──
+function loadTqResult(name, grade, spd, onFound) {
+  fetch(TQ_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
+    body: JSON.stringify({ action: "load", name: name, grade: String(grade||""), spd: Number(spd)||0 })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok && d.found) {
+      console.log("[TQ] 기존 판독 결과 발견:", d.test_date);
+      onFound(d);
+    } else {
+      console.log("[TQ] 기존 판독 결과 없음");
+    }
+  })
+  .catch(function(e){ console.warn("[TQ] 조회 오류:", e); });
+}
+window.loadTqResult = loadTqResult;
 
 // ── 인쇄 / PDF 저장 ──
 function printReport() {
@@ -1126,7 +1179,8 @@ function getInputs(){
     acc, spd:parseInt(gv("sSpd").value)||0, fct, str,
     voc:+gv("sVoc").value, wm:+gv("sWm").value, inf:+gv("sInf").value,
     hab:habScore, eff:effScore,
-    habChecked, effChecked
+    habChecked, effChecked,
+    test_date: (function(){ var d=gv("iDate"); return (d&&d.value)?d.value:new Date().toISOString().slice(0,10); })()
   };
 }
 
@@ -1829,6 +1883,8 @@ gv("btnB").addEventListener("click",async function(){
     if (!window.__reportRendered) {
       try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
     }
+    // 판독 결과 자동 저장
+    saveTqResult(inp, window.__eng, slots);
   }catch(err){
     showErr("판독문 생성 오류: "+err.message);
     console.error("[TQ generate error]", err);
@@ -2050,7 +2106,7 @@ function showFeedbackToast(msg, isErr) {
 var SAMPLES=[
   // 0. 진호윤 — 초5 고역량 잠재력 미개방형
   {
-    name:"진호윤", level:"초고", grade:5,
+    name:"진호윤", level:"초고", grade:5, test_date:"2026-03-29",
     kor:"매우잘함", engScore:"잘함", math:"매우잘함",
     fct:100, str_:80, spd:1794,
     voc:65, wm:50, inf:70,
@@ -2076,7 +2132,7 @@ var SAMPLES=[
   },
   // 1. 이준혁 — 중2 역량 모순 붕괴 예고형
   {
-    name:"이준혁", level:"중등", grade:2,
+    name:"이준혁", level:"중등", grade:2, test_date:"2026-03-29",
     kor:"90점 이상", engScore:"80~89점", math:"90점 이상",
     fct:20, str_:20, spd:540,
     voc:45, wm:30, inf:50,
@@ -2105,7 +2161,7 @@ var SAMPLES=[
   },
   // 2. 박서연 — 중1 논리 두뇌 미발현형
   {
-    name:"박서연", level:"중등", grade:1,
+    name:"박서연", level:"중등", grade:1, test_date:"2026-03-29",
     kor:"60~69점", engScore:"70~79점", math:"60~69점",
     fct:30, str_:40, spd:420,
     voc:40, wm:40, inf:65,
@@ -2134,7 +2190,7 @@ var SAMPLES=[
   },
   // 3. 김민서 — 고1 성실한 암기 의존형
   {
-    name:"김민서", level:"고등", grade:1,
+    name:"김민서", level:"고등", grade:1, test_date:"2026-03-29",
     kor:"70~79점", engScore:"60~69점", math:"60~69점",
     fct:70, str_:40, spd:680,
     voc:60, wm:50, inf:35,
@@ -4921,6 +4977,9 @@ safeRenderNav();
 // tqdata JSON → 숨겨진 폼에 주입 후 분석 실행
 // ══════════════════════════════════════════════════════
 function injectTqDataAndRun(d) {
+  // 검사일 세팅
+  var dateEl = document.getElementById('iDate');
+  if (dateEl && d.test_date) dateEl.value = d.test_date;
   // 이름
   if (d.name) { var elN = document.getElementById('iName'); if(elN) elN.value = d.name; }
 
@@ -5002,11 +5061,46 @@ function injectTqDataAndRun(d) {
   }
   if(window.updateChkScore) window.updateChkScore();
 
-  // 분석 실행 → 결과 페이지로 전환
-  setTimeout(function() {
-    var btnA = document.getElementById('btnA');
-    if (btnA) btnA.click();
-  }, 80);
+  // 기존 판독 결과 조회 → 있으면 복원, 없으면 엔진 실행
+  if (d.name && d.spd && d.test_date) {
+    loadTqResult(d.name, d.grade, d.spd, function(saved) {
+      // 기존 결과 발견 — 엔진+슬롯 복원 후 결과 페이지 표시
+      window.__inp        = saved.inp;
+      window.__eng        = saved.eng;
+      window.__nm         = d.name;
+      window.__TQ_SLOTS   = saved.slots;
+      window.__TQ_SAVED_ID= saved.id;
+      // 엔진 실행 (renderResult용) 후 판독문은 저장된 것으로 덮어씀
+      setTimeout(function() {
+        var btnA = document.getElementById('btnA');
+        if (btnA) btnA.click();
+        // 엔진 실행 완료 후 저장된 슬롯 복원
+        setTimeout(function() {
+          window.__TQ_SLOTS = saved.slots;
+          if (!window.__reportRendered) {
+            try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+          }
+          // 판독문 버튼 활성화
+          var btnR = document.getElementById('btnR');
+          if (btnR) btnR.disabled = false;
+          showSavedResultToast(saved.test_date);
+        }, 800);
+      }, 80);
+    });
+    // loadTqResult는 비동기 — 결과 없을 때는 일반 엔진 실행
+    setTimeout(function() {
+      if (!window.__TQ_SLOTS) {
+        var btnA = document.getElementById('btnA');
+        if (btnA) btnA.click();
+      }
+    }, 1500);
+  } else {
+    // test_date 없으면 바로 엔진 실행
+    setTimeout(function() {
+      var btnA = document.getElementById('btnA');
+      if (btnA) btnA.click();
+    }, 80);
+  }
 }
 window.injectTqDataAndRun = injectTqDataAndRun;
 
@@ -5042,6 +5136,29 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       try {
         var d = JSON.parse(decodeURIComponent(tqRaw));
+        // 기존 판독 결과 조회 — 있으면 자동 로드
+        if (d.name && d.spd) {
+          loadTqResult(d.name, d.grade, d.spd, function(saved) {
+            // 기존 결과 발견 → 엔진 결과와 슬롯 복원 후 결과 페이지 표시
+            window.__inp  = d;
+            window.__eng  = saved.eng;
+            window.__nm   = d.name;
+            window.__TQ_SLOTS = saved.slots;
+            window.__TQ_SAVED_ID = saved.id;
+            // 판독 페이지로 이동
+            var btnA = document.getElementById('btnA');
+            if (btnA) btnA.click(); // 엔진 재실행 (inp 세팅 후)
+            setTimeout(function() {
+              // 슬롯 복원 후 리포트 렌더
+              window.__TQ_SLOTS = saved.slots;
+              if (!window.__reportRendered) {
+                try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+              }
+              // 저장된 결과 알림
+              showSavedResultToast(saved.test_date);
+            }, 1500);
+          });
+        }
         injectTqDataAndRun(d);
       } catch(err) {
         console.warn('tqdata 파싱 실패:', err);
@@ -5290,7 +5407,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.20</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.22</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
