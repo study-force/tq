@@ -683,11 +683,12 @@ const PROGRAMS = {
 // ── 프로그램 추천 엔진 ──
 // 기준: acc 낮음(<50) / 보통(50~79) / 높음(80+) × 학제·학년
 function recommendPrograms(eng) {
+  if (!eng || eng.acc == null) return [];  // 데이터 없으면 추천 불가
   var level = eng.uiLevel || eng.level || "중등";
   var grade = parseInt(eng.grade) || 1;
-  var acc   = eng.acc || 0;
-  var inf   = eng.inf || 0;
-  var wm    = eng.wm  || 0;
+  var acc   = eng.acc;
+  var inf   = eng.inf;
+  var wm    = eng.wm;
   var recs  = [];
 
   // acc 구간
@@ -1010,7 +1011,7 @@ function getInputs(){
   const habChecked=HAB_ITEMS.filter((_,i)=>gv("h"+i)?.checked);
   const effChecked=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked);
   return{
-    name:gv("iName").value||"학생",
+    name:gv("iName").value||"",
         level:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
     grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
     kor:gv("sS0").value, eng:gv("sS1").value, math:gv("sS2").value,
@@ -1607,6 +1608,7 @@ gv("btnA").addEventListener("click",async function(){
 
   try{
     const inp=getInputs();
+    if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
     const resp=await fetch(TQ_API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
@@ -1619,7 +1621,7 @@ gv("btnA").addEventListener("click",async function(){
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
-    eng.grade = eng.grade || inp.grade || 0;
+    eng.grade = eng.grade || inp.grade || null;
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -3361,7 +3363,7 @@ function openReport(){
   var imgEl=document.getElementById("imgPreview");
   var imgSrc=imgEl&&imgEl.src&&imgEl.src.startsWith("data:")?imgEl.src:null;
   var d={
-    name:gv("iName").value||"학생",
+    name:gv("iName").value||"",
     level:gv("iLevel").value,
     grade:parseInt(gv("iGrade").value)||0,
     uiLevel:gv("iLevel").value,
