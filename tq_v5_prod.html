@@ -567,7 +567,7 @@ details summary:hover{color:var(--tx2)}
   </div>
   <!-- 중앙: 학생명 + 탭 -->
   <div style="flex:1;display:flex;align-items:center;justify-content:center;height:100%;gap:0">
-    <div id="result-student-name" style="display:none;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);margin-right:12px;white-space:nowrap"></div>
+    <div id="result-student-name" style="display:none"></div>
     <div id="resultTabBar" style="display:none;align-items:stretch;gap:0;height:100%">
       <button id="resultTab_판독" onclick="switchResultTab('판독')" style="padding:0 16px;font-size:11px;font-weight:600;color:#A78BFA;background:transparent;border:none;border-bottom:2px solid #8B5CF6;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
         📊 판독
@@ -578,7 +578,7 @@ details summary:hover{color:var(--tx2)}
     </div>
   </div>
   <!-- 우측: 인쇄 버튼 (리포트 탭에서만 표시) -->
-  <div id="headerPrintBtn" style="display:none;margin-left:auto;padding-right:16px">
+  <div id="headerPrintBtn" style="visibility:hidden;margin-left:auto;padding-right:16px">
     <span style="font-size:10px;color:rgba(255,255,255,.4);margin-right:10px">여백: <strong style="color:rgba(255,255,255,.7)">없음</strong> 또는 <strong style="color:rgba(255,255,255,.7)">기본</strong> 권장</span>
     <button onclick="printReport()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
   </div>
@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.50</span> · 헤더타이틀스페이스</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.52</span> · 판독탭학생명중앙+탭위치고정</div>
 
   </div>
 </div>
@@ -685,6 +685,7 @@ details summary:hover{color:var(--tx2)}
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
   <div id="resultPane_판독" style="display:block">
+    <div id="pandok-student-banner" style="display:none;text-align:center;padding:14px 0 6px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:-.1px"></div>
     <div id="resultView" style="padding:20px 0"></div>
   </div>
   <!-- 리포트 탭 컨텐츠 -->
@@ -2552,7 +2553,7 @@ function switchResultTab(tab) {
   });
   // 리포트 탭: 인쇄 버튼 표시
   var printBtn = document.getElementById('headerPrintBtn');
-  if (printBtn) printBtn.style.display = (tab === '리포트') ? 'block' : 'none';
+  if (printBtn) printBtn.style.visibility = (tab === '리포트') ? 'visible' : 'hidden';
   var pr = document.getElementById('page-result');
   if (pr) pr.scrollTop = 0;
 }
@@ -2569,7 +2570,9 @@ function showResultPage(nm) {
   if (!inp || !res) return;
   // 헤더에 학생명 + 학교/학년 + 검사일 표시
   var nameEl = document.getElementById('result-student-name');
-  if (nameEl && nm) {
+  // 판독 탭 상단 학생명+검사일 배너 표시
+  var _banner = document.getElementById('pandok-student-banner');
+  if (_banner && nm) {
     var _inp = window.__inp || {};
     var _lvMap = {초등:'초등학교',초저:'초등학교',초고:'초등학교',중등:'중학교',고등:'고등학교',일반:''};
     var _lv = _lvMap[_inp.uiLevel||_inp.level] || '';
@@ -2578,8 +2581,8 @@ function showResultPage(nm) {
       var d = _inp.test_date ? new Date(_inp.test_date) : new Date();
       return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
     })();
-    nameEl.textContent = nm + ' ' + _lv + ' ' + _gr + ' · ' + _dt + ' 검사';
-    nameEl.style.display = 'block';
+    _banner.textContent = nm + ' ' + _lv + (_gr ? ' ' + _gr : '') + ' · ' + _dt + ' 검사';
+    _banner.style.display = 'block';
   }
   var tabBar = document.getElementById('resultTabBar');
   if (tabBar) tabBar.style.display = 'flex';
@@ -3413,6 +3416,8 @@ function resetAll(){
   if (_tabBar) _tabBar.style.display = 'none';
   var _nm = document.getElementById('result-student-name');
   if (_nm) { _nm.textContent=''; _nm.style.display='none'; }
+  var _bnr = document.getElementById('pandok-student-banner');
+  if (_bnr) { _bnr.textContent=''; _bnr.style.display='none'; }
   var _pb = document.getElementById('headerPrintBtn');
   if (_pb) _pb.style.display = 'none';
   var oldEditBar = document.getElementById('editBar');
@@ -5541,7 +5546,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.50</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.52</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
