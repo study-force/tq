@@ -72,7 +72,7 @@ body { font-family:\'Noto Sans KR\',sans-serif; padding:32px 16px 60px; }
 <div class="page-wrap" id="pageWrap"></div>
 
 <script>
-// ── 데이터 로드: sessionStorage(prod 연동) ──
+// ── 샘플 데이터 ──
 var D = (function(){
   try {
     var raw = sessionStorage.getItem("__TQ_REPORT__");
@@ -83,8 +83,8 @@ var D = (function(){
 
 if (!D) {
   document.addEventListener('DOMContentLoaded', function(){
-    document.body.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#64748B;gap:16px;background:#f8fafc';
-    document.body.innerHTML = '<div style="text-align:center">'
+    document.body.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100vh;background:#f8fafc';
+    document.body.innerHTML = '<div style="text-align:center;font-family:sans-serif;color:#64748B">'
       + '<div style="font-size:48px;margin-bottom:16px">📄</div>'
       + '<div style="font-size:18px;font-weight:600;color:#1E293B;margin-bottom:8px">데이터가 없습니다</div>'
       + '<div style="font-size:14px;margin-bottom:20px">판독 시스템에서 리포트 출력 버튼을 눌러주세요.</div>'
@@ -92,6 +92,292 @@ if (!D) {
       + '</div>';
   });
 }
+
+var HABIT_ITEMS = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해하기 잘 안됨","긴 문장은 줄여 읽기를 함","긴 글은 내용 기억이 잘 안됨","모르는 단어가 없어도 이해가 잘 안됨","글 읽는 속도가 느린 편임"];
+var EFF_ITEMS   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
+var FACTOR_LABEL = {어휘력:"어휘의 의미를 문장의 맥락을 통해 정확하게 파악하고 정교하게 처리하는 능력",워킹메모리:"실시간으로 정보를 처리하고 그것을 다시 하나의 단위로 재처리하여 생성하는 작업기억 능력",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단"};
+var TC = {"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
+var UC = {"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
+var UBG = {"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
+var SC = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
+var SLOT_T      = ["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"];
+var SLOT_JOSA   = ["은","은","이","이"]; // "학생" 뒤 — 받침 있으므로 은/이 고정
+
+// 이름 마지막 글자 받침 여부로 조사 자동 선택 (이름+조사 조합에 사용)
+function josa(name, pair) {
+  var code = name.charCodeAt(name.length - 1);
+  var hasBatchim = (code >= 0xAC00 && code <= 0xD7A3) && ((code - 0xAC00) % 28 !== 0);
+  var parts = pair.split('/');
+  return hasBatchim ? parts[0] : parts[1];
+}
+var SLOT_DESC = ["강점과 가능성을 중심으로","현재 역량 상태와 원인 분석","지금 개선하지 않을 때의 리스크","맞춤 처방과 앞으로의 방향"];
+
+var now = new Date();
+var dateStr = now.getFullYear()+"년 "+(now.getMonth()+1)+"월 "+now.getDate()+"일";
+var lvMap = {초등:"초등학교",초저:"초등학교",초고:"초등학교",중등:"중학교",고등:"고등학교"};
+var lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
+
+// ── PolarArea SVG ──
+function buildPolar(factors, size) {
+  var cx=size/2, cy=size/2, maxR=size*0.355, n=factors.length, step=(Math.PI*2)/n;
+  var segs = factors.map(function(d,i){
+    var sa=-Math.PI/2-(Math.PI/5)+i*step, ea=sa+step;
+    var r=Math.max((Math.min(d.score,100)/100)*maxR,2);
+    var x1=cx+r*Math.cos(sa),y1=cy+r*Math.sin(sa),x2=cx+r*Math.cos(ea),y2=cy+r*Math.sin(ea);
+    var mid=sa+step/2, lR=maxR*1.38;
+    var lxOff=d.name==="독해효율성"?5:d.name==="워킹메모리"?-5:0;
+    var lyOff=d.name==="독해습관"?-5:d.name==="추론능력"?-5:0;
+    return {
+      path:'M '+cx.toFixed(1)+' '+cy.toFixed(1)+' L '+x1.toFixed(1)+' '+y1.toFixed(1)+' A '+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1)+' Z',
+      color:d.color, label:d.name, value:d.score, needsBadge:d.score<=60,
+      lx:cx+lR*Math.cos(mid)+lxOff, ly:cy+lR*Math.sin(mid)+lyOff
+    };
+  });
+  // 배경 링: 0-20, 40-60, 80-100 구간
+  function ringPath(r1, r2) {
+    // r1=안쪽, r2=바깥쪽 — evenodd로 링 생성
+    var p = 'M '+(cx+r2)+' '+cy+' A '+r2+' '+r2+' 0 1 0 '+(cx-r2)+' '+cy+' A '+r2+' '+r2+' 0 1 0 '+(cx+r2)+' '+cy;
+    if(r1 > 0) p += ' M '+(cx+r1)+' '+cy+' A '+r1+' '+r1+' 0 1 0 '+(cx-r1)+' '+cy+' A '+r1+' '+r1+' 0 1 0 '+(cx+r1)+' '+cy;
+    return p;
+  }
+  var r0 = 0, r20=(20/100)*maxR, r40=(40/100)*maxR, r60=(60/100)*maxR, r80=(80/100)*maxR, r100=maxR;
+  var bg = '<path d="'+ringPath(r0,r20)+'" fill="#E8EDF2" fill-opacity="0.5" fill-rule="evenodd"/>'
+    +'<path d="'+ringPath(r40,r60)+'" fill="#E8EDF2" fill-opacity="0.5" fill-rule="evenodd"/>'
+    +'<path d="'+ringPath(r80,r100)+'" fill="#E8EDF2" fill-opacity="0.5" fill-rule="evenodd">'+'</path>';
+  var grids = [20,40,60,80,100].map(function(g){
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+((g/100)*maxR).toFixed(1)+'" fill="none" stroke="#D1D5DB" stroke-width="0.7"/>';
+  }).join('');
+  var lines = factors.map(function(_,i){
+    var a=-Math.PI/2-(Math.PI/5)+i*step;
+    return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+maxR*Math.cos(a)).toFixed(1)+'" y2="'+(cy+maxR*Math.sin(a)).toFixed(1)+'" stroke="#D1D5DB" stroke-width="0.7"/>';
+  }).join('');
+  var paths = segs.map(function(s){ return '<path d="'+s.path+'" fill="'+s.color+'" fill-opacity="0.65" stroke="white" stroke-width="1.2" style="filter:drop-shadow(1px 2px 3px rgba(0,0,0,0.18))"/>'; }).join('');
+  var pcts = [0,20,40,60,80,100].map(function(pct){
+    return '<text x="'+(cx+4)+'" y="'+(cy+(pct/100)*maxR+9).toFixed(1)+'" text-anchor="start" dominant-baseline="middle" font-size="11" fill="#000" fill-opacity="0.6" font-weight="600" font-family="\'Noto Sans KR\',sans-serif">'+pct+'%</text>';
+  }).join('');
+  var labels = segs.map(function(s){
+    return '<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="\'Noto Sans KR\',sans-serif">'+s.label+'</text>'
+          +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(s.value<=60?"#EF4444":"#1E293B")+'" font-weight="900" font-family="Tahoma,sans-serif">'+s.value+'</text>';
+  }).join('');
+  var badges = segs.filter(function(s){return s.needsBadge;}).map(function(s){
+    return '<rect x="'+(s.lx-24).toFixed(1)+'" y="'+(s.ly+20).toFixed(1)+'" width="48" height="18" rx="3" fill="#EF4444"/>'
+          +'<text x="'+s.lx.toFixed(1)+'" y="'+(s.ly+30).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="white" font-weight="800" font-family="\'Noto Sans KR\',sans-serif">개선 필요</text>';
+  }).join('');
+  return '<svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'" overflow="visible">'+bg+grids+lines+paths+pcts+labels+badges+'</svg>';
+}
+
+// ── 공통 회색 푸터 ──
+function buildFooter(pageNum, total) {
+  return '<div style="background:#666666;padding:7px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +''
+    +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:12px">'
+    +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
+    +'<span style="font-size:9px;color:rgba(255,255,255,.3)">'+pageNum+' / '+total+'</span>'
+    +'</div>'
+    +'</div>';
+}
+
+// ══════════════════════════
+// 페이지 1 — TQ 결과지
+// ══════════════════════════
+function buildPage1() {
+  var factual    = D.fct>0 ? D.fct : D.acc;
+  var structural = D.str_>0 ? D.str_ : D.acc;
+  var avgAcc     = Math.round((factual+structural)/2);
+  var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
+
+  var habChecked = HABIT_ITEMS.map(function(item){ return D.habChecked.indexOf(item)>-1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return D.effChecked.indexOf(item)>-1; });
+  var habitCount = habChecked.filter(Boolean).length;
+  var effCount   = effChecked.filter(Boolean).length;
+
+  var FACTORS = [
+    {name:"어휘력",    score:D.voc,  color:FACTOR_COLORS["어휘력"]},
+    {name:"워킹메모리",score:D.wm,   color:FACTOR_COLORS["워킹메모리"]},
+    {name:"추론능력",  score:D.inf,  color:FACTOR_COLORS["추론능력"]},
+    {name:"독해습관",  score:D.hab,  color:FACTOR_COLORS["독해습관"]},
+    {name:"독해효율성",score:D.eff,  color:FACTOR_COLORS["독해효율성"]},
+  ];
+
+  var habitRows = HABIT_ITEMS.map(function(item,i){
+    var on=habChecked[i];
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+      +'<span style="color:'+(on?"#cc0000":"#CBD5E1")+';font-size:15px;min-width:13px;line-height:1">'+(on?"●":"○")+'</span>'
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:'+(item==="모르는 단어가 없어도 이해가 잘 안됨"?"-0.05em":"-0.02em")+';white-space:nowrap">'+item+'</span></div>';
+  }).join('');
+
+  var effRows = EFF_ITEMS.map(function(item,i){
+    var on=effChecked[i];
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+      +'<span style="color:'+(on?"#cc0000":"#CBD5E1")+';font-size:15px;min-width:13px;line-height:1">'+(on?"●":"○")+'</span>'
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span></div>';
+  }).join('');
+
+  var factorRows = FACTORS.map(function(f){
+    return '<div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;margin-bottom:10px;margin-left:20px">'
+      +'<div style="text-align:center;padding:5px 4px;background:#F1F5F9;border-radius:6px;border:1px solid #DDE3ED">'
+      +'<div style="font-size:16px;font-weight:400;color:#111">'+f.name+'</div></div>'
+      +'<div style="font-size:12px;color:#475569;line-height:1.55">'+FACTOR_LABEL[f.name]+'</div></div>';
+  }).join('');
+
+  var div = document.createElement('div');
+  div.className = 'page';
+  div.innerHTML =
+    // 헤더
+    '<div style="background:#666666;padding:21px 36px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'
+    +'<div style="display:flex;align-items:center;gap:24px">'
+    +'<svg id="_레이어_1" data-name="레이어_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 384.01 157.95" height="60" style="display:block;">  <!-- Generator: Adobe Illustrator 29.8.5, SVG Export Plug-In . SVG Version: 2.1.1 Build 2)  -->  <defs>    <style>      .st0 {        fill: #c9c9c9;      }      .st1 {        fill: #fff;      }    </style>  </defs>  <polyline class="st1" points="0 24.54 75.25 24.54 75.25 47.14 49.97 47.14 49.97 115.73 25.28 115.73 25.28 47.14 0 47.14 0 24.54"/>  <path class="st1" d="M149.3,103.88c3.09,2.44,5.11,3.97,6.06,4.59,1.42.91,3.33,1.96,5.73,3.16l-6.88,15.72c-3.45-1.9-6.87-4.16-10.25-6.77-3.38-2.62-5.74-4.59-7.09-5.91-5.46,2.69-12.31,4.03-20.53,4.03-12.16,0-21.75-3.61-28.77-10.83-8.3-8.54-12.45-20.55-12.45-36.03s3.63-26.68,10.89-35c7.26-8.32,17.4-12.48,30.43-12.48s23.54,4.07,30.76,12.2c7.22,8.14,10.84,19.78,10.84,34.93,0,13.49-2.91,24.28-8.73,32.37h0ZM130.36,89.47c1.98-4.02,2.96-10.03,2.96-18.04,0-9.21-1.51-15.78-4.51-19.72-3.01-3.94-7.15-5.91-12.44-5.91-4.92,0-8.91,2.01-11.97,6.03-3.06,4.02-4.59,10.31-4.59,18.85,0,9.95,1.49,16.94,4.47,20.96,2.98,4.02,7.07,6.03,12.27,6.03,1.67,0,3.25-.19,4.75-.56-2.08-2.28-5.36-4.44-9.84-6.47l3.86-10.14c2.2.46,3.9,1.02,5.13,1.68,1.23.66,3.61,2.41,7.16,5.23.84.66,1.76,1.35,2.74,2.05"/>  <polyline class="st0" points="178.39 115.82 178.39 33.75 151.71 33.75 151.71 24.66 215.02 24.66 215.02 33.75 188.7 33.75 188.7 115.82 178.39 115.82"/>  <polyline class="st0" points="219.83 115.82 219.83 24.66 264.29 24.66 264.29 34.68 230.14 34.68 230.14 63.46 260.02 63.46 260.02 72.56 230.14 72.56 230.14 105.79 266.95 105.79 266.95 115.82 219.83 115.82"/>  <path class="st0" d="M267.21,95.21h10.32v.59c0,5.06,1.53,8.58,4.6,10.55,3.07,1.98,7.14,2.97,12.23,2.97,4.44,0,8.18-1.5,11.19-4.52,3.02-3.01,4.52-6.99,4.52-11.92,0-3.99-1.3-7.26-3.9-9.81-2.6-2.5-6.56-5.01-11.87-7.52l-4.1-1.94c-5.57-2.66-9.74-5.29-12.5-7.9-2.75-2.6-4.81-5.49-6.16-8.66-1.35-3.17-2.02-6.71-2.02-10.63,0-6.89,2.1-12.7,6.3-17.44,4.21-4.74,10.79-7.11,19.73-7.11,8.21,0,13.98,1.74,17.33,5.23,3.34,3.49,5.01,7.55,5.01,12.2v.58h-10.31v-.58c0-1.46-.51-2.89-1.53-4.31-1.02-1.42-2.56-2.44-4.6-3.08-2.05-.63-4.3-.95-6.74-.95-4.99,0-8.69,1.46-11.09,4.38-2.4,2.92-3.6,6.24-3.6,9.95,0,2.51.57,4.87,1.71,7.08,1.14,2.21,2.72,4.04,4.72,5.49,2,1.45,5.37,3.39,10.11,5.81l4.79,2.41c7.66,3.87,12.79,7.94,15.39,12.2,2.56,4.26,3.83,8.86,3.83,13.78,0,4.58-1.05,9.01-3.14,13.29-2.09,4.28-4.99,7.53-8.7,9.74-3.71,2.21-8.65,3.31-14.82,3.31s-10.76-.81-14.69-2.43c-3.93-1.62-6.91-4.29-8.95-8-2.04-3.71-3.06-7.78-3.06-12.19v-.59"/>  <polyline class="st0" points="347.37 115.82 347.37 33.75 320.69 33.75 320.69 24.66 384.01 24.66 384.01 33.75 357.68 33.75 357.68 115.82 347.37 115.82"/>  <g>    <path class="st1" d="M90.33,140.62c.02.26-.08.41-.29.44-.21.03-.33-.1-.36-.39-.3-2.53-.72-4.05-1.24-4.55-.52-.51-1.73-.76-3.64-.76-.69,0-1.12.05-1.28.16-.17.11-.25.39-.25.84v13.52c0,.95.12,1.5.35,1.65.23.15.93.23,2.1.23.4,0,.6.11.61.33s-.2.33-.61.33h-6.14c-.4,0-.6-.11-.6-.33s.2-.33.6-.33c1.18,0,1.89-.08,2.11-.23.22-.16.34-.71.34-1.65v-13.52c0-.46-.08-.74-.24-.84s-.58-.16-1.27-.16c-1.89,0-3.1.25-3.64.76-.54.51-.95,2.02-1.24,4.55-.03.29-.16.43-.37.39-.22-.03-.32-.18-.3-.44l.29-5.46c.03-.18.09-.29.17-.34s.2-.07.36-.07h13.75c.18,0,.3.02.38.07.08.05.13.16.14.34l.26,5.46Z"/>    <path class="st1" d="M99.76,142.28c.85,1.24,1.3,2.56,1.37,3.97.02.16.01.3-.01.4-.02.11-.12.16-.28.16h-9.43c0,1.68.42,3,1.27,3.95.85.96,2.1,1.4,3.74,1.33,1.01-.03,1.86-.35,2.54-.94.69-.6,1.17-1.2,1.44-1.82.13-.26.3-.33.52-.22.22.11.27.29.16.51-.45.98-1.09,1.77-1.92,2.38-.83.6-1.95.91-3.36.91-1.71,0-3.1-.58-4.16-1.74-1.06-1.16-1.6-2.56-1.6-4.21,0-1.73.52-3.25,1.55-4.57,1.03-1.31,2.45-1.97,4.26-1.97s3.06.62,3.91,1.86ZM99.48,145.91c.1-.12.16-.38.16-.77,0-.96-.31-1.88-.94-2.74-.62-.87-1.6-1.3-2.93-1.3-1.47,0-2.54.54-3.22,1.63-.67,1.09-1.04,2.21-1.1,3.37h7.22c.43,0,.7-.06.8-.18Z"/>  </g>  <g>    <path class="st1" d="M108.55,152.46c-.37,0-.55-.11-.55-.32s.18-.32.55-.32c.99,0,1.56-.05,1.7-.15.14-.1.04-.4-.31-.91l-2.42-3.48-2.57,3.48c-.4.52-.54.83-.42.92.12.09.62.13,1.5.13.37,0,.55.11.55.32s-.18.32-.55.32h-4.46c-.37,0-.55-.11-.55-.32s.18-.32.55-.32c.7,0,1.18-.05,1.42-.13.24-.09.54-.38.89-.87l3.14-4.19-2.95-4.26c-.34-.49-.62-.78-.85-.87-.23-.09-.72-.13-1.45-.13-.37,0-.56-.1-.56-.31,0-.2.18-.31.56-.31h5.04c.4,0,.6.1.59.31,0,.2-.2.31-.59.31-.91,0-1.44.05-1.57.15-.14.1-.03.4.32.91l2.23,3.18,2.42-3.18c.4-.52.54-.83.42-.92-.12-.09-.6-.13-1.45-.13-.35,0-.53-.1-.53-.31s.18-.31.53-.31h4.3c.38,0,.58.1.58.31s-.19.31-.58.31c-.67,0-1.11.05-1.31.15s-.48.38-.85.86l-3.02,3.94,3.17,4.51c.34.47.62.76.86.86.24.1.8.15,1.68.15.4,0,.6.11.59.32,0,.21-.2.32-.59.32h-5.45Z"/>    <path class="st1" d="M123.11,148.15c.26-.02.38.13.38.45,0,1-.25,1.96-.76,2.9-.5.94-1.39,1.41-2.65,1.41-.74,0-1.35-.26-1.85-.77-.5-.51-.74-1.17-.74-1.97v-8.42h-2.33c-.37,0-.55-.1-.55-.31s.18-.31.55-.31c1.28,0,2.06-.42,2.34-1.26.28-.84.48-1.99.61-3.44.03-.33.14-.49.34-.49s.29.16.29.49v4.6h3.34c.4,0,.6.12.59.36,0,.24-.2.35-.59.35h-3.34v8.18c0,.64.13,1.15.4,1.53.26.38.76.58,1.5.58.8,0,1.34-.42,1.63-1.25.29-.83.44-1.53.46-2.11,0-.33.13-.5.38-.53Z"/>  </g>  <g>    <path class="st1" d="M134.08,152.68c-.11.02-.19,0-.24-.06-.05-.06-.07-.15-.07-.28v-2.5c-.3.78-.87,1.49-1.7,2.12-.83.63-1.73.94-2.69.94-1.25,0-2.22-.43-2.92-1.29-.7-.86-1.04-1.9-1.04-3.12v-5.88c0-.55-.1-.89-.3-.99-.2-.11-.75-.16-1.64-.16-.37,0-.55-.1-.55-.29s.18-.3.55-.32l2.93-.22c.1-.02.16,0,.2.06.04.06.06.15.06.28v7.59c0,1.08.31,1.9.94,2.47.62.57,1.34.86,2.16.86,1.15,0,2.1-.49,2.84-1.47.74-.98,1.12-1.92,1.12-2.82v-4.97c0-.55-.1-.89-.3-.99-.2-.11-.75-.16-1.64-.16-.37,0-.55-.1-.55-.29s.18-.3.55-.32l2.9-.22c.11-.02.19,0,.23.06.04.06.06.15.06.28v9.72c0,.52.1.84.29.94.19.11.76.16,1.7.16.37,0,.55.1.55.29s-.18.31-.55.34l-2.88.22Z"/>    <path class="st1" d="M150.39,151.15c.08.03.1.1.05.2-.18.39-.48.71-.91.94-.43.24-.83.34-1.2.31-.53-.05-.94-.28-1.22-.69s-.46-.91-.5-1.52c-.58.72-1.34,1.31-2.28,1.79-.94.47-1.96.71-3.05.71-.96,0-1.81-.24-2.56-.72-.74-.48-1.12-1.24-1.12-2.29,0-1.81,1.2-3.03,3.59-3.65,2.39-.62,4.21-.94,5.46-.96v-2.01c0-.82-.36-1.4-1.09-1.74-.73-.34-1.59-.51-2.58-.51-.46,0-.99.08-1.57.23-.58.15-1,.4-1.24.75-.11.16-.16.3-.13.42.02.11.11.24.25.37.13.11.25.23.36.34.11.11.16.28.14.49-.02.38-.14.65-.37.83s-.52.27-.85.27c-.37,0-.66-.13-.89-.38-.22-.25-.34-.56-.34-.92,0-.52.2-1,.61-1.42.41-.42.84-.74,1.28-.93.54-.24,1.08-.42,1.6-.53.52-.11,1.08-.15,1.67-.13,1.78.05,2.95.43,3.53,1.15.58.72.86,1.62.86,2.69v6.07c0,.88.27,1.35.82,1.4.54.05,1.02-.11,1.42-.49.1-.08.18-.11.26-.07ZM146.55,148.59c.06-.61.1-1.51.1-2.71-1.22.07-2.8.34-4.75.83s-2.93,1.48-2.93,2.96c0,.8.26,1.39.77,1.76.51.38,1.21.56,2.09.56.82,0,1.58-.16,2.28-.48.7-.32,1.25-.71,1.63-1.16.48-.57.75-1.16.82-1.78Z"/>  </g>  <g>    <path class="st1" d="M151.08,152.46c-.4,0-.6-.11-.6-.32s.2-.32.6-.32c.9,0,1.43-.09,1.61-.26.18-.17.26-.66.26-1.46v-13.62c0-.54-.1-.86-.31-.97-.21-.11-.76-.16-1.66-.16-.37,0-.55-.1-.55-.31s.18-.31.55-.33l2.93-.22c.11-.02.19,0,.23.06s.06.15.06.28v15.18c0,.85.09,1.36.28,1.53.18.17.76.26,1.72.26.37,0,.55.11.55.32s-.18.32-.55.32h-5.11Z"/>    <path class="st1" d="M180.24,152.98c.21.02.32.15.34.39.03,1.03-.24,1.91-.83,2.63-.58.73-1.34,1.06-2.27.99-1.23-.08-2.05-.64-2.45-1.67-.4-1.03-.63-2.01-.7-2.94-.4.15-.84.26-1.31.34-.47.08-.93.12-1.38.12-2.46,0-4.5-.93-6.12-2.79-1.62-1.86-2.42-4.01-2.42-6.44s.81-4.66,2.42-6.5c1.62-1.84,3.66-2.76,6.12-2.76s4.5.92,6.12,2.76c1.62,1.84,2.42,4,2.42,6.5,0,1.67-.4,3.24-1.21,4.73-.81,1.49-1.93,2.64-3.37,3.45.06,1,.26,1.93.59,2.79.33.86.93,1.3,1.81,1.3.72,0,1.21-.31,1.48-.92.26-.61.4-1.15.42-1.6.02-.28.13-.41.34-.39ZM177.58,148.55c.75-1.04,1.13-2.69,1.13-4.92,0-2.35-.62-4.35-1.86-5.99-1.24-1.64-2.97-2.46-5.19-2.46s-3.91.82-5.16,2.47c-1.25,1.65-1.87,3.64-1.87,5.98,0,1.81.34,3.31,1.02,4.49.68,1.18,1.46,2.11,2.34,2.78-.18-1.18.07-2.25.73-3.22.66-.97,1.57-1.46,2.72-1.46,1.22,0,2.15.42,2.81,1.27.66.85,1.09,1.96,1.3,3.33.61-.47,1.29-1.23,2.04-2.28ZM173.06,151.94c.47-.11.89-.24,1.26-.4-.06-1.32-.29-2.41-.67-3.27-.38-.86-1.18-1.29-2.38-1.29-.67,0-1.22.28-1.66.83-.43.55-.66,1.16-.7,1.81-.02.42-.02.8,0,1.14.02.33.03.58.05.72.38.16.81.31,1.27.43.46.12.94.18,1.42.18s.93-.05,1.4-.16Z"/>  </g>  <g>    <path class="st1" d="M192.06,152.68c-.11.02-.19,0-.24-.06-.05-.06-.07-.15-.07-.28v-2.5c-.3.78-.87,1.49-1.7,2.12-.83.63-1.73.94-2.69.94-1.25,0-2.22-.43-2.92-1.29-.7-.86-1.04-1.9-1.04-3.12v-5.88c0-.55-.1-.89-.3-.99-.2-.11-.75-.16-1.64-.16-.37,0-.55-.1-.55-.29s.18-.3.55-.32l2.93-.22c.1-.02.16,0,.2.06.04.06.06.15.06.28v7.59c0,1.08.31,1.9.94,2.47.62.57,1.34.86,2.16.86,1.15,0,2.1-.49,2.84-1.47.74-.98,1.12-1.92,1.12-2.82v-4.97c0-.55-.1-.89-.3-.99-.2-.11-.75-.16-1.64-.16-.37,0-.55-.1-.55-.29s.18-.3.55-.32l2.9-.22c.11-.02.19,0,.23.06.04.06.06.15.06.28v9.72c0,.52.1.84.29.94.19.11.76.16,1.7.16.37,0,.55.1.55.29s-.18.31-.55.34l-2.88.22Z"/>    <path class="st1" d="M205.4,142.25c1.06,1.22,1.6,2.7,1.6,4.43s-.53,3.18-1.6,4.4c-1.06,1.22-2.5,1.82-4.31,1.82s-3.22-.61-4.28-1.82c-1.06-1.22-1.6-2.68-1.6-4.4s.53-3.21,1.6-4.43c1.06-1.22,2.49-1.84,4.28-1.84s3.24.61,4.31,1.84ZM204.53,150.53c.7-1.13,1.06-2.41,1.06-3.85s-.35-2.78-1.06-3.89c-.7-1.11-1.85-1.67-3.43-1.67s-2.71.56-3.42,1.68c-.71,1.12-1.07,2.41-1.07,3.88s.36,2.72,1.07,3.85c.71,1.13,1.85,1.69,3.42,1.69s2.73-.56,3.43-1.69Z"/>  </g>  <g>    <path class="st1" d="M215.45,148.15c.26-.02.38.13.38.45,0,1-.25,1.96-.76,2.9-.5.94-1.39,1.41-2.65,1.41-.74,0-1.35-.26-1.85-.77-.5-.51-.74-1.17-.74-1.97v-8.42h-2.33c-.37,0-.55-.1-.55-.31s.18-.31.55-.31c1.28,0,2.06-.42,2.34-1.26.28-.84.48-1.99.61-3.44.03-.33.14-.49.34-.49s.29.16.29.49v4.6h3.34c.4,0,.6.12.59.36,0,.24-.2.35-.59.35h-3.34v8.18c0,.64.13,1.15.4,1.53.26.38.76.58,1.5.58.8,0,1.34-.42,1.63-1.25.29-.83.44-1.53.46-2.11,0-.33.13-.5.38-.53Z"/>    <path class="st1" d="M216.72,152.45c-.4,0-.6-.11-.6-.32s.2-.32.6-.32c.9,0,1.43-.09,1.61-.26.18-.17.26-.66.26-1.46v-7.45c0-.55-.1-.89-.31-.99-.21-.11-.76-.16-1.66-.16-.37,0-.55-.1-.55-.29s.18-.3.55-.32l2.93-.22c.11-.02.19,0,.23.06.04.06.06.15.06.28v9.01c0,.85.09,1.36.28,1.53.18.17.76.26,1.72.26.37,0,.55.11.55.32s-.18.32-.55.32h-5.11ZM219.86,135.15c.22.22.34.49.34.82s-.11.58-.34.8c-.22.22-.5.33-.82.33-.34,0-.62-.11-.84-.33-.22-.22-.34-.49-.34-.8,0-.33.11-.6.34-.82.22-.22.5-.33.84-.33s.59.11.82.33Z"/>  </g>  <g>    <path class="st1" d="M232,142.28c.85,1.24,1.3,2.56,1.37,3.97.02.16.01.3-.01.4-.02.11-.12.16-.28.16h-9.43c0,1.68.42,3,1.27,3.95.85.96,2.1,1.4,3.74,1.33,1.01-.03,1.86-.35,2.54-.94.69-.6,1.17-1.2,1.44-1.82.13-.26.3-.33.52-.22.22.11.27.29.16.51-.45.98-1.09,1.77-1.92,2.38-.83.6-1.95.91-3.36.91-1.71,0-3.1-.58-4.16-1.74-1.06-1.16-1.6-2.56-1.6-4.21,0-1.73.52-3.25,1.55-4.57,1.03-1.31,2.45-1.97,4.26-1.97s3.06.62,3.91,1.86ZM231.73,145.91c.1-.12.16-.38.16-.77,0-.96-.31-1.88-.94-2.74-.62-.87-1.6-1.3-2.93-1.3-1.47,0-2.54.54-3.22,1.63-.67,1.09-1.04,2.21-1.1,3.37h7.22c.43,0,.7-.06.8-.18Z"/>    <path class="st1" d="M242.43,152.44c-.4,0-.6-.11-.6-.32s.2-.32.6-.32c.9,0,1.44-.09,1.62-.26.18-.17.28-.66.28-1.46v-5.36c0-1.06-.29-1.91-.88-2.55-.58-.64-1.3-.96-2.15-.96-1.15,0-2.11.52-2.88,1.56-.77,1.04-1.15,2.01-1.15,2.93v4.31c0,.85.09,1.36.28,1.53.18.17.76.26,1.72.26.38,0,.58.11.58.32s-.19.32-.58.32h-5.11c-.4,0-.6-.11-.6-.32s.2-.32.6-.32c.9,0,1.43-.09,1.61-.26.18-.17.26-.66.26-1.46v-7.47c0-.55-.1-.89-.3-.99-.2-.11-.75-.16-1.64-.16-.38,0-.58-.1-.58-.29s.19-.3.58-.32l2.9-.22c.11-.02.19,0,.23.06.04.06.06.15.06.28v2.47c.35-.77.92-1.46,1.7-2.09.78-.63,1.64-.94,2.57-.94,1.25,0,2.23.44,2.95,1.32.72.88,1.08,1.94,1.08,3.18v5.09c0,.85.1,1.36.29,1.53.19.17.75.26,1.68.26.38,0,.58.11.58.32s-.19.32-.58.32h-5.11Z"/>  </g>  <g>    <path class="st1" d="M255.76,148.15c.26-.02.38.13.38.45,0,1-.25,1.96-.76,2.9-.5.94-1.39,1.41-2.65,1.41-.74,0-1.35-.26-1.85-.77-.5-.51-.74-1.17-.74-1.97v-8.42h-2.33c-.37,0-.55-.1-.55-.31s.18-.31.55-.31c1.28,0,2.06-.42,2.34-1.26.28-.84.48-1.99.61-3.44.03-.33.14-.49.34-.49s.29.16.29.49v4.6h3.34c.4,0,.6.12.59.36,0,.24-.2.35-.59.35h-3.34v8.18c0,.64.13,1.15.4,1.53.26.38.76.58,1.5.58.8,0,1.34-.42,1.63-1.25.29-.83.44-1.53.46-2.11,0-.33.13-.5.38-.53Z"/>    <path class="st1" d="M277.76,140.62c.02.26-.08.41-.29.44-.21.03-.33-.1-.36-.39-.3-2.53-.72-4.05-1.24-4.55-.52-.51-1.73-.76-3.64-.76-.69,0-1.12.05-1.28.16s-.25.39-.25.84v13.52c0,.95.12,1.5.35,1.65.23.15.93.23,2.1.23.4,0,.6.11.61.33s-.2.33-.61.33h-6.14c-.4,0-.6-.11-.6-.33s.2-.33.6-.33c1.18,0,1.89-.08,2.11-.23.22-.16.34-.71.34-1.65v-13.52c0-.46-.08-.74-.24-.84s-.58-.16-1.27-.16c-1.89,0-3.1.25-3.64.76-.54.51-.95,2.02-1.24,4.55-.03.29-.16.43-.37.39-.22-.03-.32-.18-.3-.44l.29-5.46c.03-.18.09-.29.17-.34.08-.05.2-.07.36-.07h13.75c.18,0,.3.02.38.07.08.05.13.16.14.34l.26,5.46Z"/>  </g>  <g>    <path class="st1" d="M287.18,142.28c.85,1.24,1.3,2.56,1.37,3.97.02.16.01.3-.01.4-.02.11-.12.16-.28.16h-9.43c0,1.68.42,3,1.27,3.95.85.96,2.1,1.4,3.74,1.33,1.01-.03,1.86-.35,2.54-.94.69-.6,1.17-1.2,1.44-1.82.13-.26.3-.33.52-.22.22.11.27.29.16.51-.45.98-1.09,1.77-1.92,2.38-.83.6-1.95.91-3.36.91-1.71,0-3.1-.58-4.16-1.74-1.06-1.16-1.6-2.56-1.6-4.21,0-1.73.52-3.25,1.55-4.57,1.03-1.31,2.45-1.97,4.26-1.97s3.06.62,3.91,1.86ZM286.91,145.91c.1-.12.16-.38.16-.77,0-.96-.31-1.88-.94-2.74-.62-.87-1.6-1.3-2.93-1.3-1.47,0-2.54.54-3.22,1.63-.67,1.09-1.04,2.21-1.1,3.37h7.22c.43,0,.7-.06.8-.18Z"/>    <path class="st1" d="M299.1,148.06c.21.33.31.75.31,1.27,0,1.09-.43,1.96-1.28,2.61-.86.64-1.9.97-3.13.97-.77,0-1.55-.16-2.35-.47-.8-.31-1.47-.69-2.02-1.15l-.55,1.27c-.1.21-.22.33-.38.36-.16.02-.24-.09-.24-.36v-4.29c0-.24.07-.36.22-.35.14,0,.25.13.31.35.35,1.14.95,2.09,1.8,2.83.85.74,1.95,1.11,3.31,1.11.72,0,1.42-.22,2.09-.65.67-.43,1.01-1.03,1.01-1.8,0-1.18-.54-1.92-1.62-2.23-1.08-.31-2.36-.63-3.83-.95-.83-.18-1.56-.5-2.18-.97-.62-.47-.94-1.11-.94-1.95,0-1.01.39-1.81,1.16-2.39.78-.58,1.71-.87,2.8-.87.62,0,1.29.11,2,.33.71.22,1.3.62,1.76,1.21l.58-1.2c.11-.23.24-.34.37-.34s.2.14.2.42v3.5c0,.25-.08.37-.23.37s-.28-.11-.37-.32c-.35-.91-.85-1.69-1.49-2.33-.64-.64-1.58-.96-2.81-.96-.78,0-1.46.18-2.03.55-.57.37-.85.89-.85,1.58,0,.91.35,1.54,1.06,1.89.7.34,1.39.58,2.06.71.74.16,1.55.34,2.45.53.9.19,1.57.47,2.02.85.32.25.58.53.79.86Z"/>    <path class="st1" d="M308.21,148.15c.26-.02.38.13.38.45,0,1-.25,1.96-.76,2.9-.5.94-1.39,1.41-2.65,1.41-.74,0-1.35-.26-1.85-.77-.5-.51-.74-1.17-.74-1.97v-8.42h-2.33c-.37,0-.55-.1-.55-.31s.18-.31.55-.31c1.28,0,2.06-.42,2.34-1.26.28-.84.48-1.99.61-3.44.03-.33.14-.49.34-.49s.29.16.29.49v4.6h3.34c.4,0,.6.12.59.36,0,.24-.2.35-.59.35h-3.34v8.18c0,.64.13,1.15.4,1.53.26.38.76.58,1.5.58.8,0,1.34-.42,1.63-1.25.29-.83.44-1.53.46-2.11,0-.33.13-.5.38-.53Z"/>  </g></svg>'
+    +'<div style="padding-left:4px;color:#F5C518;font-size:34.4px;font-weight:400;letter-spacing:-0.1em;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif">문자정보 처리역량 테스트</div>'
+    +'</div>'
+    +'<div style="text-align:right">'
+    +'<div style="color:white;font-weight:400;font-size:21px"><span style="font-size:14.7px">'+lvLabel+'</span>&nbsp;&nbsp;<span style="font-size:31.5px">'+D.name+'</span></div>'
+    +'<div style="margin-top:6px"><span style="background:#888;border-radius:4px;padding:3px 10px;color:#fff;font-size:15px">진단일 : '+dateStr+'</span></div>'
+    +'</div></div>'
+
+    // 본문
+    +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0;overflow:hidden">'
+
+    // 상단 3열
+    +'<div style="display:grid;grid-template-columns:40fr 30fr 30fr;gap:8px">'
+
+    // 열1
+    +'<div style="padding-right:20px;display:flex;flex-direction:column;align-items:center">'
+    +'<div style="margin-bottom:20px;width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px">'
+    +'<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해정확도</span><span style="font-size:16px;color:#666;font-weight:400">(%)</span></div>'
+    +'<div style="font-size:128px;font-weight:900;color:'+accColor+';line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+avgAcc+'</div>'
+    +'<div style="margin-top:8px;width:calc(65% - 30px)">'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:23px;color:#111;font-weight:400;font-family:Tahoma,sans-serif">'+factual+'</span><span style="font-size:23px;color:#111;font-weight:400;font-family:Tahoma,sans-serif">'+structural+'</span></div>'
+    +'<div style="width:100%;display:flex;height:10px;border-radius:4px;overflow:hidden;background:#E2E8F0">'
+    +'<div style="flex:1;display:flex;justify-content:flex-end"><div style="width:'+factual+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px"></div></div>'
+    +'<div style="width:1px;background:#94A3B8;flex-shrink:0"></div>'
+    +'<div style="flex:1;display:flex;justify-content:flex-start"><div style="width:'+structural+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0"></div></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:12px;color:#666">사실적 이해</span><span style="font-size:12px;color:#666">구조적 이해</span></div>'
+    +'</div></div>'
+    +'<div style="width:100%;display:flex;flex-direction:column;align-items:center">'
+    +'<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해속도</span><span style="font-size:16px;color:#666;font-weight:400">(자/분)</span></div>'
+    +'<div style="font-size:92px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif">'+Number(D.spd).toLocaleString()+'</div>'
+    +'</div></div>'
+
+    // 열2
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em">'
+    +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해습관</span></div>'
+    +habitRows
+    +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
+    +'<span style="color:#1E293B;font-size:15px">잘못된 독해습관</span><span style="margin-left:auto;color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span></div></div></div>'
+
+    // 열3
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em">'
+    +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해효율성</span></div>'
+    +effRows
+    +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
+    +'<span style="color:#1E293B;font-size:15px">독해효율성 결합증상</span><span style="margin-left:auto;color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+effCount+'</span></div></div></div>'
+    +'</div>'
+
+    // 구분선
+    +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0"></div>'
+
+    // 하단: 차트 + 요인분석
+    +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
+    +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'+buildPolar(FACTORS,317)+'</div>'
+    +'<div style="padding-right:20px;padding-top:30px">'
+    +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px">독해역량 요인분석</div>'
+    +factorRows
+    +'</div></div>'
+    +'</div>'
+
+    // 푸터
+    +buildFooter(1, TOTAL);
+
+  return div;
+}
+
+// ══════════════════════════
+// ══════════════════════════
+// 페이지 2~3 — 2슬롯 1페이지
+// ══════════════════════════
+function buildSlotBlock(i) {
+  var slotColor = SC[i-1];
+  var txt = D.slots["slot"+i] || "";
+  var lightBg = ["#EFF3FF","#F0FDF9","#FFFBEB","#F5F3FF"][i-1] || "#F8FAFC";
+
+  var M = '72px'; // 페이지 좌우 여백 — 레이블·박스 모두 이 값으로 정렬
+  return ''
+    +'<div style="padding:0 '+M+' 12px '+M+';flex-shrink:0;display:flex;align-items:stretch;gap:0;">'
+    +'<div style="width:3px;background:'+slotColor+';flex-shrink:0;margin-right:16px;border-radius:2px;"></div>'
+    +'<div style="display:flex;flex-direction:column;justify-content:center;">'
+    +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;">'
+    +'<span style="font-size:13px;font-weight:600;color:'+slotColor+';font-family:\'Noto Sans KR\',sans-serif;letter-spacing:.5px;">'+i+'</span>'
+    +'<span style="font-size:10.5px;color:#94A3B8;letter-spacing:1.5px;font-family:\'Noto Sans KR\',sans-serif;">'+SLOT_DESC[i-1]+'</span>'
+    +'</div>'
+    +'<div style="font-size:21px;font-weight:500;color:#1A2332;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">'+D.name+' 학생'+SLOT_JOSA[i-1]+' '+SLOT_T[i-1]+'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="flex:1;margin:0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;">'
+    +'<div style="position:absolute;top:0;left:0;width:3px;height:100%;background:'+slotColor+';opacity:.5;"></div>'
+    +'<div style="position:absolute;bottom:12px;right:16px;font-size:56px;color:'+slotColor+';opacity:.04;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
+    +'<div style="font-size:15.5px;line-height:2.1;color:#1A2332;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
+    +(txt||'<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>')
+    +'</div>'
+    +'</div>'
+    +'<div style="height:48px;flex-shrink:0;"></div>';
+    +'</div>'
+    +'<div style="height:48px;flex-shrink:0;"></div>';
+}
+
+function buildDualSlotPage(a, b, pageNum, total) {
+  var div = document.createElement('div');
+  div.className = 'page';
+  div.innerHTML =
+    '<div style="flex:1;display:flex;flex-direction:column;min-height:0;background:#fff;">'
+
+    // 상단 여백
+    +'<div style="height:62px;flex-shrink:0;"></div>'
+
+    // 슬롯 A
+    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    +buildSlotBlock(a)
+    +'</div>'
+
+    // 슬롯 B
+    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    +buildSlotBlock(b)
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 72px 44px;flex-shrink:0;">'
+    +''
+    +''
+    +'<p style="font-size:11.5px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;margin:0;">'+D.name+' '+lvLabel+' - '+dateStr+' 검사</p>'
+    +'</div>'
+    +''
+    +''
+    +''
+    +''
+    +''
+    +''
+    +''
+    +''
+
+    +'</div>'
+    +buildFooter(pageNum, total);
+  return div;
+}
+
+// ══════════════════════════
+// 마지막 페이지 — 훈련 로드맵
+// ══════════════════════════
+
+// ── 코스 패키지 정의 (PDF 확정본 기준) ──
+var COURSES = {
+  PK06_1: { name:"초급0", code:"PK06-1", steps:["비문학독서클럽","초급예비과정","초급기본과정"] },
+  PK06:   { name:"초급1", code:"PK06",   steps:["초급예비과정","초급기본과정","초급심화과정"] },
+  PK07:   { name:"초급2", code:"PK07",   steps:["초급예비과정","초급심화과정","중급기본과정"] },
+  PK08:   { name:"중급1", code:"PK08",   steps:["중급예비과정","중급기본과정","중급심화과정"] },
+  PK09:   { name:"중급2", code:"PK09",   steps:["중급심화과정","고급기본과정","고급심화과정"] },
+  PK10:   { name:"고급1", code:"PK10",   steps:["고급기본과정","고급심화과정"] }
+};
 
 // ── 학년·수준별 코스 추천 함수 ──
 function recommendCourse(level, grade, acc, kor) {
@@ -220,16 +506,7 @@ function buildPrescFromCourse(courseCode) {
 }
 
 function buildLastPage(total) {
-  var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
-  var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
-  var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
-  var activeKeys;
-  if (validPresc.length > 0) {
-    activeKeys = validPresc;
-  } else {
-    var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
-    activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
-  }
+  var activeKeys = (D.presc||[]).map(function(p){ return p.c; });
 
   // 모던 그라디언트 팔레트 — 활성 단계 공통 색 (진행감)
   var STEP_COLORS = [
@@ -374,22 +651,18 @@ function buildLastPage(total) {
   return div;
 }
 
-// ── 렌더링 ──
+// ── 렌더링 — 로드맵을 1번째로 ──
+var wrap = document.getElementById('pageWrap');
 var TOTAL = 4;
 document.addEventListener('DOMContentLoaded', function(){
-  if (!D) return; // 데이터 없으면 렌더링 안 함
-
-  // print-bar 학생 이름 업데이트
+  if (!D) return;
   var pbn = document.getElementById('printBarName');
   if (pbn) pbn.textContent = D.name || '학생';
   document.title = 'TQ 판독 리포트 — ' + (D.name || '학생');
-
-  var wrap = document.getElementById('pageWrap');
-  if (!wrap) return;
-  wrap.appendChild(buildPage1());                        // 1페이지: TQ 결과지
-  wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));  // 2페이지: 판독문 ①②
-  wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));  // 3페이지: 판독문 ③④
-  wrap.appendChild(buildLastPage(TOTAL));                // 4페이지: 로드맵
+  wrap.appendChild(buildPage1());
+  wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));
+  wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));
+  wrap.appendChild(buildLastPage(TOTAL));
 });
 
 // ══════════════════════════════════════════════
