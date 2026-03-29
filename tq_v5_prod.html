@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.30</span> · 캐시무효화+편집바동기화+SVG수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.31</span> · 판독탭슬롯표시+편집바동기화</div>
 
   </div>
 </div>
@@ -722,6 +722,40 @@ function showSavedResultToast(testDate) {
 }
 
 // ── 판독 결과 저장 ──
+
+// ── 판독 탭 슬롯 표시 ──
+function renderSlotsInPandok(slots) {
+  var sec = document.getElementById('slotsSection');
+  var list = document.getElementById('slotsList');
+  if (!sec || !list || !slots) return;
+  var TITLES = ['① 이 학생은 어떤 학습자인가?','② 지금 어떤 상태인가?','③ 지금 개선하지 않으면?','④ 지금 무엇을 해야 하는가?'];
+  var COLORS = ['#1E40AF','#0BA98E','#B45309','#7C3AED'];
+  list.innerHTML = '';
+  var hasAny = false;
+  for (var i = 1; i <= 4; i++) {
+    var txt = (slots['slot'+i] || '').trim();
+    if (!txt) continue;
+    hasAny = true;
+    var wrap = document.createElement('div');
+    wrap.className = 'slot';
+    wrap.style.cssText = 'border-left:3px solid '+COLORS[i-1]+';padding-left:16px;margin-bottom:24px;border-bottom:none;';
+    var hdr = document.createElement('div');
+    hdr.className = 'slot-h';
+    var ttl = document.createElement('span');
+    ttl.style.color = COLORS[i-1];
+    ttl.textContent = TITLES[i-1];
+    hdr.appendChild(ttl);
+    var body = document.createElement('div');
+    body.className = 'slot-b';
+    body.textContent = txt;
+    wrap.appendChild(hdr);
+    wrap.appendChild(body);
+    list.appendChild(wrap);
+  }
+  sec.style.display = hasAny ? 'block' : 'none';
+}
+window.renderSlotsInPandok = renderSlotsInPandok;
+
 function saveTqResult(inp, eng, slots) {
   if (!inp || !eng) return;
   // slots 없으면 빈 객체 전달 — DB의 기존 slot은 덮어쓰지 않도록 index.ts에서 처리
@@ -1735,11 +1769,17 @@ function renderResult(e,nm){
       <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
     </div>
 
+    <!-- 판독문 슬롯 섹션 -->
+    <div id="slotsSection" style="display:none;max-width:1180px;margin:0 auto 40px;padding:0 20px">
+      <div style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;padding-top:8px;border-top:1px solid #E2E8F0">판독문</div>
+      <div id="slotsList"></div>
+    </div>
+
   </div>
 
 
 
-`;
+\`;
 
   // 로그 섹션을 문자열로 별도 생성 후 삽입
   return html;
@@ -1887,6 +1927,8 @@ gv("btnB").addEventListener("click",async function(){
     }
     window.__TQ_SLOTS=slots;
     gv("btnR").disabled=false;
+    // 판독 탭에 슬롯 표시
+    renderSlotsInPandok(slots);
     // 판독문 생성 완료 시 항상 재렌더
     window.__reportRendered = false;
     try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
@@ -3388,6 +3430,11 @@ function resetAll(){
   gv("btnR").disabled=true;
 
   window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
+  // 판독 탭 슬롯 초기화
+  var _slotsSec = document.getElementById('slotsSection');
+  if (_slotsSec) _slotsSec.style.display = 'none';
+  var _slotsList = document.getElementById('slotsList');
+  if (_slotsList) _slotsList.innerHTML = '';
   // 리포트 탭 초기화
   var repPlaceholder = document.getElementById('reportInlinePlaceholder');
   if(repPlaceholder) repPlaceholder.style.display='block';
@@ -5083,6 +5130,7 @@ function injectTqDataAndRun(d) {
       window.__TQ_SAVED_ID = saved.id;
       window.__RPT_D       = null;  // 이전 세션 presc 초기화
       console.log("[TQ] 로드된 slots:", saved.slots ? Object.keys(saved.slots) : "없음");
+      if (saved.slots && saved.slots.slot1) renderSlotsInPandok(saved.slots);
 
       // 2단계: 폼 필드 복원 (검사일 포함)
       if (saved.inp) injectTqDataAndRun.__formOnly(saved.inp);
@@ -5510,7 +5558,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.30</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.31</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
