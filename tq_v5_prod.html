@@ -486,6 +486,11 @@ details summary:hover{color:var(--tx2)}
 @keyframes tq-number       { from{opacity:0;transform:scale(.8) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
 @keyframes tq-scan-line    { 0%{top:-60px} 100%{top:110%} }
 .tq-hidden { opacity:0; }
+/* page-result: 화면에서는 헤더 높이만큼 offset, 인쇄에서는 제거 */
+#page-result {
+  height: calc(100vh - 40px);
+  margin-top: 40px;
+}
 /* ── standalone 리포트 CSS (이식) ── */
 @font-face{font-family:'S-CoreDream';src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff')format('woff');font-weight:400;}
 #resultPane_리포트 .page{width:794px;height:1123px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
@@ -508,22 +513,19 @@ details summary:hover{color:var(--tx2)}
     margin:0!important; padding:0!important;
     overflow:visible!important; background:white!important;
   }
-  /* inline style margin-top:40px 제거 — id+html 조합으로 specificity 올림 */
-  html body #page-result {
+  /* page-result: 인쇄 시 margin/height 제거 (CSS 클래스이므로 정상 적용) */
+  #page-result {
     height:auto!important; overflow:visible!important;
     position:static!important;
     margin:0!important; padding:0!important;
-    top:0!important;
   }
-  /* 리포트 탭 배경 제거 */
-  html body #resultPane_리포트 {
+  #resultPane_리포트 {
     background:white!important;
     min-height:0!important;
   }
-  /* placeholder 완전 숨김 */
   #reportInlinePlaceholder {
     display:none!important;
-    padding:0!important; margin:0!important; height:0!important;
+    height:0!important; padding:0!important; margin:0!important;
   }
   #rptPageWrap {
     display:block!important;
@@ -665,13 +667,13 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.1</span> · 슬롯겹침수정/인쇄개선
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.3</span> · 인쇄여백구조개선
     </div>
 
   </div>
 </div>
 
-<div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
+<div id="page-result" style="display:none;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
   <div id="resultPane_판독" style="display:block">
@@ -708,33 +710,10 @@ function printReport() {
   var orig = document.title;
   if (nm) document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
 
-  // inline style 인쇄 전 임시 제거 (margin-top:40px 등)
-  var pageResult = document.getElementById('page-result');
-  var origMargin = '', origPadding = '', origPos = '', origHeight = '';
-  if (pageResult) {
-    origMargin  = pageResult.style.marginTop;
-    origPadding = pageResult.style.paddingBottom;
-    origPos     = pageResult.style.position;
-    origHeight  = pageResult.style.height;
-    pageResult.style.marginTop     = '0';
-    pageResult.style.paddingBottom = '0';
-    pageResult.style.position      = 'static';
-    pageResult.style.height        = 'auto';
-  }
-
   requestAnimationFrame(function(){
     setTimeout(function(){
       window.print();
-      // 인쇄 후 원상복귀
-      setTimeout(function(){
-        document.title = orig;
-        if (pageResult) {
-          pageResult.style.marginTop     = origMargin;
-          pageResult.style.paddingBottom = origPadding;
-          pageResult.style.position      = origPos;
-          pageResult.style.height        = origHeight;
-        }
-      }, 500);
+      setTimeout(function(){ document.title = orig; }, 500);
     }, 200);
   });
 }
@@ -5304,7 +5283,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.1</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.3</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
