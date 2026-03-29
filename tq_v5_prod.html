@@ -674,7 +674,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.19</span> · 슬롯높이재조정+안내이동
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.20</span> · 슬롯구조재설계
     </div>
 
   </div>
@@ -5290,7 +5290,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.19</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.20</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5458,32 +5458,29 @@ function buildDualSlotPage(a, b, pageNum, total) {
   var div = document.createElement('div');
   div.className = 'page';
   div.innerHTML =
+    // 페이지 본문: flex-column으로 슬롯A/B 균등 분배
     '<div style="flex:1;display:flex;flex-direction:column;min-height:0;background:#fff;">'
 
     // 상단 여백
-    +'<div style="height:62px;flex-shrink:0;"></div>'
+    +'<div style="height:40px;flex-shrink:0;"></div>'
 
-    // 슬롯 A — 고정 높이로 B와 동일하게
-    +'<div style="height:475px;display:flex;flex-direction:column;padding-bottom:12px;">'
+    // 슬롯 A — flex:1로 균등 분배
+    +'<div style="flex:1;min-height:0;display:flex;flex-direction:column;">'
     +buildSlotBlock(a)
     +'</div>'
 
-    // 슬롯 B — 고정 높이
-    +'<div style="height:475px;display:flex;flex-direction:column;padding-bottom:12px;">'
+    // 슬롯 간 여백
+    +'<div style="height:16px;flex-shrink:0;"></div>'
+
+    // 슬롯 B — flex:1로 균등 분배
+    +'<div style="flex:1;min-height:0;display:flex;flex-direction:column;">'
     +buildSlotBlock(b)
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 72px 44px;flex-shrink:0;">'
-    +''
-    +''
+    +'</div>'
+
+    // 날짜 영역 — 슬롯 밖, 하단 고정
+    +'<div style="padding:10px 72px 16px;flex-shrink:0;">'
     +'<p style="font-size:11.5px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;margin:0;">'+D.name+' '+RPT_lvLabel+' - '+RPT_dateStr+' 검사</p>'
     +'</div>'
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
-    +''
 
     +'</div>'
     +buildFooter(pageNum, total);
