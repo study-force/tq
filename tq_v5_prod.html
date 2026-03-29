@@ -5305,8 +5305,8 @@ function buildPage1() {
   var avgAcc     = Math.round((factual+structural)/2);
   var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
 
-  var habChecked = HABIT_ITEMS.map(function(item){ return D.habChecked.indexOf(item)>-1; });
-  var effChecked = EFF_ITEMS.map(function(item){ return D.effChecked.indexOf(item)>-1; });
+  var habChecked = HABIT_ITEMS.map(function(item){ return Array.isArray(D.habChecked) && D.habChecked.indexOf(item)>-1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return Array.isArray(D.effChecked) && D.effChecked.indexOf(item)>-1; });
   var habitCount = habChecked.filter(Boolean).length;
   var effCount   = effChecked.filter(Boolean).length;
 
@@ -6073,7 +6073,7 @@ window.renderReportTab = renderReportTab;
 
 // 편집바를 판독 탭 하단에 표시
 function showEditBar() {
-  // __RPT_D 없으면 __eng/__inp로 직접 조립 (btnA 완료 직후에도 동작)
+  // __RPT_D 우선, 없으면 __eng/__inp로 최소 조립
   var _D = window.__RPT_D;
   if (!_D) {
     var _eng = window.__eng, _inp = window.__inp;
@@ -6091,8 +6091,11 @@ function showEditBar() {
   var oldBar = document.getElementById('editBar');
   if (oldBar) oldBar.remove();
   editMode = true;
-  // D를 buildEditBar/buildLastPage가 참조하도록 전역에 설정
-  D = _D;
+  // D 전역을 덮어쓰지 않고 편집바 전용 변수 사용
+  // buildEditBar는 전역 D를 참조하므로, 완전한 D가 있으면 그대로 두고
+  // 없을 때만 임시로 설정 후 복원
+  var _prevD = D;
+  if (!D || !D.acc) D = _D;  // D가 null이거나 불완전할 때만 임시 설정
   currentActiveKeys = (_D.presc||[]).map(function(p){ return p.c; });
   if (!currentActiveKeys.length) {
     var recCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
@@ -6101,6 +6104,7 @@ function showEditBar() {
   currentCourseCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
   aiReasonCache = {};
   var newBar = buildEditBar();
+  D = _prevD;  // 원래 D로 복원 (renderReportTab이 덮어쓴 완전한 D 보호)
   newBar.style.position = 'fixed';
   newBar.style.bottom = '0';
   newBar.style.left = '0';
