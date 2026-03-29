@@ -506,8 +506,8 @@ details summary:hover{color:var(--tx2)}
   </div>
   <!-- 구분선 -->
   <div style="width:1px;height:20px;background:rgba(255,255,255,.1);flex-shrink:0;margin:0 4px"></div>
-  <!-- 학생이름 -->
-  <div id="result-student-name" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);padding:0 8px;flex-shrink:0;display:none"></div>
+  <!-- 학생이름 헤더 표시 제거 (판독 페이지에 이름 있음) -->
+  <div id="result-student-name" style="display:none"></div>
   <!-- 판독/리포트 탭 (결과 페이지에서만 표시) -->
   <div id="resultTabBar" style="display:none;align-items:stretch;gap:0;height:100%">
     <button id="resultTab_판독" onclick="switchResultTab('판독')" style="padding:0 16px;font-size:11px;font-weight:600;color:#A78BFA;background:transparent;border:none;border-bottom:2px solid #8B5CF6;cursor:pointer;font-family:inherit;transition:all .15s;height:100%">
@@ -2923,10 +2923,18 @@ function postRenderSWOT(eng, inp) {
 
         var heroRect = heroBox.getBoundingClientRect();
 
-        // 정보처리습관 카드: habTitle과 같은 높이에 시작
+        // 정보처리습관 카드: habTitle 높이 vs studentInfoSlot 하단 중 더 아래에 배치
         if (habTitle && leftCard) {
           var habRect = habTitle.getBoundingClientRect();
-          leftCard.style.top = Math.round(habRect.top - heroRect.top) + 'px';
+          var habTop  = Math.round(habRect.top - heroRect.top);
+          // studentInfoSlot 하단 + 간격 확인
+          var infoBot = 0;
+          var infoSlotEl = document.getElementById('studentInfoSlot');
+          if (infoSlotEl) {
+            var infoRect = infoSlotEl.getBoundingClientRect();
+            infoBot = Math.round(infoRect.bottom - heroRect.top) + 16; // 16px 여백
+          }
+          leftCard.style.top = Math.max(habTop, infoBot) + 'px';
           leftCard.style.marginTop = '0';
         }
 
