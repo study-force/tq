@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.25</span> · 로드복원구조재설계
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.26</span> · 로드복원단계정리
     </div>
 
   </div>
@@ -5069,38 +5069,55 @@ function injectTqDataAndRun(d) {
     var _loaded = false;  // 로드 완료 플래그
     loadTqResult(d.name, d.grade, d.spd, function(saved) {
       _loaded = true;
-      // ── 기존 결과 발견 ──
-      // btnA.click() 없이 저장된 데이터 직접 복원
+      // ── 기존 결과 발견 — 단계별 복원 ──
+
+      // 1단계: 전역 상태 세팅
       window.__nm          = d.name;
       window.__inp         = saved.inp;
       window.__eng         = saved.eng;
       window.__TQ_SLOTS    = saved.slots;
       window.__TQ_SAVED_ID = saved.id;
 
-      // 저장된 inp로 폼 필드 재주입 (검사일 포함)
+      // 2단계: 폼 필드 복원 (검사일 포함)
       if (saved.inp) injectTqDataAndRun.__formOnly(saved.inp);
 
-      // 판독 탭 화면 렌더
-      var rv = document.getElementById('resultView');
-      if (rv && saved.eng && saved.inp) {
-        try { rv.innerHTML = renderResult(saved.eng, saved.inp.name || d.name); } catch(e){}
-      }
+      // 3단계: 결과 페이지 전환
       showResultPage(d.name);
 
-      // 리포트 렌더
-      window.__reportRendered = false;
-      try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+      setTimeout(function() {
+        // 4단계: 판독 탭 화면 렌더
+        var rv = document.getElementById('resultView');
+        if (rv && saved.eng && saved.inp) {
+          try { rv.innerHTML = renderResult(saved.eng, saved.inp.name || d.name); } catch(e){ console.error('[renderResult]',e); }
+        }
 
-      // 버튼 활성화
-      var btnR = document.getElementById('btnR');
-      if (btnR) btnR.disabled = false;
-      var btnB = document.getElementById('btnB');
-      if (btnB) btnB.disabled = false;
+        // 5단계: 버튼 활성화
+        var btnR = document.getElementById('btnR');
+        if (btnR) btnR.disabled = false;
+        var btnB = document.getElementById('btnB');
+        if (btnB) { btnB.disabled = false; btnB.textContent = '② 판독문 생성 — Claude AI'; }
 
-      // 편집바
-      try { showEditBar(); } catch(e){}
+        // 6단계: 리포트 탭 "✓ 생성 완료" 표시
+        var _tabRpt = document.getElementById('resultTab_리포트');
+        if (_tabRpt) {
+          _tabRpt.style.color = '#34D399';
+          _tabRpt.style.borderBottomColor = 'transparent';
+          _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
+        }
 
-      showSavedResultToast(saved.test_date);
+        // 7단계: 편집바 활성화
+        editBarReady = true;
+        try {
+          if (document.getElementById('editBar')) rebuildEditBar();
+          else showEditBar();
+        } catch(e){}
+
+        // 8단계: 리포트 렌더
+        window.__reportRendered = false;
+        try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]',e); }
+
+        showSavedResultToast(saved.test_date);
+      }, 300);
     });
     // 2초 후에도 로드 안 됐으면 → 새로 엔진 실행
     setTimeout(function() {
@@ -5460,7 +5477,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.25</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.26</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
