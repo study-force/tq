@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.26</span> · 로드복원단계정리
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.27</span> · 권장훈련저장+RPT_D초기화
     </div>
 
   </div>
@@ -5077,6 +5077,7 @@ function injectTqDataAndRun(d) {
       window.__eng         = saved.eng;
       window.__TQ_SLOTS    = saved.slots;
       window.__TQ_SAVED_ID = saved.id;
+      window.__RPT_D       = null;  // 이전 세션 presc 초기화
       console.log("[TQ] 로드된 slots:", saved.slots ? Object.keys(saved.slots) : "없음");
 
       // 2단계: 폼 필드 복원 (검사일 포함)
@@ -5120,13 +5121,13 @@ function injectTqDataAndRun(d) {
         showSavedResultToast(saved.test_date);
       }, 300);
     });
-    // 2초 후에도 로드 안 됐으면 → 새로 엔진 실행
+    // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
     setTimeout(function() {
-      if (!_loaded) {
+      if (!_loaded && !window.__TQ_SLOTS) {
         var btnA = document.getElementById('btnA');
         if (btnA) btnA.click();
       }
-    }, 2000);
+    }, 3000);
   } else {
     setTimeout(function() {
       var btnA = document.getElementById('btnA');
@@ -5478,7 +5479,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.26</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.27</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
