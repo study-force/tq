@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.56</span> · 풋터수정+헤더강화+탭강조</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.57</span> · 최대선택6개제한</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.56</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.57</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6260,7 +6260,7 @@ function toggleProgram(key) {
   if (idx > -1) {
     currentActiveKeys.splice(idx, 1);
   } else {
-    if (currentActiveKeys.length >= 7) { alert('최대 7단계까지 선택 가능합니다.'); return; }
+    if (currentActiveKeys.length >= 6) { alert('최대 6단계까지 선택 가능합니다.'); return; }
     var allKeys = ALL_PROGRAMS.map(function(p){ return p.key; });
     var newList = allKeys.filter(function(k){ return currentActiveKeys.indexOf(k) > -1 || k === key; });
     currentActiveKeys = newList;
