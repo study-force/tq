@@ -1126,7 +1126,7 @@ async function processOcrFile(file){
     // 폼에 값 적용
     if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
     if(parsed.struct_understand!=null){gv("sStr").value=parsed.struct_understand;gv("sStrV").textContent=parsed.struct_understand;}
-    if(parsed.speed!=null){gv("sSpd").value=parsed.speed;}
+    if(parsed.speed!=null){gv("sSpd").value=parseInt(parsed.speed)||0;}
     if(parsed.vocabulary!=null){gv("sVoc").value=parsed.vocabulary;gv("sVocV").textContent=parsed.vocabulary;}
     if(parsed.working_memory!=null){gv("sWm").value=parsed.working_memory;gv("sWmV").textContent=parsed.working_memory;}
     if(parsed.inference!=null){gv("sInf").value=parsed.inference;gv("sInfV").textContent=parsed.inference;}
@@ -2317,7 +2317,8 @@ function runEntryAnimation(rv, eng, inp) {
   t += 400;
   setTimeout(function(){
     var spdEl = document.getElementById('heroSpd');
-    var _spd = parseInt(eng&&eng.spd)||parseInt(inp.spd)||0;
+    var _rawSpd2 = (eng&&eng.spd)||(inp&&inp.spd)||0;
+    var _spd = isNaN(Number(_rawSpd2)) ? 0 : Number(_rawSpd2);
     if (spdEl && _spd) {
       spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
       var start = 0, startTime = null, target = _spd;
@@ -2766,7 +2767,11 @@ function postRenderSWOT(eng, inp) {
 
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
-  if (heroSpd) { var _s=parseInt(eng&&eng.spd)||parseInt(inp.spd)||0; heroSpd.textContent = _s ? _s.toLocaleString() : '—'; }
+  if (heroSpd) {
+    var _rawSpd = (eng&&eng.spd) || (inp&&inp.spd) || 0;
+    var _s = isNaN(Number(_rawSpd)) ? 0 : Number(_rawSpd);
+    heroSpd.textContent = _s > 0 ? _s.toLocaleString() : '—';
+  }
 
   // 학생 정보 카드 → studentInfoSlot으로 이동
   var srcCard = document.getElementById('studentInfoCard');
@@ -3005,7 +3010,8 @@ function rpBuildResultHTML(eng, inp) {
   var fct      = inp.fct  > 0 ? inp.fct  : eng.acc;
   var str_     = inp.str  > 0 ? inp.str  : eng.acc;
   var avgAcc   = Math.round((fct + str_) / 2);
-  var spd      = parseInt(inp.spd)||parseInt(eng&&eng.spd)||0;
+  var _spdRaw = (inp&&inp.spd)||(eng&&eng.spd)||0;
+  var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
 
   // 체크 항목
   var habChecked = HAB_ITEMS.map(function(item){ return inp.habChecked && inp.habChecked.indexOf(item) > -1; });
