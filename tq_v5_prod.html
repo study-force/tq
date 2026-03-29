@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.41</span> · applyEdit단순화</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.42</span> · 전역함수노출수정</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.41</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.42</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6219,7 +6219,8 @@ function rebuildEditBar() {
   newBar.style.right = '0';
   newBar.style.zIndex = '200';
   old.replaceWith(newBar);
-}
+}window.rebuildEditBar = rebuildEditBar;
+
 window.unlockEditBar = unlockEditBar;
 window.lockEditBar = lockEditBar;
 
@@ -6233,7 +6234,8 @@ function selectCourse(code) {
   aiReasonCache = {};
   // 로드맵 반영 + 저장
   applyEdit();
-}
+}window.selectCourse = selectCourse;
+
 
 function renderEditBtns(container) {
   var STEP_COLORS_E = ["#F47A20","#F5C518","#F5C518","#F5C518","#7CB342","#7CB342","#7CB342","#4A90D9","#4A90D9"];
@@ -6271,7 +6273,8 @@ function toggleProgram(key) {
   currentCourseCode = matchedCode; // 정확히 일치하는 코스가 있으면 표시, 없으면 해제
   aiReasonCache = {};
   applyEdit();
-}
+}window.toggleProgram = toggleProgram;
+
 
 // AI 추천 이유 캐시
 var aiReasonCache = {};
@@ -6370,7 +6373,8 @@ function applyEdit() {
   if (window.__inp && window.__eng && window.__TQ_SLOTS) {
     saveTqResult(window.__inp, window.__eng, window.__TQ_SLOTS);
   }
-}
+}window.applyEdit = applyEdit;
+
 
 function showToastRM(msg) {
   var t = document.createElement('div');
