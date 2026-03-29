@@ -491,7 +491,7 @@ details summary:hover{color:var(--tx2)}
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:1px solid rgba(139,92,246,.15);position:fixed;top:0;left:0;right:0;z-index:200">
   <div style="display:flex;align-items:center;gap:8px;padding:0 16px">
     <div style="width:22px;height:22px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;letter-spacing:-.3px">TQ</div>
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 TQ TEST 결과 분석 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 TQ TEST 결과 분석 시스템 <span style="color:#8B5CF6;font-weight:400;font-size:10px">StudyForce</span></span><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:8px">v2026.03.29</span>
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
@@ -501,7 +501,25 @@ details summary:hover{color:var(--tx2)}
     <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">접근 권한이 없습니다</div>
     <div style="font-size:13px;line-height:1.8;margin-bottom:32px">학원 관리 시스템에서 [결과판독] 버튼을 통해 접근해 주세요.</div>
     <div style="font-size:11px;font-weight:700;color:#64748B;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">테스트용 샘플</div>
-    <div id="sampleBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button data-tq='{"name": "진호윤", "level": "초고", "grade": 5, "fct": 100, "str": 80, "spd": 1794, "voc": 65, "wm": 50, "inf": 70, "kor_score": "매우잘함", "eng_score": "잘함", "math": "매우잘함", "hab_checks": [true, false, false, false, true, false, false, false, false, false], "eff_checks": [false, false, false, false, false, false, false, false, false, false]}' onclick="var d=JSON.parse(this.dataset.tq);window.location.href=window.location.href.split('?')[0]+'?tqdata='+encodeURIComponent(JSON.stringify(d))" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(11,169,142,.3);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">
+        <div style="font-size:14px;font-weight:700;color:#0BA98E;margin-bottom:4px">진호윤</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">초등5 · 고역량 완성형</div>
+      </button>
+      <button data-tq='{"name": "이준혁", "level": "중등", "grade": 2, "fct": 20, "str": 20, "spd": 540, "voc": 45, "wm": 30, "inf": 50, "kor_score": "90점 이상", "eng_score": "80~89점", "math": "90점 이상", "hab_checks": [true, false, false, false, true, true, false, true, false, false], "eff_checks": [false, false, true, true, true, false, false, false, false, true]}' onclick="var d=JSON.parse(this.dataset.tq);window.location.href=window.location.href.split('?')[0]+'?tqdata='+encodeURIComponent(JSON.stringify(d))" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(220,38,38,.3);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">
+        <div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:4px">이준혁</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">중2 · 모순패턴</div>
+      </button>
+      <button data-tq='{"name": "박서연", "level": "중등", "grade": 1, "fct": 30, "str": 40, "spd": 420, "voc": 40, "wm": 40, "inf": 65, "kor_score": "60~69점", "eng_score": "70~79점", "math": "60~69점", "hab_checks": [false, true, true, false, false, true, true, false, false, false], "eff_checks": [true, true, false, true, false, true, false, false, true, false]}' onclick="var d=JSON.parse(this.dataset.tq);window.location.href=window.location.href.split('?')[0]+'?tqdata='+encodeURIComponent(JSON.stringify(d))" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(217,119,6,.3);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">
+        <div style="font-size:14px;font-weight:700;color:#D97706;margin-bottom:4px">박서연</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">중1 · 추론잠재형</div>
+      </button>
+      <button data-tq='{"name": "김민서", "level": "고등", "grade": 1, "fct": 70, "str": 40, "spd": 680, "voc": 60, "wm": 50, "inf": 35, "kor_score": "70~79점", "eng_score": "60~69점", "math": "60~69점", "hab_checks": [false, false, false, true, false, true, false, true, false, false], "eff_checks": [false, true, false, true, true, false, true, false, false, false]}' onclick="var d=JSON.parse(this.dataset.tq);window.location.href=window.location.href.split('?')[0]+'?tqdata='+encodeURIComponent(JSON.stringify(d))" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(37,99,235,.3);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">
+        <div style="font-size:14px;font-weight:700;color:#2563EB;margin-bottom:4px">김민서</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">고1 · 사실강점형</div>
+      </button>
+    </div>
     <div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px">실제 운영 시 학원 관리 시스템에서 자동으로 데이터가 전달됩니다</div>
   </div>
 </div>
@@ -1083,7 +1101,7 @@ function showFeedbackToast(msg, isErr) {
 }
 
 function loadSampleParam(d) {
-  var url = window.location.pathname + '?tqdata=' + encodeURIComponent(JSON.stringify(d));
+        var url = window.location.href.split('?')[0] + '?tqdata=' + encodeURIComponent(JSON.stringify(s));
   window.location.href = url;
 }
 window.loadSampleParam = loadSampleParam;
@@ -4147,7 +4165,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var btns = document.getElementById('sampleBtns');
       if (!btns) return;
       btns.innerHTML = sampleData.map(function(s) {
-        return '<button onclick="loadSampleParam(' + JSON.stringify(s).replace(/"/g,'&quot;') + ')"'
+        var url = window.location.href.split('?')[0] + '?tqdata=' + encodeURIComponent(JSON.stringify(s));
+        return '<button onclick="window.location.href=\'' + url + '\'"'
           + ' style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);'
           + 'border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;font-family:inherit">'
           + '<div style="font-size:14px;font-weight:700;color:' + s.color + ';margin-bottom:4px">' + s.name + '</div>'
