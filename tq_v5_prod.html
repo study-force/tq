@@ -674,7 +674,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.16</span> · 블록위치이동
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.18</span> · 슬롯박스높이균등
     </div>
 
   </div>
@@ -5290,7 +5290,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.16</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.18</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5390,14 +5390,14 @@ function buildPage1() {
     +'</div></div>'
 
     // 열2
-    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:20px">'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:30px">'
     +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해습관</span></div>'
     +habitRows
     +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
     +'<span style="color:#1E293B;font-size:15px">잘못된 독해습관</span><span style="margin-left:auto;color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span></div></div></div>'
 
     // 열3
-    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:20px">'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:max-content;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:30px">'
     +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해효율성</span></div>'
     +effRows
     +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
@@ -5410,7 +5410,7 @@ function buildPage1() {
     // 하단: 차트 + 요인분석
     +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start">'
     +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px">'+buildPolar(FACTORS,317)+'</div>'
-    +'<div style="padding-right:20px;padding-top:30px;padding-left:15px">'
+    +'<div style="padding-right:20px;padding-top:30px;padding-left:25px">'
     +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px">독해역량 요인분석</div>'
     +factorRows
     +'</div></div>'
@@ -5443,7 +5443,7 @@ function buildSlotBlock(i) {
     +'<div style="font-size:21px;font-weight:500;color:#1A2332;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">'+D.name+' 학생'+RPT_SLOT_JOSA[i-1]+' '+RPT_SLOT_T[i-1]+'</div>'
     +'</div>'
     +'</div>'
-    +'<div style="flex:1;margin:0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;">'
+    +'<div style="flex:1;min-height:0;margin:0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;">'
     +'<div style="position:absolute;top:0;left:0;width:3px;height:100%;background:'+slotColor+';opacity:.5;"></div>'
     +'<div style="position:absolute;bottom:12px;right:16px;font-size:56px;color:'+slotColor+';opacity:.04;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
     +'<div style="font-size:15.5px;line-height:2.1;color:#1A2332;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
@@ -5466,13 +5466,13 @@ function buildDualSlotPage(a, b, pageNum, total) {
     // 상단 여백
     +'<div style="height:62px;flex-shrink:0;"></div>'
 
-    // 슬롯 A
-    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    // 슬롯 A — 고정 높이로 B와 동일하게
+    +'<div style="height:475px;display:flex;flex-direction:column;">'
     +buildSlotBlock(a)
     +'</div>'
 
-    // 슬롯 B
-    +'<div style="flex:1;display:flex;flex-direction:column;min-height:0;">'
+    // 슬롯 B — 고정 높이
+    +'<div style="height:475px;display:flex;flex-direction:column;">'
     +buildSlotBlock(b)
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 72px 44px;flex-shrink:0;">'
     +''
