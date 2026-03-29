@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.44</span> · 편집바에러추적</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.45</span> · buildEditBar-D-null수정</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.44</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.45</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6051,7 +6051,15 @@ var currentActiveKeys = [];
 
 // ── 편집 UI 생성 ──
 function buildEditBar() {
-  var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
+  // D가 null일 수 있으므로 __inp/__eng로 안전하게 폴백
+  var _bd = D || window.__RPT_D || {};
+  var _bi = window.__inp || {};
+  var _be = window.__eng || {};
+  var _uiLevel = _bd.uiLevel || _bd.level || _bi.uiLevel || _bi.level || '';
+  var _grade   = _bd.grade   != null ? _bd.grade   : (_bi.grade || 0);
+  var _acc     = _bd.acc     != null ? _bd.acc     : (_be.acc   || 0);
+  var _kor     = _bd.kor     || _bi.kor || '-';
+  var recCode = recommendCourse(_uiLevel, _grade, _acc, _kor);
   var recCourse = COURSES[recCode];
   // currentActiveKeys가 비어있으면 추천 코스로 채움 (어떤 경로로 호출되든 보장)
   if (!currentActiveKeys.length) {
