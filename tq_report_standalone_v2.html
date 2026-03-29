@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>TQ 판독 리포트 — 박서연</title>
+<title>TQ 판독 리포트</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Noto+Serif+KR:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 <style>@font-face{font-family:'S-CoreDream';src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff')format('woff');font-weight:400;}</style>
 <style>
@@ -55,10 +55,9 @@ body { font-family:\'Noto Sans KR\',sans-serif; padding:32px 16px 60px; }
 <!-- 툴바 -->
 <div class="print-bar">
   <div style="display:flex;align-items:center;gap:10px">
-    <div style="width:28px;height:28px;background:linear-gradient(135deg,#0BA98E,#0E7CC0);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">TQ</div>
     <div>
       <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">TQ 독해역량 판독 리포트</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.4)">디자인 미리보기 — 박서연</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4)">미리보기 — <span id="printBarName">박서연</span></div>
     </div>
   </div>
   <div id="printBarRight" style="display:flex;gap:8px">
@@ -656,6 +655,11 @@ function buildLastPage(total) {
 // ── 렌더링 — 로드맵을 1번째로 ──
 var wrap = document.getElementById('pageWrap');
 var TOTAL = 4;
+// print-bar 학생 이름 업데이트
+var pbn = document.getElementById('printBarName');
+if (pbn) pbn.textContent = D.name || '학생';
+document.title = 'TQ 판독 리포트 — ' + (D.name || '학생');
+
 wrap.appendChild(buildPage1());                        // 1페이지: TQ 결과지
 wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));  // 2페이지: 판독문 ①②
 wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));  // 3페이지: 판독문 ③④
