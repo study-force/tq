@@ -4120,7 +4120,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   // tqdata 없음 → 샘플 버튼 렌더링
   if (!tqRaw) {
-    document.addEventListener('DOMContentLoaded', function(){
+    var _renderSample = function(){
       var sampleData = [
         { name:'진호윤', label:'초등5 · 고역량 완성형', color:'#0BA98E',
           level:'초고', grade:5, fct:100, str:80, spd:1794, voc:65, wm:50, inf:70,
@@ -4153,7 +4153,12 @@ document.addEventListener('DOMContentLoaded', function() {
           + '<div style="font-size:11px;color:rgba(255,255,255,.5)">' + s.label + '</div>'
           + '</button>';
       }).join('');
-    });
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _renderSample);
+    } else {
+      _renderSample();
+    }
   }
 });
 
