@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.43</span> · showEditBar-presc복원수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.44</span> · 편집바에러추적</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.43</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.44</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6519,14 +6519,17 @@ function showEditBar() {
   // editBar 생성 후 body에 고정
   var _savedD = D;
   D = window.__RPT_D || D;
-  var newBar = buildEditBar();
+  var newBar;
+  try { newBar = buildEditBar(); } catch(e) { console.error('[showEditBar] buildEditBar 에러:', e); D = _savedD; return; }
   D = _savedD;
+  if (!newBar) { console.error('[showEditBar] buildEditBar가 null 반환'); return; }
   newBar.style.position = 'fixed';
   newBar.style.bottom = '0';
   newBar.style.left = '0';
   newBar.style.right = '0';
   newBar.style.zIndex = '200';
   document.body.appendChild(newBar);
+  console.log('[showEditBar] 편집바 생성 완료, currentActiveKeys:', currentActiveKeys);
 }
 window.showEditBar = showEditBar;
 </script>
