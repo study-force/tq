@@ -675,7 +675,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.27</span> · 권장훈련저장+RPT_D초기화
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.28</span> · UPSERT오류수정+탭재확인
     </div>
 
   </div>
@@ -5099,7 +5099,7 @@ function injectTqDataAndRun(d) {
         var btnB = document.getElementById('btnB');
         if (btnB) { btnB.disabled = false; btnB.textContent = '② 판독문 생성 — Claude AI'; }
 
-        // 6단계: 리포트 탭 "✓ 생성 완료" 표시
+        // 6단계: 리포트 탭 "✓ 생성 완료" 표시 (showResultPage가 탭바를 건드리므로 이후에 실행)
         var _tabRpt = document.getElementById('resultTab_리포트');
         if (_tabRpt) {
           _tabRpt.style.color = '#34D399';
@@ -5117,6 +5117,21 @@ function injectTqDataAndRun(d) {
         // 8단계: 리포트 렌더
         window.__reportRendered = false;
         try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]',e); }
+
+        // 9단계: 탭 상태 재확인 (renderReportTab이 덮어쓸 수 있으므로 한 번 더)
+        setTimeout(function() {
+          var _t = document.getElementById('resultTab_리포트');
+          if (_t && window.__TQ_SLOTS) {
+            _t.style.color = '#34D399';
+            _t.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
+          }
+          // 권장훈련 버튼 재활성화
+          if (editBarReady) {
+            try {
+              if (document.getElementById('editBar')) rebuildEditBar();
+            } catch(e){}
+          }
+        }, 500);
 
         showSavedResultToast(saved.test_date);
       }, 300);
@@ -5479,7 +5494,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.27</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.28</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
