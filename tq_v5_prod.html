@@ -1757,17 +1757,24 @@ gv("btnB").addEventListener("click",async function(){
   }finally{
     btnB.disabled=false;
     btnB.textContent="② 판독문 생성 — Claude AI";
-    // 리포트 탭 완료 상태
+    // 리포트 탭 완료 상태 업데이트
     var _tabRpt = document.getElementById('resultTab_리포트');
-    if (_tabRpt) {
-      if (window.__TQ_SLOTS) {
+    if (window.__TQ_SLOTS) {
+      if (_tabRpt) {
         _tabRpt.style.color = '#34D399';
         _tabRpt.style.borderBottomColor = 'transparent';
         _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
-        // 판독 완료 → 수정하기 버튼 활성화
-        editBarReady = true;
+      }
+      // 판독 완료 → 수정하기 버튼 활성화 (탭 요소 유무와 무관하게 항상 실행)
+      editBarReady = true;
+      if (document.getElementById('editBar')) {
         rebuildEditBar();
       } else {
+        // editBar가 아직 없으면 showEditBar로 새로 생성
+        try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
+      }
+    } else {
+      if (_tabRpt) {
         _tabRpt.style.color = 'rgba(255,255,255,.35)';
         _tabRpt.innerHTML = '📄 리포트';
       }
@@ -5900,8 +5907,19 @@ function lockEditBar() {
 function rebuildEditBar() {
   var old = document.getElementById('editBar');
   if (!old) return;
+  // D 안전하게 확보: __RPT_D → __eng/__inp 최소 조립 순서
   var _savedD = D;
-  D = window.__RPT_D || D;
+  var _useD = window.__RPT_D;
+  if (!_useD && window.__eng && window.__inp) {
+    _useD = {
+      name: window.__inp.name||'', level: window.__inp.uiLevel||window.__inp.level||'',
+      uiLevel: window.__inp.uiLevel||window.__inp.level||'',
+      grade: window.__inp.grade||0, kor: window.__inp.kor||'-',
+      acc: window.__eng.acc||0, presc: []
+    };
+  }
+  if (!_useD) return;
+  D = _useD;
   var newBar = buildEditBar();
   D = _savedD;
   newBar.style.position = 'fixed';
