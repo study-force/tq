@@ -374,20 +374,23 @@ function buildLastPage(total) {
   return div;
 }
 
-// ── 렌더링 — 로드맵을 1번째로 ──
-var wrap = document.getElementById('pageWrap');
+// ── 렌더링 ──
 var TOTAL = 4;
-// print-bar 학생 이름 업데이트
-if (D) {
+document.addEventListener('DOMContentLoaded', function(){
+  if (!D) return; // 데이터 없으면 렌더링 안 함
+
+  // print-bar 학생 이름 업데이트
   var pbn = document.getElementById('printBarName');
   if (pbn) pbn.textContent = D.name || '학생';
   document.title = 'TQ 판독 리포트 — ' + (D.name || '학생');
-}
 
-wrap.appendChild(buildPage1());                        // 1페이지: TQ 결과지
-wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));  // 2페이지: 판독문 ①②
-wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));  // 3페이지: 판독문 ③④
-wrap.appendChild(buildLastPage(TOTAL));                // 4페이지: 로드맵
+  var wrap = document.getElementById('pageWrap');
+  if (!wrap) return;
+  wrap.appendChild(buildPage1());                        // 1페이지: TQ 결과지
+  wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));  // 2페이지: 판독문 ①②
+  wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));  // 3페이지: 판독문 ③④
+  wrap.appendChild(buildLastPage(TOTAL));                // 4페이지: 로드맵
+});
 
 // ══════════════════════════════════════════════
 // 로드맵 편집 시스템
@@ -397,7 +400,7 @@ var TQ_API_URL_RM   = (typeof TQ_API_URL !== 'undefined') ? TQ_API_URL : '';
 var TQ_API_TOKEN_RM = (typeof TQ_API_TOKEN !== 'undefined') ? TQ_API_TOKEN : '';
 
 // 현재 활성 과정 목록 (presc 기반, 편집 가능)
-var currentActiveKeys = (D.presc||[]).map(function(p){ return p.c; });
+var currentActiveKeys = D ? (D.presc||[]).map(function(p){ return p.c; }) : [];
 
 // ── 편집 UI 생성 ──
 function buildEditBar() {
