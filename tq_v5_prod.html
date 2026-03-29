@@ -495,175 +495,10 @@ details summary:hover{color:var(--tx2)}
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
-<div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
-  <div style="flex:1;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:28px 24px 40px">
-    <div style="width:100%;max-width:520px">
-      <div class="L-head" style="border-radius:14px 14px 0 0">
-
-    <div class="hd">
-      <div class="logo">TQ</div>
-      <div>
-        <div class="logo-title">스터디포스 TQ TEST 결과 분석 시스템</div>
-        <div class="logo-sub">STUDYFORCE LANGUAGE RESEARCH INSTITUTE</div>
-      </div>
-    </div>
-  </div>
-<div class="L-body" style="background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.07);border-top:none;border-radius:0 0 14px 14px;padding:16px 18px">
-
-  <!-- OCR 업로드 -->
-  <!-- 원본 크기 팝업 (전역) -->
-  <div id="imgFullWrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;overflow:auto;cursor:zoom-out" onclick="toggleImgFull()">
-    <img id="imgFull" src="" style="max-width:90vw;max-height:90vh;margin:auto;display:block;margin-top:5vh;border-radius:8px">
-  </div>
-
-  <!-- 샘플 데이터 선택 -->
-  <div style="margin-bottom:12px">
-    <div class="sec" style="margin-top:0">샘플 데이터</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-      <button onclick="loadSample(0)" class="btn" style="background:rgba(139,92,246,.08);color:#C4B5FD;border:1px solid rgba(139,92,246,.2);font-size:10px;padding:6px 8px;margin:0;text-align:left">
-        <span style="display:block;font-weight:600;color:var(--purple)">진호윤</span>
-        <span style="font-size:9px;color:var(--text-muted)">초고5 · 통합완성형 · 재검사</span>
-      </button>
-      <button onclick="loadSample(1)" class="btn" style="background:rgba(139,92,246,.08);color:#C4B5FD;border:1px solid rgba(139,92,246,.2);font-size:10px;padding:6px 8px;margin:0;text-align:left">
-        <span style="display:block;font-weight:600;color:#DC2626">이준혁</span>
-        <span style="font-size:9px;color:var(--text-muted)">중2 · 모순패턴 · 즉각개입</span>
-      </button>
-      <button onclick="loadSample(2)" class="btn" style="background:rgba(139,92,246,.08);color:#C4B5FD;border:1px solid rgba(139,92,246,.2);font-size:10px;padding:6px 8px;margin:0;text-align:left">
-        <span style="display:block;font-weight:600;color:#D97706">박서연</span>
-        <span style="font-size:9px;color:var(--text-muted)">중1 · 추론잠재형 · 조기개입</span>
-      </button>
-      <button onclick="loadSample(3)" class="btn" style="background:rgba(139,92,246,.08);color:#C4B5FD;border:1px solid rgba(139,92,246,.2);font-size:10px;padding:6px 8px;margin:0;text-align:left">
-        <span style="display:block;font-weight:600;color:#2563EB">김민서</span>
-        <span style="font-size:9px;color:var(--text-muted)">고1 · 사실강점형 · 중장기</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- 좌측 이미지 미리보기 (업로드 시 표시) -->
-  <div id="imgPreviewLeft" style="display:none;margin-bottom:8px;position:relative">
-    <img id="imgPreviewLeftImg" src="" alt="결과지"
-      style="width:100%;border-radius:8px;border:1px solid #E8E6E0;display:block;cursor:zoom-in"
-      title="클릭하면 원본 크기로 봅니다" onclick="toggleImgFull()">
-    <button onclick="clearImg()" title="이미지 제거"
-      style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:rgba(44,44,42,.75);color:#fff;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
-  </div>
-
-  <div class="ocr-zone" id="ocrZone" onclick="document.getElementById('imgInput').click()">
-    <input type="file" id="imgInput" accept="image/*">
-    <div id="ocrPlaceholder" style="line-height:1.8">
-      <div style="font-size:18px;margin-bottom:4px">📷</div>
-      <div style="font-size:11px;font-weight:600;color:#94A3B8">이미지 업로드 또는 Ctrl+V</div>
-      <div style="font-size:10px;color:var(--text-muted)">결과지 캡처 후 바로 붙여넣기 가능</div>
-      <div style="font-size:10px;color:var(--text-muted)">수치 자동 인식 · OCR 기반</div>
-    </div>
-    <span id="ocrStatus" style="font-size:11px;color:var(--purple);font-weight:600;display:block;margin-top:4px"></span>
-  </div>
-
-  <!-- 학생 정보 -->
-  <div class="sec">학생 정보</div>
-  <div style="margin-bottom:7px"><label>이름</label><input type="text" id="iName" value="" autocomplete="off" placeholder="학생 이름"></div>
-  <div class="fl2">
-    <div><label>학제</label>
-      <select id="iLevel" onchange="onLevelChange()">
-        <option value="초등">초등학생</option>
-        <option value="중등" selected>중학생</option>
-        <option value="고등">고등학생</option>
-        <option value="일반">일반</option>
-      </select>
-    </div>
-    <div><label>학년</label>
-      <select id="iGrade"></select>
-    </div>
-  </div>
-  <div class="fl3" id="scoreArea"></div>
-
-  <div class="div"></div>
-
-  <!-- 독해유창성 — 정확도 자동산출 -->
-  <div class="sec" style="margin-top:0">독해유창성 (정확도 자동산출)</div>
-  <div class="acc-badge">
-  <span class="acc-badge-label">독해정확도 (자동산출)</span>
-  <span id="accVal" style="font-size:18px;letter-spacing:-.5px">20</span>
-</div>
-
-  <div style="margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-      <label style="margin:0">사실적 이해</label>
-      <span id="sFctV" style="font-size:10px;font-weight:500;background:#F1EFE8;padding:1px 6px;border-radius:3px">20</span>
-    </div>
-    <input type="range" id="sFct" min="0" max="100" step="10" value="20">
-  </div>
-  <div style="margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-      <label style="margin:0">구조적 이해</label>
-      <span id="sStrV" style="font-size:10px;font-weight:500;background:#F1EFE8;padding:1px 6px;border-radius:3px">0</span>
-    </div>
-    <input type="range" id="sStr" min="0" max="100" step="10" value="0">
-  </div>
-  <div style="margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-      <label style="margin:0">독해속도 (자/분)</label>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <input type="number" id="sSpd" min="0" max="9999" step="10" value="584"
-        style="flex:1;padding:6px 8px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;border-radius:6px;color:#2C2C2A;background:#fff;outline:none"
-        oninput="document.getElementById('btnB').disabled=true">
-      <span style="font-size:11px;color:#888780;white-space:nowrap">자/분</span>
-    </div>
-  </div>
-
-  <div class="div"></div>
-
-  <!-- 요인분석 -->
-  <div class="sec" style="margin-top:0">요인분석</div>
-  <div id="factorSliders"></div>
-
-  <div class="div"></div>
-
-  <!-- 독해습관 체크리스트 -->
-  <div class="sec" style="margin-top:0">독해습관 자가진단</div>
-  <div class="chk-section">
-    <div class="chk-title">체크된 항목 = 문제 있음 (많을수록 점수↓) <span class="chk-score" id="habScore">점수: 100</span></div>
-    <div id="habChecks"></div>
-  </div>
-
-  <!-- 독해효율성 체크리스트 -->
-  <div class="sec">독해효율성 자가진단</div>
-  <div class="chk-section">
-    <div class="chk-title">체크된 항목 = 문제 있음 <span class="chk-score" id="effScore">점수: 100</span></div>
-    <div id="effChecks"></div>
-  </div>
-
-  <div style="padding-top:4px">
-    <button class="btn bA" id="btnA">① 분석 — 규칙 엔진 실행</button>
-    <button class="btn bB" id="btnB" disabled>② 판독문 생성 — Claude AI</button>
-    <button class="btn" id="btnR" disabled
-      style="background:linear-gradient(135deg,#8B5CF6,#00C9A7);color:#fff;opacity:.95">
-      📄 학부모 리포트 출력
-    </button>
-    <div style="display:grid;grid-template-columns:1fr auto;gap:5px">
-      <button class="btn" id="btnReset"
-        style="background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;margin:0">
-        🔄 다음 학생 (결과만 초기화)
-      </button>
-      <button class="btn" onclick="resetAllFull()"
-        style="background:var(--surface2);color:var(--text-muted);border:1.5px solid var(--border);font-size:10px;padding:8px 8px;margin:0;white-space:nowrap">
-        전체 초기화
-      </button>
-    </div>
-  </div>
-  <div class="err" id="errBox"></div>
-  </div><!-- L-body -->
-</div>
-    </div>
-  </div>
-</div>
 
 <div id="page-result" style="display:none;height:calc(100vh - 40px);margin-top:40px;background:var(--bg);overflow-y:auto;position:relative">
   <div style="position:sticky;top:0;z-index:50;padding:10px 22px;background:rgba(2,6,23,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(139,92,246,.1);display:flex;align-items:center;gap:12px">
-    <button onclick="(window.showInputPage||function(){})();" style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);color:#A78BFA;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(139,92,246,.22)'" onmouseout="this.style.background='rgba(139,92,246,.12)'">
-      ← 새 학생
-    </button>
+
     <div id="result-student-name" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8)"></div>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center" id="result-topbar-badges">
       <button id="btnB2" disabled
@@ -2072,6 +1907,12 @@ var SAMPLES=[
     effChecks:[false,true,false,true,true,false,true,false,false,false]
   }
 ];
+
+function loadSampleParam(enc) {
+  // 샘플 데이터를 tqdata URL 파라미터처럼 처리
+  var url = window.location.pathname + '?tqdata=' + enc;
+  window.location.href = url;
+}
 
 function loadSample(idx){
   var s=SAMPLES[idx];
@@ -4973,7 +4814,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 300);
 
   }
-  // tqdata 없음 → 그냥 입력 페이지 (기존 동작)
+  // tqdata 없음 → 샘플 테스트 버튼 표시
+  if (!tqRaw) {
+    document.addEventListener('DOMContentLoaded', function(){
+      var pi = document.getElementById('page-input');
+      if (!pi) return;
+      pi.style.display = 'flex';
+      pi.style.alignItems = 'center';
+      pi.style.justifyContent = 'center';
+
+      var sampleData = [
+        { name:'진호윤', label:'초등5 · 고역량 완성형', color:'#0BA98E',
+          level:'초고', grade:5, fct:100, str:80, spd:1794, voc:65, wm:50, inf:70,
+          kor_score:'매우잘함', eng_score:'잘함', math:'매우잘함',
+          hab_checks:[true,false,false,false,true,false,false,false,false,false],
+          eff_checks:[false,false,false,false,false,false,false,false,false,false] },
+        { name:'이준혁', label:'중2 · 모순패턴', color:'#DC2626',
+          level:'중등', grade:2, fct:20, str:20, spd:540, voc:45, wm:30, inf:50,
+          kor_score:'90점 이상', eng_score:'80~89점', math:'90점 이상',
+          hab_checks:[true,false,false,false,true,true,false,true,false,false],
+          eff_checks:[false,false,true,true,true,false,false,false,false,true] },
+        { name:'박서연', label:'중1 · 추론잠재형', color:'#D97706',
+          level:'중등', grade:1, fct:30, str:40, spd:420, voc:40, wm:40, inf:65,
+          kor_score:'60~69점', eng_score:'70~79점', math:'60~69점',
+          hab_checks:[false,true,true,false,false,true,true,false,false,false],
+          eff_checks:[true,true,false,true,false,true,false,false,true,false] },
+        { name:'김민서', label:'고1 · 사실강점형', color:'#2563EB',
+          level:'고등', grade:1, fct:70, str:40, spd:680, voc:60, wm:50, inf:35,
+          kor_score:'70~79점', eng_score:'60~69점', math:'60~69점',
+          hab_checks:[false,false,false,true,false,true,false,true,false,false],
+          eff_checks:[false,true,false,true,true,false,true,false,false,false] }
+      ];
+
+      var btns = sampleData.map(function(s) {
+        var enc = encodeURIComponent(JSON.stringify(s));
+        return '<button onclick="loadSampleParam(\'' + enc + '\')"'
+          + ' style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 20px;cursor:pointer;text-align:left;min-width:200px">'
+          + '<div style="font-size:14px;font-weight:700;color:' + s.color + ';margin-bottom:4px">' + s.name + '</div>'
+          + '<div style="font-size:11px;color:rgba(255,255,255,.5)">' + s.label + '</div>'
+          + '</button>';
+      }).join('');
+
+      pi.innerHTML = '<div style="text-align:center;font-family:inherit;color:#94A3B8;padding:40px">'
+        + '<div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-bottom:20px">테스트 샘플 선택</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">' + btns + '</div>'
+        + '<div style="font-size:11px;color:rgba(255,255,255,.25)">실제 운영 시 학원 관리 시스템에서 자동으로 데이터가 전달됩니다</div>'
+        + '</div>';
+    });
+  }
 });
 
 </script>
