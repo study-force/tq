@@ -1885,10 +1885,9 @@ gv("btnB").addEventListener("click",async function(){
     }
     window.__TQ_SLOTS=slots;
     gv("btnR").disabled=false;
-    // 리포트 최초 1회 렌더 (이후 탭 전환은 display 토글만)
-    if (!window.__reportRendered) {
-      try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
-    }
+    // 판독문 생성 완료 시 항상 재렌더 (slots가 새로 생성됨)
+    window.__reportRendered = false;
+    try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
     // 판독 결과 자동 저장
     saveTqResult(inp, window.__eng, slots);
   }catch(err){
@@ -6339,7 +6338,9 @@ function renderReportTab() {
   var eng   = window.__eng;
   var inp   = window.__inp;
   var slots = window.__TQ_SLOTS;
-  if (!eng || !inp || !slots) return;
+  console.log('[RPT] renderReportTab 호출 — eng:', !!eng, 'inp:', !!inp, 'slots:', slots ? Object.keys(slots) : null);
+  if (!eng || !inp) { console.warn('[RPT] eng 또는 inp 없음'); return; }
+  if (!slots || !slots.slot1) { console.warn('[RPT] slots 없음 또는 slot1 비어있음', slots); return; }
 
   // D 조립 (standalone 형식)
   var imgEl  = document.getElementById('imgPreview');
@@ -6387,10 +6388,16 @@ function renderReportTab() {
 
   // 페이지 빌드
   var TOTAL = 4;
-  try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
-  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
-  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
-  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); }
+  function errDiv(label, e) {
+    var d = document.createElement('div');
+    d.style.cssText = 'background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:16px;color:#991B1B;font-size:13px;font-family:monospace;width:760px;margin:0 auto';
+    d.textContent = '[' + label + '] 오류: ' + (e && e.message ? e.message : String(e));
+    return d;
+  }
+  try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); wrap.appendChild(errDiv('buildPage1', e)); }
+  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); wrap.appendChild(errDiv('buildDualSlotPage 1-2', e)); }
+  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); wrap.appendChild(errDiv('buildDualSlotPage 3-4', e)); }
+  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); wrap.appendChild(errDiv('buildLastPage', e)); }
 
   // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
   // renderReportTab은 덮어쓰지 않음
