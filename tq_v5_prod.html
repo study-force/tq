@@ -1758,13 +1758,15 @@ gv("btnB").addEventListener("click",async function(){
   }finally{
     btnB.disabled=false;
     btnB.textContent="② 판독문 생성 — Claude AI";
-    // 리포트 탭 완료 상태 (성공/실패 무관 always)
+    // 리포트 탭 완료 상태
     var _tabRpt = document.getElementById('resultTab_리포트');
     if (_tabRpt) {
       if (window.__TQ_SLOTS) {
         _tabRpt.style.color = '#34D399';
         _tabRpt.style.borderBottomColor = 'transparent';
         _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
+        // 편집바 표시 (renderReportTab 성공 여부와 무관하게)
+        try { showEditBar(); } catch(ebErr){ console.error('[showEditBar]', ebErr); }
       } else {
         _tabRpt.style.color = 'rgba(255,255,255,.35)';
         _tabRpt.innerHTML = '📄 리포트';
@@ -6052,10 +6054,10 @@ function renderReportTab() {
 
   // 페이지 빌드
   var TOTAL = 4;
-  wrap.appendChild(buildPage1());
-  wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL));
-  wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL));
-  wrap.appendChild(buildLastPage(TOTAL));
+  try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
+  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
+  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
+  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); }
 
   // currentActiveKeys 초기화
   currentActiveKeys = D.presc.map(function(p){ return p.c; });
@@ -6064,20 +6066,31 @@ function renderReportTab() {
     currentActiveKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
   }
 
-  // 판독 탭 하단 편집바 자동 표시
+}
+window.renderReportTab = renderReportTab;
+
+// 편집바를 판독 탭 하단에 표시
+function showEditBar() {
+  var _D = window.__RPT_D;
+  if (!_D) return;
   var oldBar = document.getElementById('editBar');
   if (oldBar) oldBar.remove();
   editMode = true;
+  currentActiveKeys = (_D.presc||[]).map(function(p){ return p.c; });
+  if (!currentActiveKeys.length) {
+    var recCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
+    currentActiveKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+  }
+  currentCourseCode = recommendCourse(_D.uiLevel||_D.level, _D.grade, _D.acc, _D.kor);
+  aiReasonCache = {};
   var newBar = buildEditBar();
-  // page-result가 overflow-y:auto 스크롤 컨테이너
-  // → page-result 자식으로 붙이고 sticky bottom:0
   newBar.style.position = 'sticky';
   newBar.style.bottom = '0';
   newBar.style.zIndex = '40';
   var scrollContainer = document.getElementById('page-result');
   if (scrollContainer) scrollContainer.appendChild(newBar);
 }
-window.renderReportTab = renderReportTab;
+window.showEditBar = showEditBar;
 </script>
 
 </body>
