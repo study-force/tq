@@ -560,7 +560,7 @@ details summary:hover{color:var(--tx2)}
   </div>
   <!-- 우측: 인쇄 버튼 (리포트 탭에서만 표시) -->
   <div id="headerPrintBtn" style="display:none;margin-left:auto;padding-right:16px">
-    <button onclick="window.print()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
+    <button onclick="printReport()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
   </div>
 </div>
 <div id="v5panel_판독" style="display:block;margin-top:40px">
@@ -686,6 +686,19 @@ details summary:hover{color:var(--tx2)}
 <div id="imgPreviewWrap" style="display:none"><img id="imgPreview" src="" alt=""><button onclick="clearImg()" style="display:none">✕</button></div>
 
 <script>
+
+// ── 인쇄 / PDF 저장 — 파일명 동적 설정 ──
+function printReport() {
+  var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
+  var orig = document.title;
+  if (nm) {
+    document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
+  }
+  window.print();
+  // 인쇄 다이얼로그 닫힌 후 원래 title 복원
+  setTimeout(function(){ document.title = orig; }, 1000);
+}
+window.printReport = printReport;
 
 // ══════════════════════════════════════════════════════
 // ★ 배포 설정 — 이 두 줄만 수정하면 됩니다 ★
