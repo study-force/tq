@@ -1434,7 +1434,7 @@ function renderResult(e,nm){
     :"";
 
   const slotsH=["어떤 학습자인가?","지금 어떤 상태인가?","지금 개선하지 않으면?","지금 무엇을 해야 하는가?"].map((t,i)=>
-    `<div class="slot"><div class="slot-h"><div class="sn" style="background:${SC[i]}">${i+1}</div><span style="font-size:12px;font-weight:600;color:#4C1D95">${nm} — ${t}</span></div><div class="slot-b" id="sl${i+1}"><span style="color:var(--tx3);font-size:11px">② 판독문 생성 후 표시됩니다</span></div></div>`
+    `<div class="slot"><div class="slot-h"><div class="sn" style="background:${SC[i]}">${i+1}</div><span style="font-size:12px;font-weight:600;color:#4C1D95">${nm} — ${t}</span></div><div class="slot-b" id="sl${i+1}"><span style="color:#CBD5E1;font-size:11px">판독문 생성 후 표시됩니다</span></div></div>`
   ).join("");
 
   var html=`
@@ -2317,7 +2317,7 @@ function runEntryAnimation(rv, eng, inp) {
   t += 400;
   setTimeout(function(){
     var spdEl = document.getElementById('heroSpd');
-    var _spd = (eng.spd||inp.spd||0);
+    var _spd = parseInt(eng&&eng.spd)||parseInt(inp.spd)||0;
     if (spdEl && _spd) {
       spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
       var start = 0, startTime = null, target = _spd;
@@ -2766,7 +2766,7 @@ function postRenderSWOT(eng, inp) {
 
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
-  if (heroSpd) { var _s=eng.spd||inp.spd||0; heroSpd.textContent = _s ? _s.toLocaleString() : '—'; }
+  if (heroSpd) { var _s=parseInt(eng&&eng.spd)||parseInt(inp.spd)||0; heroSpd.textContent = _s ? _s.toLocaleString() : '—'; }
 
   // 학생 정보 카드 → studentInfoSlot으로 이동
   var srcCard = document.getElementById('studentInfoCard');
@@ -3005,7 +3005,7 @@ function rpBuildResultHTML(eng, inp) {
   var fct      = inp.fct  > 0 ? inp.fct  : eng.acc;
   var str_     = inp.str  > 0 ? inp.str  : eng.acc;
   var avgAcc   = Math.round((fct + str_) / 2);
-  var spd      = inp.spd || 0;
+  var spd      = parseInt(inp.spd)||parseInt(eng&&eng.spd)||0;
 
   // 체크 항목
   var habChecked = HAB_ITEMS.map(function(item){ return inp.habChecked && inp.habChecked.indexOf(item) > -1; });
