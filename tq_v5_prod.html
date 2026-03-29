@@ -678,7 +678,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.39</span> · 편집바동기화완성</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.40</span> · 편집바-리포트동기화완성</div>
 
   </div>
 </div>
@@ -5532,7 +5532,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.39</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.40</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5869,16 +5869,21 @@ function buildPrescFromCourse(courseCode) {
   return course.steps.map(function(key, i){ return { p: i+1, c: key }; });
 }
 
-function buildLastPage(total) {
+function buildLastPage(total, activeKeysOverride) {
   var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
-  var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
-  var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
   var activeKeys;
-  if (validPresc.length > 0) {
-    activeKeys = validPresc;
+  if (activeKeysOverride && activeKeysOverride.length > 0) {
+    // applyEdit에서 직접 전달한 경우 우선 사용
+    activeKeys = activeKeysOverride;
   } else {
-    var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
-    activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+    var prescKeys = (D.presc||[]).map(function(p){ return p.c; });
+    var validPresc = prescKeys.filter(function(k){ return ALL_KEYS.indexOf(k) > -1; });
+    if (validPresc.length > 0) {
+      activeKeys = validPresc;
+    } else {
+      var recCode = recommendCourse(D.uiLevel||D.level, D.grade, D.acc, D.kor);
+      activeKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
+    }
   }
 
   // 모던 그라디언트 팔레트 — 활성 단계 공통 색 (진행감)
@@ -6331,7 +6336,7 @@ function applyEdit() {
   var wrap = document.getElementById('rptPageWrap');
   if (wrap && wrap.children.length > 0) {
     var firstPage = wrap.lastChild;
-    var newPage = buildLastPage(TOTAL);
+    var newPage = buildLastPage(TOTAL, currentActiveKeys.slice());
     wrap.replaceChild(newPage, firstPage);
   }
   showToastRM('로드맵이 업데이트되었습니다.');
@@ -6437,7 +6442,7 @@ function renderReportTab() {
   try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
   try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
   try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
-  try { wrap.appendChild(buildLastPage(TOTAL)); } catch(e){ console.error('[buildLastPage]', e); }
+  try { wrap.appendChild(buildLastPage(TOTAL, currentActiveKeys.length ? currentActiveKeys.slice() : null)); } catch(e){ console.error('[buildLastPage]', e); }
 
   // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
   // renderReportTab은 덮어쓰지 않음
