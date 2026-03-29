@@ -491,6 +491,9 @@ details summary:hover{color:var(--tx2)}
   height: calc(100vh - 40px);
   margin-top: 40px;
 }
+#v5panel_판독 {
+  margin-top: 40px;
+}
 /* ── standalone 리포트 CSS (이식) ── */
 @font-face{font-family:'S-CoreDream';src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff')format('woff');font-weight:400;}
 #resultPane_리포트 .page{width:794px;height:1123px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
@@ -513,7 +516,10 @@ details summary:hover{color:var(--tx2)}
     margin:0!important; padding:0!important;
     overflow:visible!important; background:white!important;
   }
-  /* page-result: 인쇄 시 margin/height 제거 (CSS 클래스이므로 정상 적용) */
+  /* 인쇄 시 모든 margin-top 제거 */
+  #v5panel_판독 {
+    margin-top:0!important;
+  }
   #page-result {
     height:auto!important; overflow:visible!important;
     position:static!important;
@@ -575,7 +581,7 @@ details summary:hover{color:var(--tx2)}
     <button onclick="printReport()" style="padding:5px 14px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🖨️ 인쇄 / PDF 저장</button>
   </div>
 </div>
-<div id="v5panel_판독" style="display:block;margin-top:40px">
+<div id="v5panel_판독" style="display:block">
 <!-- ══ 샘플 랜딩 페이지 (입력 폼 제거, tqdata 파라미터 없을 때 표시) ══ -->
 <div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
 
@@ -667,7 +673,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.3</span> · 인쇄여백구조개선
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.4</span> · 인쇄여백근본수정
     </div>
 
   </div>
@@ -5283,7 +5289,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.3</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.4</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
