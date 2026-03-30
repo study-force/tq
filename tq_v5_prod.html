@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.57</span> · 최대선택6개제한</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.61</span> · 몰입특목박스수정</div>
 
   </div>
 </div>
@@ -1885,6 +1885,16 @@ gv("btnB").addEventListener("click",async function(){
         if(_m)slots[k]=_m[1].replace(/\\n/g,"\n").replace(/\\"/g,'"');
       });
       if(!slots.slot1)throw new Error("응답 파싱 실패");
+    }
+    // roadmap_reasons 추출 및 D에 저장
+    if (slots.roadmap_reasons) {
+      try {
+        var _rr = typeof slots.roadmap_reasons === 'string'
+          ? JSON.parse(slots.roadmap_reasons) : slots.roadmap_reasons;
+        if (D) D.roadmapReasons = _rr;
+        if (window.__RPT_D) window.__RPT_D.roadmapReasons = _rr;
+        if (window.__eng) window.__eng.roadmapReasons = _rr;
+      } catch(e){}
     }
     window.__TQ_SLOTS=slots;
     gv("btnR").disabled=false;
@@ -5102,6 +5112,14 @@ function injectTqDataAndRun(d) {
             try { rv.innerHTML = renderResult(engObj, saved.inp.name || d.name); } catch(e){ console.error('[renderResult]',e); }
             try { runEntryAnimation(rv, engObj, saved.inp); } catch(e){ console.error('[runEntryAnimation]',e); }
           }
+          // roadmapReasons 복원
+          if (saved.slots && saved.slots.roadmap_reasons) {
+            try {
+              var _rr2 = typeof saved.slots.roadmap_reasons === 'string'
+                ? JSON.parse(saved.slots.roadmap_reasons) : saved.slots.roadmap_reasons;
+              saved.eng.roadmapReasons = _rr2;
+            } catch(e){}
+          }
           if (!saved.eng.evidence) {
             fetch(TQ_API_URL, {
               method:'POST',
@@ -5532,7 +5550,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.57</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.61</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6028,6 +6046,33 @@ function buildLastPage(total, activeKeysOverride) {
     +'</div>'
     +'</div>'
     +'</div>'
+    +(D.flagMolip ? (
+      '<div style="margin:12px 40px 0;border-left:4px solid #F97316;background:#FFF7ED;padding:14px 18px;border-radius:0 8px 8px 0;">'
+      +'<div style="font-size:11px;font-weight:800;color:#EA580C;letter-spacing:.5px;margin-bottom:8px;">⚡ 몰입훈련 안내'+(D.flagMolipRequired?' (필수)':' (권장)')+'</div>'
+      +'<div style="font-size:11px;color:#7C2D12;line-height:1.9;">'
+      +'<strong>시간</strong> — 1일 4~6시간, 주 5회<br>'
+      +'<strong>목표</strong> — 또래 수준의 역량 회복 기간을 최대한 단축하는 것이 목표<br>'
+      +'<strong>기간</strong> — 2~3개월 소요<br>'
+      +'· 예비과정: 1일 1개 / 그 외 기초 과정: 1일 5~10개 집중 진행<br>'
+      +'· 훈련 중 노트 없이 발문 수업 1일 2~3개 읽고 바로 발표<br>'
+      +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong>'
+      +'</div></div>'
+    ) : '')
+    +(D.flagTeukmok ? (
+      '<div style="margin:12px 40px 0;border-left:4px solid #7C3AED;background:#F5F3FF;padding:14px 18px;border-radius:0 8px 8px 0;">'
+      +'<div style="font-size:11px;font-weight:800;color:#6D28D9;letter-spacing:.5px;margin-bottom:6px;">🎯 특목자사고 대비 역량강화 프로그램</div>'
+      +'<div style="font-size:11px;color:#3B0764;line-height:1.9;">'
+      +'<strong>목표</strong> — 중학교 졸업 전 <strong>고급심화과정 완성</strong><br>'
+      +'· 고등 진학 후 학습역량 압도적 우위<br>'
+      +'· 일반 수강보다 빠른 진행 + 심화 어휘·추론 병행 권장'
+      +'</div></div>'
+    ) : '')
+    +((D.flagMolip||D.flagTeukmok) ? (
+      '<div style="margin:12px 40px 0;background:#F1F5F9;padding:10px 18px;border-radius:6px;border:1px solid #E2E8F0;">'
+      +'<div style="font-size:11px;color:#475569;line-height:1.7;">'
+      +'💡 <strong>공통</strong> — 전 과목에 영향을 미치는 독해력 향상이 최우선 해결 과제입니다.'
+      +'</div></div>'
+    ) : '')
     +'</div>'
     +buildFooter(total, total);
   return div;
@@ -6438,6 +6483,8 @@ function renderReportTab() {
     st:  eng.stDisplay || eng.st || '',
     urg: eng.urg || '',
     flagC: eng.flagC, flagO: eng.flagO,
+    flagMolip: eng.flagMolip, flagMolipRequired: eng.flagMolipRequired,
+    flagTeukmok: eng.flagTeukmok,
     acc:  eng.acc  || 0,
     fct:  eng.fct  || 0,
     str_: eng.str_ || 0,
@@ -6450,6 +6497,7 @@ function renderReportTab() {
     habChecked: eng.habChecked || [],
     effChecked: eng.effChecked || [],
     presc:  (window.__RPT_D && window.__RPT_D.presc && window.__RPT_D.presc.length ? window.__RPT_D.presc : eng.presc) || [],
+    roadmapReasons: (window.__RPT_D && window.__RPT_D.roadmapReasons) || (eng.roadmapReasons) || null,
     slots:  slots,
     imgSrc: imgSrc
   };
