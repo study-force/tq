@@ -2124,19 +2124,19 @@ function showFeedbackToast(msg, isErr) {
 var SAMPLES=[
   // 0. 진호윤 — 초5 고역량 잠재력 미개방형
   {
-    name:"진호윤", level:"초고", grade:5, test_date:"2026-03-29",
-    kor:"매우잘함", engScore:"잘함", math:"매우잘함",
-    fct:100, str_:80, spd:1794,
-    voc:65, wm:50, inf:70,
-    habChecks:[true,false,false,false,true,false,false,false,false,false],
-    effChecks:[false,false,false,false,false,false,false,false,false,false],
+    name:"진호윤", user_section:"초고", user_school_grade:5, reg_date:"2026-03-29",
+    kor_score:"매우잘함", eng_score:"잘함", math_score:"매우잘함",
+    fact_score:100, structure_score:80, reading_score:1794,
+    voca_score:65, wm_score:50, inference_score:70,
+    reading_habit_checks:[true,false,false,false,true,false,false,false,false,false],
+    reading_effect_checks:[false,false,false,false,false,false,false,false,false,false],
     eng:{
       bt:"고역량 잠재력 미개방형", btDisplay:"고역량 잠재력 미개방형",
       st:"워킹메모리 강화 시 최상위 완전 안착 가능", stDisplay:"워킹메모리 강화 시 최상위 완전 안착 가능",
-      urg:"조기", tone:"격려확인", grade:5,
+      urg:"조기", tone:"격려확인", user_school_grade:5,
       flagC:false, flagO:false, invSpd:false, retest:false,
-      acc:90, spd:1794, fct:100, str:80, str_:80, voc:65, wm:50, inf:70, hab:80, eff:100,
-      kv:90, level:"초고",
+      acc:90, reading_score:1794, fact_score:100, structure_score:80, structure_score:80, voca_score:65, wm_score:50, inference_score:70, hab_score:80, eff_score:100,
+      kv:90, user_section:"초고",
       patterns:[{id:"p_spd_high",label:"초고속독해",sym:"⚡",t:"초고속 독해",s:"독해 속도가 또래 대비 매우 빠릅니다.",tier:"주의"}],
       cau:["사실적 이해와 구조적 이해 모두 상위권","독해 속도 매우 빠름 — 음독 습관은 속도 저해 요소","워킹메모리가 전체 역량 발현의 병목"],
       slots:{
@@ -2150,19 +2150,19 @@ var SAMPLES=[
   },
   // 1. 이준혁 — 중2 역량 모순 붕괴 예고형
   {
-    name:"이준혁", level:"중등", grade:2, test_date:"2026-03-29",
-    kor:"90점 이상", engScore:"80~89점", math:"90점 이상",
-    fct:20, str_:20, spd:540,
-    voc:45, wm:30, inf:50,
-    habChecks:[true,false,false,false,true,true,false,true,false,false],
-    effChecks:[false,false,true,true,true,false,false,false,false,true],
+    name:"이준혁", user_section:"중등", user_school_grade:2, reg_date:"2026-03-29",
+    kor_score:"90점 이상", eng_score:"80~89점", math_score:"90점 이상",
+    fact_score:20, structure_score:20, reading_score:540,
+    voca_score:45, wm_score:30, inference_score:50,
+    reading_habit_checks:[true,false,false,false,true,true,false,true,false,false],
+    reading_effect_checks:[false,false,true,true,true,false,false,false,false,true],
     eng:{
       bt:"조용한 학습 위기형", btDisplay:"역량 모순 붕괴 예고형",
       st:"성적과 역량 간 극단적 괴리 — 즉각 개입 필요", stDisplay:"성적과 역량 간 극단적 괴리 — 즉각 개입 필요",
-      urg:"즉각", tone:"경고직시", grade:2,
+      urg:"즉각", tone:"경고직시", user_school_grade:2,
       flagC:true, flagO:false, invSpd:false, retest:false,
-      acc:20, spd:540, fct:20, str:20, str_:20, voc:45, wm:30, inf:50, hab:40, eff:60,
-      kv:90, level:"중등",
+      acc:20, reading_score:540, fact_score:20, structure_score:20, structure_score:20, voca_score:45, wm_score:30, inference_score:50, hab_score:40, eff_score:60,
+      kv:90, user_section:"중등",
       patterns:[
         {id:"p_contradiction",label:"역량모순",sym:"⚠",t:"성적-역량 모순",s:"성적은 최상위권이나 독해 역량은 최하위 수준입니다.",tier:"위험"},
         {id:"p_wm_low",label:"워킹메모리결핍",sym:"🔴",t:"워킹메모리 심각",s:"워킹메모리가 매우 낮아 긴 지문 처리가 어렵습니다.",tier:"위험"}
@@ -2179,19 +2179,19 @@ var SAMPLES=[
   },
   // 2. 박서연 — 중1 논리 두뇌 미발현형
   {
-    name:"박서연", level:"중등", grade:1, test_date:"2026-03-29",
-    kor:"60~69점", engScore:"70~79점", math:"60~69점",
-    fct:30, str_:40, spd:420,
-    voc:40, wm:40, inf:65,
-    habChecks:[false,true,true,false,false,true,true,false,false,false],
-    effChecks:[true,true,false,true,false,true,false,false,true,false],
+    name:"박서연", user_section:"중등", user_school_grade:1, reg_date:"2026-03-29",
+    kor_score:"60~69점", eng_score:"70~79점", math_score:"60~69점",
+    fact_score:30, structure_score:40, reading_score:420,
+    voca_score:40, wm_score:40, inference_score:65,
+    reading_habit_checks:[false,true,true,false,false,true,true,false,false,false],
+    reading_effect_checks:[true,true,false,true,false,true,false,false,true,false],
     eng:{
       bt:"논리 두뇌 미발현형", btDisplay:"논리 두뇌 미발현형",
       st:"추론 잠재력 보유 — 어휘·정확도 향상 시 도약 가능", stDisplay:"추론 잠재력 보유 — 어휘·정확도 향상 시 도약 가능",
-      urg:"조기", tone:"잠재확인", grade:1,
+      urg:"조기", tone:"잠재확인", user_school_grade:1,
       flagC:false, flagO:false, invSpd:false, retest:false,
-      acc:35, spd:420, fct:30, str:40, str_:40, voc:40, wm:40, inf:65, hab:40, eff:40,
-      kv:60, level:"중등",
+      acc:35, reading_score:420, fact_score:30, structure_score:40, structure_score:40, voca_score:40, wm_score:40, inference_score:65, hab_score:40, eff_score:40,
+      kv:60, user_section:"중등",
       patterns:[
         {id:"p_inf_high",label:"추론잠재",sym:"💡",t:"추론 잠재력",s:"정확도 대비 추론 능력이 높아 잠재력이 있습니다.",tier:"주목"},
         {id:"p_voc_low",label:"어휘부족",sym:"📖",t:"어휘력 부족",s:"어휘 점수가 낮아 독해 이해를 방해합니다.",tier:"주의"}
@@ -2208,19 +2208,19 @@ var SAMPLES=[
   },
   // 3. 김민서 — 고1 성실한 암기 의존형
   {
-    name:"김민서", level:"고등", grade:1, test_date:"2026-03-29",
-    kor:"70~79점", engScore:"60~69점", math:"60~69점",
-    fct:70, str_:40, spd:680,
-    voc:60, wm:50, inf:35,
-    habChecks:[false,false,false,true,false,true,false,true,false,false],
-    effChecks:[false,true,false,true,true,false,true,false,false,false],
+    name:"김민서", user_section:"고등", user_school_grade:1, reg_date:"2026-03-29",
+    kor_score:"70~79점", eng_score:"60~69점", math_score:"60~69점",
+    fact_score:70, structure_score:40, reading_score:680,
+    voca_score:60, wm_score:50, inference_score:35,
+    reading_habit_checks:[false,false,false,true,false,true,false,true,false,false],
+    reading_effect_checks:[false,true,false,true,true,false,true,false,false,false],
     eng:{
       bt:"성실한 암기 의존형", btDisplay:"성실한 암기 의존형",
       st:"사실적 처리 강점 — 추론·구조 훈련으로 상위권 진입 가능", stDisplay:"사실적 처리 강점 — 추론·구조 훈련으로 상위권 진입 가능",
-      urg:"중장기", tone:"구조개선", grade:1,
+      urg:"중장기", tone:"구조개선", user_school_grade:1,
       flagC:false, flagO:false, invSpd:false, retest:false,
-      acc:55, spd:680, fct:70, str:40, str_:40, voc:60, wm:50, inf:35, hab:70, eff:60,
-      kv:70, level:"고등",
+      acc:55, reading_score:680, fact_score:70, structure_score:40, structure_score:40, voca_score:60, wm_score:50, inference_score:35, hab_score:70, eff_score:60,
+      kv:70, user_section:"고등",
       patterns:[
         {id:"p_str_low",label:"구조이해약",sym:"📐",t:"구조적 이해 부족",s:"사실 파악은 되나 글 구조를 파악하는 능력이 낮습니다.",tier:"주의"},
         {id:"p_inf_low",label:"추론부족",sym:"🧠",t:"추론능력 부족",s:"추론능력이 낮아 고난도 문제에서 약점이 드러납니다.",tier:"주의"}
