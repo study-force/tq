@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.68</span> · postMessage보안강화</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.69</span> · 막대그래프색상수정</div>
 
   </div>
 </div>
@@ -1470,7 +1470,7 @@ function renderResult(e,nm){
     "독해습관":{v:e.hab,thresh:50},
     "독해효율성":{v:e.eff,thresh:50}
   };
-  function barColor(v,t){return v>90?"#3B82F6":v>=81?"#22C55E":v>=71?"#EAB308":v>=61?"#F97316":"#EF4444";}
+  function barColor(v,t){return v>=61?"#22C55E":"#EF4444";}
   const ibars=Object.entries(rawScores).map(([lb,d])=>{
     const pct=Math.round(d.v);
     const col=barColor(d.v,d.thresh);
@@ -5615,7 +5615,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.68</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.69</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
