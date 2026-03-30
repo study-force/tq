@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.62</span> · 특목판정기준수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.64</span> · 필드명기존사이트통일</div>
 
   </div>
 </div>
@@ -1178,14 +1178,14 @@ function getInputs(){
   const effChecked=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked);
   return{
     name:gv("iName").value||"",
-        level:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
-    grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
-    kor:gv("sS0").value, eng:gv("sS1").value, math:gv("sS2").value,
-    acc, spd:parseInt(gv("sSpd").value)||0, fct, str,
-    voc:+gv("sVoc").value, wm:+gv("sWm").value, inf:+gv("sInf").value,
-    hab:habScore, eff:effScore,
-    habChecked, effChecked,
-    test_date: (function(){ var d=gv("iDate"); return (d&&d.value)?d.value:new Date().toISOString().slice(0,10); })()
+    user_section:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
+    user_school_grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
+    kor_score:gv("sS0").value, eng_score:gv("sS1").value, math_score:gv("sS2").value,
+    acc, reading_score:parseInt(gv("sSpd").value)||0, fact_score:fct, structure_score:str,
+    voca_score:+gv("sVoc").value, wm_score:+gv("sWm").value, inference_score:+gv("sInf").value,
+    hab_score:habScore, eff_score:effScore,
+    reading_habit_checks:habChecked, reading_effect_checks:effChecked,
+    reg_date: (function(){ var d=gv("iDate"); return (d&&d.value)?d.value:new Date().toISOString().slice(0,10); })()
   };
 }
 
@@ -1771,7 +1771,7 @@ gv("btnA").addEventListener("click",async function(){
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
-    eng.grade = eng.grade || inp.grade || null;
+    eng.grade = eng.grade || inp.user_school_grade || null;
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -2482,7 +2482,7 @@ function runEntryAnimation(rv, eng, inp) {
   t += 400;
   setTimeout(function(){
     var spdEl = document.getElementById('heroSpd');
-    var _rawSpd2 = (eng&&eng.spd)||(inp&&inp.spd)||0;
+    var _rawSpd2 = (eng&&eng.spd)||(inp&&inp.reading_score)||0;
     var _spd = isNaN(Number(_rawSpd2)) ? 0 : Number(_rawSpd2);
     if (spdEl && _spd) {
       spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
@@ -2761,9 +2761,9 @@ function postRenderSWOT(eng, inp) {
 
   var factorOrder = ["어휘력","워킹메모리","추론능력","독해습관","독해효율성"];
   var factorScores = {
-    "어휘력":    inp.voc,
-    "워킹메모리":inp.wm,
-    "추론능력":  inp.inf,
+    "어휘력":    inp.voca_score,
+    "워킹메모리":inp.wm_score,
+    "추론능력":  inp.inference_score,
     "독해습관":  eng.hab,
     "독해효율성":eng.eff
   };
@@ -2932,7 +2932,7 @@ function postRenderSWOT(eng, inp) {
   // 히어로 속도 직접 패치
   var heroSpd = document.getElementById('heroSpd');
   if (heroSpd) {
-    var _rawSpd = (eng&&eng.spd) || (inp&&inp.spd) || 0;
+    var _rawSpd = (eng&&eng.spd) || (inp&&inp.reading_score) || 0;
     var _s = isNaN(Number(_rawSpd)) ? 0 : Number(_rawSpd);
     heroSpd.textContent = _s > 0 ? _s.toLocaleString() : '—';
   }
@@ -3038,10 +3038,10 @@ function postRenderSWOT(eng, inp) {
       var BOWL_COLOR = {역량충실:'#00C9B1',언어우세:'#3B82F6',논리우세:'#8B5CF6',역량취약:'#EF4444'};
       var bc = BOWL_COLOR[eng.bowlType]||'#8B5CF6';
       var bs = BOWL_SHORT[eng.bowlType]||eng.bowlType;
-      var vColor = (inp.voc>=70)?'#00C9B1':'#EF4444';
-      var rColor = (inp.inf>=70)?'#8B5CF6':'#F97316';
-      var vLabel = (inp.voc>=70)?'어휘↑':'어휘↓';
-      var rLabel = (inp.inf>=70)?'추론↑':'추론↓';
+      var vColor = (inp.voca_score>=70)?'#00C9B1':'#EF4444';
+      var rColor = (inp.inference_score>=70)?'#8B5CF6':'#F97316';
+      var vLabel = (inp.voca_score>=70)?'어휘↑':'어휘↓';
+      var rLabel = (inp.inference_score>=70)?'추론↑':'추론↓';
       bowlHTML = '<span style="display:flex;gap:4px;align-items:center;margin-top:4px">'
         +'<span style="background:'+bc+'22;border:1px solid '+bc+'55;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:'+bc+'">'+bs+'</span>'
         +'<span style="background:'+vColor+'18;border:1px solid '+vColor+'44;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;color:'+vColor+'">'+vLabel+'</span>'
@@ -3106,29 +3106,29 @@ var RP_FACTOR_LABEL = {
 function rpBuildResultHTML(eng, inp) {
   var name     = inp.name || "—";
   var school   = ({초등:"초등학교",중등:"중학교",고등:"고등학교"})[inp.uiLevel] || inp.uiLevel || "";
-  var grade    = inp.grade ? inp.grade + "학년" : "";
+  var grade    = inp.user_school_grade ? inp.user_school_grade + "학년" : "";
   var dateStr  = (function(){
     var d = new Date(); 
     return d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일";
   })();
 
-  var fct      = inp.fct  > 0 ? inp.fct  : eng.acc;
-  var str_     = inp.str  > 0 ? inp.str  : eng.acc;
+  var fct      = inp.fact_score  > 0 ? inp.fact_score  : eng.acc;
+  var str_     = inp.structure_score  > 0 ? inp.structure_score  : eng.acc;
   var avgAcc   = Math.round((fct + str_) / 2);
-  var _spdRaw = (inp&&inp.spd)||(eng&&eng.spd)||0;
+  var _spdRaw = (inp&&inp.reading_score)||(eng&&eng.spd)||0;
   var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
 
   // 체크 항목
-  var habChecked = HAB_ITEMS.map(function(item){ return inp.habChecked && inp.habChecked.indexOf(item) > -1; });
-  var effChecked = EFF_ITEMS.map(function(item){ return inp.effChecked && inp.effChecked.indexOf(item) > -1; });
+  var habChecked = HAB_ITEMS.map(function(item){ return inp.reading_habit_checks && inp.reading_habit_checks.indexOf(item) > -1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return inp.reading_effect_checks && inp.reading_effect_checks.indexOf(item) > -1; });
   var habitCount = habChecked.filter(Boolean).length;
   var effCount   = effChecked.filter(Boolean).length;
 
   // 역량 요인
   var factors = [
-    {name:"어휘력",    score:inp.voc,  color:RP_FACTOR_COLORS["어휘력"]},
-    {name:"워킹메모리",score:inp.wm,   color:RP_FACTOR_COLORS["워킹메모리"]},
-    {name:"추론능력",  score:inp.inf,  color:RP_FACTOR_COLORS["추론능력"]},
+    {name:"어휘력",    score:inp.voca_score,  color:RP_FACTOR_COLORS["어휘력"]},
+    {name:"워킹메모리",score:inp.wm_score,   color:RP_FACTOR_COLORS["워킹메모리"]},
+    {name:"추론능력",  score:inp.inference_score,  color:RP_FACTOR_COLORS["추론능력"]},
     {name:"독해습관",  score:eng.hab,  color:RP_FACTOR_COLORS["독해습관"]},
     {name:"독해효율성",score:eng.eff,  color:RP_FACTOR_COLORS["독해효율성"]},
   ];
@@ -3479,7 +3479,7 @@ function openReport(){
     bt:eng.btDisplay||eng.bt, st:eng.stDisplay||eng.st, urg:eng.urg,
     flagC:eng.flagC, flagO:eng.flagO,
     acc:eng.acc, fct:eng.fct, str_:eng.str_,
-    spd:parseInt(eng.spd||(window.__inp&&window.__inp.spd))||0,
+    spd:parseInt(eng.spd||(window.__inp&&window.__inp.reading_score))||0,
     inf:eng.inf, voc:eng.voc, wm:eng.wm,
     hab:eng.hab, eff:eng.eff,
     habChecked:eng.habChecked||[], effChecked:eng.effChecked||[],
@@ -4925,8 +4925,8 @@ function parseCondExpr(varName, val, origKey) {
   }
   if (origKey === 'effChecked수' || origKey === '독서량체크' || origKey.indexOf('eff.') === 0) {
     if (val === '0') return '(e.effChecked||[]).length === 0';
-    if (val === '체크') return 'inp.effChecked.length > 0';
-    if (val === '미체크') return 'inp.effChecked.length === 0';
+    if (val === '체크') return 'inp.reading_effect_checks.length > 0';
+    if (val === '미체크') return 'inp.reading_effect_checks.length === 0';
     // 복잡한 값은 주석으로
     return '/* ' + origKey + ':' + val + ' 수동처리 필요 */';
   }
@@ -4997,15 +4997,22 @@ safeRenderNav();
 // tqdata JSON → 숨겨진 폼에 주입 후 분석 실행
 // ══════════════════════════════════════════════════════
 function injectTqDataAndRun(d) {
+  // 학제 정규화
+  var _lvNorm2 = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
+    '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
+  if (d.user_section) d.user_section = _lvNorm2[d.user_section] || d.user_section;
+  // reg_date → YYYY-MM-DD 형식 정규화
+  if (d.reg_date && d.reg_date.length > 10) d.reg_date = d.reg_date.slice(0, 10);
+
   // 검사일 세팅
   var dateEl = document.getElementById('iDate');
-  if (dateEl && d.test_date) dateEl.value = d.test_date;
+  if (dateEl && d.reg_date) dateEl.value = d.reg_date;
   // 이름
   if (d.name) { var elN = document.getElementById('iName'); if(elN) elN.value = d.name; }
 
   // 학제
   var lvRemap = {"초저":"초등","초고":"초등","초등":"초등","중등":"중등","고등":"고등","일반":"일반"};
-  var mappedLv = lvRemap[d.level] || d.level || "중등";
+  var mappedLv = lvRemap[d.user_section] || d.user_section || "중등";
   var lvSel = document.getElementById('iLevel');
   if (lvSel) {
     for (var i=0; i<lvSel.options.length; i++) {
@@ -5017,11 +5024,11 @@ function injectTqDataAndRun(d) {
   }
 
   // 학년
-  if (d.grade != null) {
+  if (d.user_school_grade != null) {
     var grSel = document.getElementById('iGrade');
     if (grSel) {
       for (var j=0; j<grSel.options.length; j++) {
-        if (String(grSel.options[j].value) === String(d.grade)) { grSel.selectedIndex=j; break; }
+        if (String(grSel.options[j].value) === String(d.user_school_grade)) { grSel.selectedIndex=j; break; }
       }
     }
   }
@@ -5039,9 +5046,9 @@ function injectTqDataAndRun(d) {
     }
   }
   // tqdata 방식 (kor_score / eng_score / math)
-  setSelectVal('sS0', d.kor_score || d.kor);
-  setSelectVal('sS1', d.eng_score || d.engScore || d.eng);
-  setSelectVal('sS2', d.math);
+  setSelectVal('sS0', d.kor_score);
+  setSelectVal('sS1', d.eng_score);
+  setSelectVal('sS2', d.math_score);
 
   // 수치 입력 (슬라이더 + 숫자표시 span 동시 갱신)
   function setSlider(sliderId, val) {
@@ -5051,29 +5058,29 @@ function injectTqDataAndRun(d) {
     var sp = document.getElementById(sliderId+'V');
     if (sp) sp.textContent = val;
   }
-  setSlider('sFct', d.fct);
-  setSlider('sStr', (d.str !== undefined && d.str !== null) ? d.str : d.str_);  // SAMPLES는 str_, tqdata는 str
-  setSlider('sVoc', d.voc);
-  setSlider('sWm',  d.wm);
-  setSlider('sInf', d.inf);
+  setSlider('sFct', d.fact_score);
+  setSlider('sStr', d.structure_score);  // SAMPLES는 str_, tqdata는 str
+  setSlider('sVoc', d.voca_score);
+  setSlider('sWm',  d.wm_score);
+  setSlider('sInf', d.inference_score);
 
   // 독해속도
-  if (d.spd != null) {
+  if (d.reading_score != null) {
     var spdEl = document.getElementById('sSpd');
-    if (spdEl) spdEl.value = d.spd;
+    if (spdEl) spdEl.value = d.reading_score;
   }
 
   if(window.updateAccuracy) window.updateAccuracy();
 
   // 독해습관 체크리스트 (tqdata: hab_checks / SAMPLES: habChecks)
-  var hArr = d.hab_checks || d.habChecks;
+  var hArr = d.reading_habit_checks;
   if (Array.isArray(hArr)) {
     hArr.forEach(function(v, i) {
       var el = document.getElementById('h'+i); if(el) el.checked = !!v;
     });
   }
   // 독해효율성 체크리스트 (tqdata: eff_checks / SAMPLES: effChecks)
-  var eArr = d.eff_checks || d.effChecks;
+  var eArr = d.reading_effect_checks;
   if (Array.isArray(eArr)) {
     eArr.forEach(function(v, i) {
       var el = document.getElementById('e'+i); if(el) el.checked = !!v;
@@ -5082,9 +5089,9 @@ function injectTqDataAndRun(d) {
   if(window.updateChkScore) window.updateChkScore();
 
   // 기존 판독 결과 조회 → 있으면 복원, 없으면 엔진 실행
-  if (d.name && d.spd && d.test_date) {
+  if (d.name && d.reading_score && d.reg_date) {
     var _loaded = false;  // 로드 완료 플래그
-    loadTqResult(d.name, d.grade, d.spd, function(saved) {
+    loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
       _loaded = true;
       // ── 기존 결과 발견 — 단계별 복원 ──
 
@@ -5212,7 +5219,7 @@ window.injectTqDataAndRun = injectTqDataAndRun;
 injectTqDataAndRun.__formOnly = function(inp) {
   if (!inp) return;
   var dateEl = document.getElementById('iDate');
-  if (dateEl && inp.test_date) dateEl.value = inp.test_date;
+  if (dateEl && inp.reg_date) dateEl.value = inp.reg_date;
   var nameEl = document.getElementById('iName');
   if (nameEl && inp.name) nameEl.value = inp.name;
   // 슬라이더 복원
@@ -5223,21 +5230,21 @@ injectTqDataAndRun.__formOnly = function(inp) {
     var sp = document.getElementById(id+'V');
     if (sp) sp.textContent = val;
   }
-  setSlider('sFct', inp.fct);
-  setSlider('sStr', inp.str !== undefined ? inp.str : inp.str_);
-  setSlider('sVoc', inp.voc);
-  setSlider('sWm',  inp.wm);
-  setSlider('sInf', inp.inf);
+  setSlider('sFct', inp.fact_score);
+  setSlider('sStr', inp.structure_score !== undefined ? inp.structure_score : inp.structure_score);
+  setSlider('sVoc', inp.voca_score);
+  setSlider('sWm',  inp.wm_score);
+  setSlider('sInf', inp.inference_score);
   var spdEl = document.getElementById('sSpd');
-  if (spdEl && inp.spd) spdEl.value = inp.spd;
+  if (spdEl && inp.reading_score) spdEl.value = inp.reading_score;
   // 체크리스트 복원
-  var habChecked = inp.habChecked || [];
+  var habChecked = inp.reading_habit_checks || [];
   var HAB = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨","긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨","글 읽는 속도가 느린 편임"];
   HAB.forEach(function(item, i) {
     var el = document.getElementById('h'+i);
     if (el) el.checked = habChecked.indexOf(item) > -1;
   });
-  var effChecked = inp.effChecked || [];
+  var effChecked = inp.reading_effect_checks || [];
   var EFF = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
   EFF.forEach(function(item, i) {
     var el = document.getElementById('e'+i);
@@ -5279,9 +5286,15 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       try {
         var d = JSON.parse(decodeURIComponent(tqRaw));
+
+        // 학제 정규화: "초등(고)", "N수생" 등 처리
+        var _lvNorm = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
+          '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
+        if (d.user_section) d.user_section = _lvNorm[d.user_section] || d.user_section;
+
         // 기존 판독 결과 조회 — 있으면 자동 로드
-        if (d.name && d.spd) {
-          loadTqResult(d.name, d.grade, d.spd, function(saved) {
+        if (d.name && d.reading_score) {
+          loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
             // 기존 결과 발견 → 엔진 결과와 슬롯 복원 후 결과 페이지 표시
             window.__inp  = d;
             window.__eng  = saved.eng;
@@ -5550,7 +5563,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.62</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.64</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6197,8 +6210,8 @@ function unlockEditBar() {
   if (!currentActiveKeys.length) {
     var _src = window.__RPT_D || (window.__eng ? {
       presc: window.__eng.presc||[], uiLevel: (window.__inp&&window.__inp.uiLevel)||'',
-      level: (window.__inp&&window.__inp.level)||'', grade: (window.__inp&&window.__inp.grade)||0,
-      acc: (window.__eng&&window.__eng.acc)||0, kor: (window.__inp&&window.__inp.kor)||'-'
+      level: (window.__inp&&window.__inp.user_section)||'', grade: (window.__inp&&window.__inp.user_school_grade)||0,
+      acc: (window.__eng&&window.__eng.acc)||0, kor: (window.__inp&&window.__inp.kor_score)||'-'
     } : null);
     if (_src) {
       currentActiveKeys = (_src.presc||[]).map(function(p){ return p.c; })
@@ -6235,9 +6248,9 @@ function rebuildEditBar() {
   var _useD = window.__RPT_D;
   if (!_useD && window.__eng && window.__inp) {
     _useD = {
-      name: window.__inp.name||'', level: window.__inp.uiLevel||window.__inp.level||'',
-      uiLevel: window.__inp.uiLevel||window.__inp.level||'',
-      grade: window.__inp.grade||0, kor: window.__inp.kor||'-',
+      name: window.__inp.name||'', level: window.__inp.uiLevel||window.__inp.user_section||'',
+      uiLevel: window.__inp.uiLevel||window.__inp.user_section||'',
+      grade: window.__inp.user_school_grade||0, kor: window.__inp.kor_score||'-',
       acc: window.__eng.acc||0, presc: []
     };
   }
@@ -6473,12 +6486,12 @@ function renderReportTab() {
   var imgSrc = imgEl && imgEl.src && imgEl.src.startsWith('data:') ? imgEl.src : null;
   D = {
     name:       inp.name || '',
-    level:      inp.uiLevel || inp.level || '',
-    uiLevel:    inp.uiLevel || inp.level || '',
-    grade:      inp.grade || 0,
-    kor:        inp.kor,
-    eng:        inp.eng,
-    math:       inp.math,
+    level:      inp.uiLevel || inp.user_section || '',
+    uiLevel:    inp.uiLevel || inp.user_section || '',
+    grade:      inp.user_school_grade || 0,
+    kor:        inp.kor_score,
+    eng:        inp.eng_score,
+    math:       inp.math_score,
     bt:  eng.btDisplay || eng.bt || '',
     st:  eng.stDisplay || eng.st || '',
     urg: eng.urg || '',
@@ -6488,7 +6501,7 @@ function renderReportTab() {
     acc:  eng.acc  || 0,
     fct:  eng.fct  || 0,
     str_: eng.str_ || 0,
-    spd:  eng.spd  || inp.spd || 0,
+    spd:  eng.spd  || inp.reading_score || 0,
     inf:  eng.inf  || 0,
     voc:  eng.voc  || 0,
     wm:   eng.wm   || 0,
@@ -6548,8 +6561,8 @@ function showEditBar() {
     currentActiveKeys = _keys;
   } else {
     var recCode = recommendCourse(
-      window.__inp.uiLevel||window.__inp.level,
-      window.__inp.grade, window.__eng.acc, window.__inp.kor
+      window.__inp.uiLevel||window.__inp.user_section,
+      window.__inp.user_school_grade, window.__eng.acc, window.__inp.kor_score
     );
     currentActiveKeys = buildPrescFromCourse(recCode).map(function(p){ return p.c; });
   }
