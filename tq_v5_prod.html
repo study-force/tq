@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.65</span> · SAMPLES-eng내부필드복원</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.67</span> · DB컬럼명통일</div>
 
   </div>
 </div>
@@ -749,7 +749,7 @@ function loadTqResult(name, grade, spd, onFound) {
   fetch(TQ_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
-    body: JSON.stringify({ action: "load", name: name, grade: String(grade||""), spd: Number(spd)||0 })
+    body: JSON.stringify({ action: "load", name: name, user_school_grade: String(grade||""), reading_score: Number(spd)||0 })
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
@@ -2761,11 +2761,11 @@ function postRenderSWOT(eng, inp) {
 
   var factorOrder = ["어휘력","워킹메모리","추론능력","독해습관","독해효율성"];
   var factorScores = {
-    "어휘력":    inp.voca_score,
-    "워킹메모리":inp.wm_score,
-    "추론능력":  inp.inference_score,
-    "독해습관":  eng.hab,
-    "독해효율성":eng.eff
+    "어휘력":    eng.voc  || inp.voca_score      || 0,
+    "워킹메모리":eng.wm   || inp.wm_score         || 0,
+    "추론능력":  eng.inf  || inp.inference_score  || 0,
+    "독해습관":  eng.hab  || 0,
+    "독해효율성":eng.eff  || 0
   };
 
   // 레이더 SVG 삽입
@@ -5196,7 +5196,7 @@ function injectTqDataAndRun(d) {
           }
         }, 500);
 
-        showSavedResultToast(saved.test_date);
+        showSavedResultToast(saved.reg_date || saved.test_date);
       }, 300);
     });
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
@@ -5311,7 +5311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 try { renderReportTab(); window.__reportRendered = true; } catch(e){}
               }
               // 저장된 결과 알림
-              showSavedResultToast(saved.test_date);
+              showSavedResultToast(saved.reg_date || saved.test_date);
             }, 1500);
           });
         }
@@ -5563,7 +5563,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.65</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.67</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
