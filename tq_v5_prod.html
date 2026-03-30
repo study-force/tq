@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.67</span> · DB컬럼명통일</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.68</span> · postMessage보안강화</div>
 
   </div>
 </div>
@@ -5324,6 +5324,58 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 200);
   }
   // tqdata 없음 → 랜딩 페이지 표시 (기존 동작)
+
+  // ── postMessage 수신 (C안: URL에 개인정보 노출 없음) ──
+  window.addEventListener('message', function(event) {
+    // 발신 출처 검증 — 기존 사이트 도메인만 허용
+    var allowedOrigins = [
+      'https://ironman.sfcenter.co.kr',
+      'http://ironman.sfcenter.co.kr',
+      'https://www.sfcenter.co.kr',
+      'http://localhost'  // 개발 테스트용
+    ];
+    if (!allowedOrigins.includes(event.origin)) return;
+
+    // 데이터 형식 검증
+    var msg = event.data;
+    if (!msg || msg.type !== 'tqdata' || !msg.data) return;
+
+    var d = msg.data;
+    if (!d.name) return;
+
+    // 학제 정규화
+    var _lvNorm = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
+      '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
+    if (d.user_section) d.user_section = _lvNorm[d.user_section] || d.user_section;
+
+    // 랜딩 페이지 숨김
+    var landingEl = document.getElementById('page-input');
+    if (landingEl) landingEl.style.display = 'none';
+
+    // 기존 판독 결과 조회
+    if (d.name && d.reading_score) {
+      loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
+        window.__inp  = d;
+        window.__eng  = saved.eng;
+        window.__nm   = d.name;
+        window.__TQ_SLOTS    = saved.slots;
+        window.__TQ_SAVED_ID = saved.id;
+        var btnA = document.getElementById('btnA');
+        if (btnA) btnA.click();
+        setTimeout(function() {
+          window.__TQ_SLOTS = saved.slots;
+          if (!window.__reportRendered) {
+            try { renderReportTab(); window.__reportRendered = true; } catch(e){}
+          }
+          showSavedResultToast(saved.reg_date || saved.test_date);
+        }, 1500);
+      });
+    }
+    injectTqDataAndRun(d);
+
+    // 수신 확인 응답 (발신측에서 확인 가능)
+    event.source.postMessage({ type: 'tqdata_received', name: d.name }, event.origin);
+  });
 });
 
 </script>
@@ -5563,7 +5615,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.67</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.68</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
