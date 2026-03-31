@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.75</span> · 리스너안전처리</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.76</span> · 리스너전면디버그</div>
 
   </div>
 </div>
@@ -5338,9 +5338,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── postMessage 수신 (C안: URL에 개인정보 노출 없음) ──
   window.addEventListener('message', function(event) {
-    // 기본 안전 처리
-    if (!event || !event.data) return;
-    console.log('[TQ] postMessage 수신:', event.origin, JSON.stringify(event.data).slice(0,100));
+    // ★ 디버그: 모든 메시지 무조건 로그
+    try {
+      console.log('[TQ] 메시지 수신 origin:', event.origin);
+      console.log('[TQ] 메시지 data 타입:', typeof event.data, event.data === null ? 'null' : '');
+      if (event.data) {
+        console.log('[TQ] data 내용:', JSON.stringify(event.data).slice(0, 200));
+      }
+    } catch(e) { console.log('[TQ] 로그 오류:', e.message); }
+
+    if (!event.data) return;
 
     // 발신 출처 검증 — sfos.kr / sfcenter.co.kr 서브도메인 전체 허용
     function isAllowedOrigin(origin) {
@@ -5360,24 +5367,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 데이터 형식 검증
     var msg = event.data;
-    if (!msg || msg.type !== 'tqdata' || !msg.data) return;
+    console.log('[TQ] msg.type:', msg.type, '/ msg.data 존재:', !!msg.data);
+    if (!msg || msg.type !== 'tqdata' || !msg.data) {
+      console.warn('[TQ] 형식 불일치 — type:', msg && msg.type, '/ data:', msg && !!msg.data);
+      return;
+    }
 
     var d = msg.data;
-    if (!d.name) return;
+    if (!d.name) { console.warn('[TQ] name 없음'); return; }
 
-    // ★ 디버그: 수신 데이터 전체 출력
+    // ★ 수신 데이터 전체 출력
     console.log('[TQ] 수신 데이터 전체:', JSON.stringify(d, null, 2));
-    console.log('[TQ] 영어성적 필드:', {
-      eng_score: d.eng_score,
-      eng: d.eng,
-      english: d.english,
-      english_score: d.english_score,
-    });
-    console.log('[TQ] 검사일 필드:', {
-      reg_date: d.reg_date,
-      test_date: d.test_date,
-      date: d.date,
-    });
 
     // 학제 정규화
     var _lvNorm = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
@@ -5661,7 +5661,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.75</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.76</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
