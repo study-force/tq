@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.70</span> · postMessage즉시처리</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.71</span> · postMessage디버그</div>
 
   </div>
 </div>
@@ -5331,6 +5331,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── postMessage 수신 (C안: URL에 개인정보 노출 없음) ──
   window.addEventListener('message', function(event) {
+    // ★ 디버그: 모든 메시지 수신 로그
+    console.log('[TQ] postMessage 수신:', event.origin, JSON.stringify(event.data).slice(0,100));
+
     // 발신 출처 검증 — 기존 사이트 도메인만 허용
     var allowedOrigins = [
       'https://ironman.sfcenter.co.kr',
@@ -5338,7 +5341,10 @@ document.addEventListener('DOMContentLoaded', function() {
       'https://www.sfcenter.co.kr',
       'http://localhost'  // 개발 테스트용
     ];
-    if (!allowedOrigins.includes(event.origin)) return;
+    if (!allowedOrigins.includes(event.origin)) {
+      console.warn('[TQ] 출처 거부:', event.origin, '→ allowedOrigins:', allowedOrigins);
+      return;
+    }
 
     // 데이터 형식 검증
     var msg = event.data;
@@ -5629,7 +5635,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.70</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.71</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
