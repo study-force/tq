@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.74</span> · 수신데이터디버그</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.75</span> · 리스너안전처리</div>
 
   </div>
 </div>
@@ -5338,7 +5338,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── postMessage 수신 (C안: URL에 개인정보 노출 없음) ──
   window.addEventListener('message', function(event) {
-    // ★ 디버그: 모든 메시지 수신 로그
+    // 기본 안전 처리
+    if (!event || !event.data) return;
     console.log('[TQ] postMessage 수신:', event.origin, JSON.stringify(event.data).slice(0,100));
 
     // 발신 출처 검증 — sfos.kr / sfcenter.co.kr 서브도메인 전체 허용
@@ -5660,7 +5661,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.74</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.75</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
