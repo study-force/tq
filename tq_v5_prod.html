@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.79</span> · 체크리스트변환+토스트수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.80</span> · 버튼label1적용</div>
 
   </div>
 </div>
@@ -5657,7 +5657,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.79</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.80</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6098,7 +6098,7 @@ function buildLastPage(total, activeKeysOverride) {
       // 4번째 이상: 이름 + 기간만
       return '<div style="border:1px solid '+col+'55;background:#fff;padding:8px 16px 8px 18px;position:relative;display:flex;align-items:center;gap:10px;">'
         +'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+col+';"></div>'
-        +'<span style="font-size:12px;font-weight:700;color:#64748B;font-family:Noto Sans KR,sans-serif;">'+(k+1)+'. '+step.key+'</span>'
+        +'<span style="font-size:12px;font-weight:700;color:#64748B;font-family:Noto Sans KR,sans-serif;">'+(k+1)+'. '+(step.label1||step.key)+'</span>'
         +'<span style="margin-left:auto;font-size:11px;color:#94A3B8;white-space:nowrap;">'+step.sessions+'회 · '+step.period+'</span>'
         +'</div>';
     }
@@ -6110,7 +6110,7 @@ function buildLastPage(total, activeKeysOverride) {
       +'<path d="M 0 0 L 17 0 L 25 12 L 17 24 L 0 24 Z" fill="'+col+'" stroke="'+(col==="#F5C518"?"#C89B00":col==="#F47A20"?"#C85F00":col==="#7CB342"?"#5A8A1E":col==="#4A90D9"?"#2B6BAD":"#C8D0DC")+'" stroke-width="1.2"/>'
       +'<text x="10" y="12" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="#fff" font-family="Noto Sans KR,sans-serif">'+(k+1)+'</text>'
       +'</svg>'
-      +'<span style="font-size:14px;font-weight:700;color:#1A2332;font-family:Noto Sans KR,sans-serif;letter-spacing:-.3px;">'+step.key+'</span>'
+      +'<span style="font-size:14px;font-weight:700;color:#1A2332;font-family:Noto Sans KR,sans-serif;letter-spacing:-.3px;">'+(step.label1||step.key)+'</span>'
       +'<span style="margin-left:auto;font-size:11px;color:'+(col==="#F5C518"?"#B8860B":col)+';padding:2px 10px;border:1px solid '+col+';font-family:Noto Sans KR,sans-serif;white-space:nowrap;font-weight:600;">'+step.sessions+'회 · '+step.period+'</span>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">'
@@ -6247,7 +6247,7 @@ function buildEditBar() {
       + (isAct
         ? 'background:' + col + ';color:#fff;border:1.5px solid ' + col + ';'
         : 'background:transparent;color:' + (editUnlocked ? '#64748B' : 'rgba(255,255,255,.25)') + ';border:1.5px solid rgba(255,255,255,.1);')
-      + '">' + p.key + '</button>';
+      + '">' + (p.label1||p.key) + '</button>';
   }).join('');
 
   // 읽기전용: 전체 알파 처리 / 편집 시: 불투명
