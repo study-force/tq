@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.91</span> · 버튼label1적용</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.92</span> · 버튼label1적용</div>
 
   </div>
 </div>
@@ -1775,7 +1775,7 @@ gv("btnA").addEventListener("click",async function(){
     eng.grade   = eng.grade  || inp.user_school_grade || null;
     eng.level   = eng.level  || inp.user_section || null;
     eng.uiLevel = inp.uiLevel || inp.user_section || null;
-    eng.date    = inp.reg_date || null;
+    eng.date    = inp.reg_date ? inp.reg_date.slice(0,10) : null;
     eng.eng     = eng.eng    || inp.eng_score  || null;
     eng.math    = eng.math   || inp.math_score || null;
     eng.kor     = eng.kor    || inp.kor_score  || null;
@@ -5316,8 +5316,12 @@ document.addEventListener('DOMContentLoaded', function() {
             window.__TQ_SLOTS = saved.slots;
             window.__TQ_SAVED_ID = saved.id;
             // 판독 페이지로 이동
-            var btnA = document.getElementById('btnA');
-            if (btnA) btnA.click(); // 엔진 재실행 (inp 세팅 후)
+            if (typeof runAnalysisDirect === 'function') {
+              runAnalysisDirect(d);
+            } else {
+              var btnA = document.getElementById('btnA');
+              if (btnA) btnA.click();
+            }
             setTimeout(function() {
               // 슬롯 복원 후 리포트 렌더
               window.__TQ_SLOTS = saved.slots;
@@ -5662,7 +5666,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.91</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.92</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -6610,6 +6614,7 @@ function renderReportTab() {
     effChecked: eng.effChecked || [],
     presc:  (window.__RPT_D && window.__RPT_D.presc && window.__RPT_D.presc.length ? window.__RPT_D.presc : eng.presc) || [],
     roadmapReasons: (window.__RPT_D && window.__RPT_D.roadmapReasons) || (eng.roadmapReasons) || null,
+    date:   eng.date || (window.__inp && window.__inp.reg_date ? window.__inp.reg_date.slice(0,10) : null),
     slots:  slots,
     imgSrc: imgSrc
   };
