@@ -1,0 +1,2807 @@
+// ── 저장된 결과 알림 토스트 ──
+function showSavedResultToast(testDate) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);'
+    + 'background:#0F172A;color:#fff;padding:10px 20px;border-radius:8px;'
+    + 'font-size:12px;font-weight:500;z-index:99999;'
+    + 'border:1px solid rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap;';
+  t.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 4000);
+}
+
+// ── 판독 결과 저장 ──
+
+
+function saveTqResult(inp, eng, slots) {
+  if (!inp || !eng) return;
+  // slots 없으면 빈 객체 전달 — DB의 기존 slot은 덮어쓰지 않도록 index.ts에서 처리
+  // (slots가 없을 땐 권장훈련 변경만 저장)
+  var _slots = slots || {};
+  fetch(TQ_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
+    body: JSON.stringify({ action: "save", inp: inp, eng: eng, slots: _slots })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok) {
+      window.__TQ_SAVED_ID = d.id;
+      console.log("[TQ] 저장 완료 id:", d.id);
+    } else {
+      console.warn("[TQ] 저장 실패:", d.error);
+    }
+  })
+  .catch(function(e){ console.warn("[TQ] 저장 오류:", e); });
+}
+
+// ── 판독 결과 조회 — 외부연동 진입 시 기존 결과 로드 ──
+function loadTqResult(name, grade, spd, onFound) {
+  fetch(TQ_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
+    body: JSON.stringify({ action: "load", name: name, user_school_grade: String(grade||""), reading_score: Number(spd)||0 })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.ok && d.found) {
+      console.log("[TQ] 기존 판독 결과 발견:", d.test_date);
+      onFound(d);
+    } else {
+      console.log("[TQ] 기존 판독 결과 없음");
+    }
+  })
+  .catch(function(e){ console.warn("[TQ] 조회 오류:", e); });
+}
+window.loadTqResult = loadTqResult;
+
+// ── 인쇄 / PDF 저장 ──
+function printReport() {
+  var nm = (window.__nm) || (window.__inp && window.__inp.name) || '';
+
+  // 리포트 탭으로 전환
+  switchResultTab('리포트');
+
+  // 파일명 설정
+  var orig = document.title;
+  if (nm) document.title = '스터디포스 TQ TEST 분석 결과 : ' + nm;
+
+  requestAnimationFrame(function(){
+    setTimeout(function(){
+      window.print();
+      setTimeout(function(){ document.title = orig; }, 500);
+    }, 200);
+  });
+}
+window.printReport = printReport;
+
+// ══════════════════════════════════════════════════════
+// ★ 배포 설정 — 이 두 줄만 수정하면 됩니다 ★
+// ══════════════════════════════════════════════════════
+var TQ_API_URL   = "https://dtktaemqssvglwgvttqq.supabase.co/functions/v1/tq-engine";
+var TQ_API_TOKEN = "sf_internal_2024";
+
+// ── 설정 검증 ──
+(function() {
+  if(TQ_API_URL.indexOf("YOUR_PROJECT") > -1 || TQ_API_TOKEN === "YOUR_ACADEMY_TOKEN") {
+    document.addEventListener("DOMContentLoaded", function() {
+      var overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:'Noto Sans KR',sans-serif";
+      overlay.innerHTML = '<div style="width:48px;height:48px;background:linear-gradient(135deg,#8B5CF6,#0BA98E);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff">TQ</div>'
+        + '<div style="font-size:18px;font-weight:700;color:#fff">설정이 필요합니다</div>'
+        + '<div style="font-size:13px;color:#94A3B8;text-align:center;line-height:1.8">tq_v5_prod.html 파일을 열어<br><span style="color:#A78BFA;font-weight:600">TQ_API_URL</span> 과 <span style="color:#A78BFA;font-weight:600">TQ_API_TOKEN</span> 을<br>본사에서 발급받은 값으로 수정해주세요.</div>'
+        + '<div style="font-size:11px;color:#475569;background:#0c1427;padding:10px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">배포 가이드 문서 참조 → 724번째 줄 수정</div>';
+      document.body.appendChild(overlay);
+    });
+  }
+})();
+// ══════════════════════════════════════════════════════
+
+
+// ── 프로그램 데이터 ──
+const PROGRAMS = {
+  // 국어
+  독해포스_초급_예비:  { name:"독해포스 - 초급", course:"예비", area:"국어", sessions:60, period:"3~5개월", grade:"초등 전체" },
+  독해포스_초급_기본:  { name:"독해포스 - 초급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"초등 3~4학년" },
+  독해포스_초급_심화:  { name:"독해포스 - 초급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"초등 5~6학년" },
+  독해포스_중급_예비:  { name:"독해포스 - 중급", course:"예비", area:"국어", sessions:60, period:"3~5개월", grade:"중등 전체" },
+  독해포스_중급_기본:  { name:"독해포스 - 중급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"중등 1~2학년" },
+  독해포스_중급_심화:  { name:"독해포스 - 중급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"중등 2~3학년" },
+  독해포스_중급_예비보완:{ name:"독해포스 - 중급", course:"예비 보완", area:"국어", sessions:60, period:"3~5개월", grade:"고등 전체" },
+  독해포스_고급_기본:  { name:"독해포스 - 고급", course:"기본", area:"국어", sessions:60, period:"3~5개월", grade:"고등 1~2학년" },
+  독해포스_고급_심화:  { name:"독해포스 - 고급", course:"심화", area:"국어", sessions:60, period:"3~5개월", grade:"고등 2~3학년" },
+  비문학독서클럽:      { name:"비문학 독서클럽", course:"분야 선택", area:"국어", sessions:50, period:"2개월", grade:"초등 2~4학년" },
+  // 수학
+  수리포스_직관연산: { name:"수리포스", course:"직관력 연산", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
+  수리포스_사고연산: { name:"수리포스", course:"사고력 연산", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
+  수리포스_직관도형: { name:"수리포스", course:"직관력 도형", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
+  수리포스_사고도형: { name:"수리포스", course:"사고력 도형", area:"수학", sessions:120, period:"6~10개월", grade:"초등" },
+  // 영어
+  영어독해포스_중급_기본: { name:"영어독해포스 - 중급", course:"기본", area:"영어", sessions:60, period:"3~5개월", grade:"중등 1~2학년" },
+  영어독해포스_중급_심화: { name:"영어독해포스 - 중급", course:"심화", area:"영어", sessions:60, period:"3~5개월", grade:"중등 2~3학년" },
+  영어독해포스_고급_기본: { name:"영어독해포스 - 고급", course:"기본", area:"영어", sessions:60, period:"3~5개월", grade:"고등 1~2학년" },
+  영어독해포스_고급_심화: { name:"영어독해포스 - 고급", course:"심화", area:"영어", sessions:60, period:"3~5개월", grade:"고등 2~3학년" },
+  리스닝포스_1: { name:"리스닝포스", course:"세션 1", area:"영어", sessions:30, period:"2개월", grade:"초등" },
+  빈칸추론_베이직: { name:"빈칸추론", course:"베이직코스", area:"영어", sessions:30, period:"2개월", grade:"고등" },
+  // 보카
+  매직보카_초등1: { name:"매직보카 초등", course:"레벨1", area:"어휘", sessions:15, period:"1개월", grade:"초등 3~5학년" },
+  매직보카_초등2: { name:"매직보카 초등", course:"레벨2", area:"어휘", sessions:15, period:"1개월", grade:"초등 6학년" },
+  매직보카_중학1: { name:"매직보카 중학", course:"레벨1~2", area:"어휘", sessions:50, period:"2개월", grade:"중1" },
+  매직보카_중학3: { name:"매직보카 중학", course:"레벨3~4", area:"어휘", sessions:50, period:"2개월", grade:"중2" },
+  매직보카_중학5: { name:"매직보카 중학", course:"레벨5~6", area:"어휘", sessions:50, period:"2개월", grade:"중3" },
+  매직보카_고등1: { name:"매직보카 고등", course:"레벨1~2", area:"어휘", sessions:60, period:"2개월", grade:"고1~2" },
+  매직보카_고등3: { name:"매직보카 고등", course:"레벨3~4", area:"어휘", sessions:60, period:"2개월", grade:"고1~2" },
+  매직보카_고등파이널: { name:"매직보카 고등", course:"파이널", area:"어휘", sessions:15, period:"1개월", grade:"수능 준비" },
+  // 특목
+  후엠아이_1: { name:"후엠아이 (Who Am I)", course:"시즌 1", area:"특목", sessions:50, period:"6개월", grade:"특목고 준비", special:true },
+  딥앤와이드_1: { name:"딥앤와이드 (Deep & Wide)", course:"시즌 1", area:"특목", sessions:50, period:"6개월", grade:"특목고 준비", special:true },
+};
+
+// ── 프로그램 추천 엔진 ──
+// 기준: acc 낮음(<50) / 보통(50~79) / 높음(80+) × 학제·학년
+function recommendPrograms(eng) {
+  if (!eng || eng.acc == null) return [];  // 데이터 없으면 추천 불가
+  var level = eng.uiLevel || eng.level || "중등";
+  var grade = parseInt(eng.grade) || 1;
+  var acc   = eng.acc;
+  var inf   = eng.inf;
+  var wm    = eng.wm;
+  var recs  = [];
+
+  // acc 구간
+  var accLow  = acc < 50;
+  var accMid  = acc >= 50 && acc < 80;
+  var accHigh = acc >= 80;
+
+  // 초등: 1~4학년 vs 5~6학년
+  var isElemLow  = (level === "초등" && grade <= 4);
+  var isElemHigh = (level === "초등" && grade >= 5);
+  var isMiddle   = (level === "중등");
+  var isHigh     = (level === "고등");
+  var grade12    = (grade <= 2);
+  var grade23    = (grade >= 2);
+
+  function add(key, reason) {
+    var p = PROGRAMS[key];
+    if (p) recs.push(Object.assign({}, p, {key, reason}));
+  }
+
+  // ── 독해포스 ──
+  // 초등 학년별 세분화
+  // 1~2학년: 테스트 대상 외 → 독해포스 없음 (비문학독서클럽만)
+  // 3학년: acc<80 → 비문학독서클럽만 / acc≥80 → 독해포스 초급
+  // 4학년 이상: acc<50 → 예비+비문학병행 / acc 50~79 → 기본/심화 / acc≥80 → 중급예비
+  if (isElemLow || isElemHigh) {
+    if (grade <= 2) {
+      // 독해포스 없음, 비문학독서클럽만 (아래 섹션에서 처리)
+    } else if (grade === 3) {
+      if (accHigh) {
+        add("독해포스_초급_예비", "3학년 고역량 — 초급 예비 과정으로 독해 훈련 시작");
+      }
+      // acc<80이면 비문학독서클럽만 (아래 섹션에서 처리)
+    } else if (grade <= 4) {
+      // 4학년: acc 무관 초급 예비
+      add("독해포스_초급_예비", "초등 독해 훈련 시작 — 초급 예비 과정");
+    } else if (grade === 5) {
+      // 5학년
+      if (accHigh) {
+        add("독해포스_중급_예비", "5학년 고역량 — 중등 수준 독해력 선행 준비 권장");
+      } else {
+        add("독해포스_초급_예비", "5학년 독해 기초 훈련 — 초급 예비 과정");
+      }
+    } else {
+      // 6학년
+      if (accHigh && wm >= 40) {
+        add("독해포스_중급_예비", "6학년 고역량 — 중등 수준 독해력 선행 준비 권장");
+      } else {
+        add("독해포스_초급_예비", "6학년 독해 기초 훈련 — 초급 예비 과정");
+      }
+    }
+
+  } else if (isMiddle) {
+    // acc ≤ 40: 학년 무관 중급 예비
+    // 중1 + acc 50~79: 중급 예비
+    // 중1 + acc ≥ 80: 예비보완 + 중급 기본
+    // 중2,3 + acc 50~79: 예비보완 + 중급 기본
+    // 중2,3 + acc ≥ 80: 예비보완 + 중급 심화
+    if (acc <= 40) {
+      add("독해포스_중급_예비", "독해 기초 역량 형성 훈련");
+    } else if (grade === 1) {
+      if (accHigh) {
+        add("독해포스_중급_예비보완", "중1 고역량 — 중급 심화 대비 예비 보완");
+        add("독해포스_중급_기본",    "중급 기본 과정 병행 훈련");
+      } else {
+        add("독해포스_중급_예비", "중1 — 중급 예비 과정으로 탄탄하게 시작");
+      }
+    } else {
+      // 중2, 중3
+      if (accHigh) {
+        add("독해포스_중급_예비보완", "중2~3 고역량 — 고급 과정 대비 예비 보완");
+        add("독해포스_중급_심화",    "중급 심화 과정 병행 훈련");
+      } else {
+        add("독해포스_중급_예비보완", "중2~3 — 예비 보완 후 기본 과정 진입");
+        add("독해포스_중급_기본",    "중급 기본 과정 병행 훈련");
+      }
+    }
+
+  } else if (isHigh) {
+    if (acc <= 40) {
+      // 고1,2,3 공통 — 예비보완 + 중급기본 (몰입훈련 권장)
+      add("독해포스_중급_예비보완", "고등 독해 기초 보완 훈련");
+      add("독해포스_중급_기본",    "예비보완과 병행하는 중급 기본 과정");
+    } else if (accHigh) {
+      // 80 이상 — 고급기본
+      add("독해포스_고급_기본", "고역량 — 고급 독해 과정");
+    } else if (grade === 1) {
+      // 고1 + 50~79 — 예비보완 + 중급심화
+      add("독해포스_중급_예비보완", "고1 — 예비 보완 후 심화 과정 진입");
+      add("독해포스_중급_심화",    "중급 심화 과정 병행 훈련");
+    } else {
+      // 고2,3 + 50~79 — 중급심화
+      add("독해포스_중급_심화", "고2~3 — 중급 심화 독해 훈련");
+    }
+  }
+
+  // ── 비문학 독서클럽 ──
+  // 1~2학년: 항상 추천
+  // 3학년: acc < 80일 때 추천
+  // 4학년 이상: acc < 50일 때 독해포스와 병행 추천
+  if ((isElemLow || isElemHigh) && grade <= 2) {
+    add("비문학독서클럽", "초등 1~2학년 — 독해 훈련 전 비문학 독서 경험 쌓기 권장");
+  } else if ((isElemLow || isElemHigh) && grade === 3 && !accHigh) {
+    add("비문학독서클럽", "3학년 권장 — 비문학 독서 경험을 먼저 쌓아 독해력의 기반 형성");
+  } else if (isElemLow && grade === 4 && accLow) {
+    add("비문학독서클럽", "독해 기초 훈련과 병행하여 비문학 독서 경험 확장");
+  } else if (isElemLow && grade === 5 && acc <= 30) {
+    add("비문학독서클럽", "5학년 독해 기초 훈련과 병행하여 비문학 독서 경험 확장");
+  }
+
+  // ── 특목: acc 80+ + inf 65+ ──
+  if (accHigh && inf >= 65 && (isMiddle || isElemHigh)) {
+    add("후엠아이_1", "높은 독해역량과 추론능력 — 특목고 진학 준비 가능 (별도 상담 필요)");
+  }
+
+  return recs;
+}
+window.recommendPrograms = recommendPrograms;
+
+(function(){
+
+// ── 상수 ──
+const SE=["매우잘함","잘함","보통","노력요함","-"];
+const SM=["90점 이상","80~89점","70~79점","60~69점","60점 미만","-"];
+const SH=["1등급","2등급","3등급","4등급","5등급 이하","-"];
+const SMAP={"90점 이상":90,"80~89점":80,"70~79점":70,"60~69점":60,"60점 미만":50,"1등급":90,"2등급":80,"3등급":70,"4등급":60,"5등급 이하":50,"매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null};
+
+const FACTORS=[
+  {id:"sVoc",lb:"어휘능력",min:0,max:100,step:5,def:45},
+  {id:"sWm", lb:"워킹메모리",min:20,max:100,step:10,def:30},
+  {id:"sInf",lb:"추론능력",min:0,max:100,step:5,def:50}
+];
+
+const HAB_ITEMS=[
+  "이미 읽은 곳을 다시 읽음",
+  "읽다가 글줄을 자주 놓침",
+  "짚어가며 읽거나 밑줄을 그음",
+  "단어 단위로 또박또박 읽음",
+  "소리 내어 읽거나 속발음을 함",
+  "긴 문장은 이해가 잘 안됨",
+  "긴 문장은 훑어 읽기를 함",
+  "긴 글은 내용 기억이 잘 안남",
+  "모르는 단어가 없어도 이해가 잘 안됨",
+  "글 읽는 속도가 느린 편임"
+];
+const EFF_ITEMS=[
+  "독서량이 많이 부족한 편이다",
+  "비문학 책은 어렵게 느껴진다",
+  "이해력이 부족한 편이다",
+  "시험에서 시간에 쫓긴다",
+  "문제를 이해를 못해서 틀린다",
+  "서술형 평가 시험 점수가 낮다",
+  "지문형 수학문제가 어렵다",
+  "국어 시험 점수가 유난히 낮다",
+  "두꺼운 책을 읽은 경험이 없다",
+  "밤새워 책을 읽은 경험이 없다"
+];
+
+// ── 초기화 ──
+// 학년 드롭다운 — 학제별
+function buildGrade(){
+  var lv=document.getElementById("iLevel").value;
+  var gradeEl=document.getElementById("iGrade");
+  var cur=gradeEl.value;
+  var opts;
+  if(lv==="초등") opts=["1학년","2학년","3학년","4학년","5학년","6학년"];
+  else if(lv==="중등") opts=["1학년","2학년","3학년"];
+  else if(lv==="고등") opts=["1학년","2학년","3학년"];
+  else opts=["해당없음"];
+  gradeEl.innerHTML=opts.map(function(o,i){
+    var v=lv==="일반"?"0":(i+1).toString();
+    return'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+(lv==="일반"?"해당없음":o)+'</option>';
+  }).join("");
+  // 기본값 설정
+  if(!gradeEl.value) gradeEl.selectedIndex=0;
+}
+
+// 내부 매핑: UI 학제값 → 엔진 레벨 키
+function uiLevelToEngineLevel(uiLv, gradeNum){
+  if(uiLv==="초등"){return gradeNum<=4?"초저":"초고";}
+  if(uiLv==="중등")return "중등";
+  if(uiLv==="고등")return "고등";
+  return "일반";
+}
+
+function onLevelChange(){
+  buildScores();
+  buildGrade();
+  document.getElementById("btnB").disabled=true;
+}
+
+function buildScores(){
+  var lv=document.getElementById("iLevel").value;
+  const opts=lv==="고등"?SH:lv==="초등"?SE:lv==="중등"?SM:SE;
+  document.getElementById("scoreArea").innerHTML=["국어","영어","수학"].map((n,i)=>
+    `<div><label>${n}</label><select id="sS${i}">${opts.map(o=>`<option${o==="-"?" selected":""}>${o}</option>`).join("")}</select></div>`
+  ).join("");
+}
+
+function buildFactors(){
+  document.getElementById("factorSliders").innerHTML=FACTORS.map(f=>
+    `<div style="margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <label style="margin:0">${f.lb}</label>
+        <span id="${f.id}V" style="font-size:10px;font-weight:500;background:#F1EFE8;padding:1px 5px;border-radius:3px">${f.def}</span>
+      </div>
+      <input type="range" id="${f.id}" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.def}">
+    </div>`
+  ).join("");
+  FACTORS.forEach(function(f){
+    var el=document.getElementById(f.id);
+    if(el) el.addEventListener("input",function(){
+      var vEl=document.getElementById(f.id+"V");
+      if(vEl) vEl.textContent=this.value;
+      var btnB=document.getElementById("btnB");
+      if(btnB) btnB.disabled=true;
+    });
+  });
+}
+
+function buildChecklists(){
+  document.getElementById("habChecks").innerHTML=HAB_ITEMS.map((item,i)=>
+    `<label class="chk-item"><input type="checkbox" id="h${i}" onchange="updateChkScore()"><span>${item}</span></label>`
+  ).join("");
+  document.getElementById("effChecks").innerHTML=EFF_ITEMS.map((item,i)=>
+    `<label class="chk-item"><input type="checkbox" id="e${i}" onchange="updateChkScore()"><span>${item}</span></label>`
+  ).join("");
+}
+
+function updateChkScore(){
+  const hCount=HAB_ITEMS.filter(function(_,i){return document.getElementById("h"+i)&&document.getElementById("h"+i).checked;}).length;
+  const eCount=EFF_ITEMS.filter(function(_,i){return document.getElementById("e"+i)&&document.getElementById("e"+i).checked;}).length;
+  const hScore=Math.max(0,Math.round((1-hCount/HAB_ITEMS.length)*10)*10);
+  const eScore=Math.max(0,Math.round((1-eCount/EFF_ITEMS.length)*10)*10);
+  document.getElementById("habScore").textContent="점수: "+hScore;
+  document.getElementById("effScore").textContent="점수: "+eScore;
+  document.getElementById("btnB").disabled=true;
+  document.getElementById("btnR").disabled=true;
+  // 결과가 이미 표시 중이면 재분석 배너 표시
+  if(document.getElementById("resultView").style.display!=="none"){
+    showReanalyzeBanner();
+  }
+}
+
+function showReanalyzeBanner(){
+  var existing=document.getElementById("reanalyzeBanner");
+  if(existing)return;
+  var rv=document.getElementById("resultView");
+  var banner=document.createElement("div");
+  banner.id="reanalyzeBanner";
+  banner.style.cssText="position:sticky;top:0;z-index:10;background:#FEF3C7;border:1.5px solid #FDE68A;border-radius:8px;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#92400E;";
+  banner.innerHTML='<span>⚠ 체크리스트가 변경되었습니다. <strong>① 분석</strong>을 다시 실행하면 결과가 갱신됩니다.</span>'
+    +'<button onclick="doReanalyze()" style="background:#D97706;color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer">재분석</button>';
+  rv.insertBefore(banner,rv.firstChild);
+}
+window.updateChkScore=updateChkScore;
+window.onLevelChange=onLevelChange;
+window.buildGrade=buildGrade;
+
+function doReanalyze(){
+  var b=document.getElementById("reanalyzeBanner");
+  if(b)b.remove();
+  document.getElementById("btnA").click();
+}
+window.doReanalyze=doReanalyze;
+
+function clearImg(){
+  var wrap=gv("imgPreviewWrap");
+  wrap.style.display="none";
+  gv("imgPreview").src="";
+  gv("imgFull").src="";
+  gv("imgPreviewLeft").style.display="none";
+  gv("imgPreviewLeftImg").src="";
+  gv("ocrPlaceholder").style.display="block";
+  gv("ocrStatus").textContent="";
+  gv("imgInput").value="";
+  var slot=document.getElementById("imgSlot");
+  if(slot) slot.style.display="none";
+  document.body.appendChild(wrap);
+}
+window.clearImg=clearImg;
+
+function toggleImgFull(){
+  const wrap=gv("imgFullWrap");
+  wrap.style.display=wrap.style.display==="none"?"flex":"none";
+  if(wrap.style.display==="flex") wrap.style.display="block";
+}
+window.toggleImgFull=toggleImgFull;
+
+// 정확도 자동산출
+function updateAccuracy(){
+  const fct=+document.getElementById("sFct").value;
+  const str=+document.getElementById("sStr").value;
+  const acc=Math.round((fct+str)/2/10)*10;
+  document.getElementById("accVal").textContent=acc;
+  document.getElementById("btnB").disabled=true;
+}
+
+["sFct","sStr"].forEach(function(id){
+  document.getElementById(id).addEventListener("input",function(){
+    document.getElementById(id+"V").textContent=this.value;
+    updateAccuracy();
+  });
+});
+
+document.getElementById("iLevel").addEventListener("change",onLevelChange);
+buildScores(); buildGrade(); buildFactors(); buildChecklists(); updateAccuracy();
+// 초기 학년 기본값 = 중등 2학년
+document.getElementById("iGrade").value="2";
+
+// ── 입력값 수집 ──
+function gv(id){return document.getElementById(id);}
+function getInputs(){
+  const fct=+gv("sFct").value, str=+gv("sStr").value;
+  const acc=Math.round((fct+str)/2/10)*10;
+  const hCount=HAB_ITEMS.filter((_,i)=>gv("h"+i)?.checked).length;
+  const eCount=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked).length;
+  const habScore=Math.max(0,Math.round((1-hCount/HAB_ITEMS.length)*10)*10);
+  const effScore=Math.max(0,Math.round((1-eCount/EFF_ITEMS.length)*10)*10);
+  const habChecked=HAB_ITEMS.filter((_,i)=>gv("h"+i)?.checked);
+  const effChecked=EFF_ITEMS.filter((_,i)=>gv("e"+i)?.checked);
+  return{
+    name:gv("iName").value||"",
+    user_section:uiLevelToEngineLevel(gv("iLevel").value,parseInt(gv("iGrade").value)||1),
+    user_school_grade:parseInt(gv("iGrade").value)||null, uiLevel:gv("iLevel").value,
+    kor_score:gv("sS0").value, eng_score:gv("sS1").value, math_score:gv("sS2").value,
+    acc, reading_score:parseInt(gv("sSpd").value)||0, fact_score:fct, structure_score:str,
+    voca_score:+gv("sVoc").value, wm_score:+gv("sWm").value, inference_score:+gv("sInf").value,
+    hab_score:habScore, eff_score:effScore,
+    reading_habit_checks:habChecked, reading_effect_checks:effChecked,
+    reg_date: (function(){ var d=gv("iDate"); return (d&&d.value)?d.value:new Date().toISOString().slice(0,10); })()
+  };
+}
+
+// ── OCR ──
+async function processOcrFile(file){
+  // 이미지 미리보기 표시
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const src=e.target.result;
+    // 우측 미리보기
+    gv("imgPreview").src=src;
+    gv("imgFull").src=src;
+    gv("imgPreviewWrap").style.display="block";
+    // 좌측 미리보기
+    gv("imgPreviewLeftImg").src=src;
+    gv("imgPreviewLeft").style.display="block";
+    gv("ocrPlaceholder").style.display="none";
+  };
+  reader.readAsDataURL(file);
+
+  const status=gv("ocrStatus");
+  status.textContent="인식 중...";
+  try{
+    const b64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(",")[1]);
+      r.onerror=rej;
+      r.readAsDataURL(file);
+    });
+        const resp=await fetch(TQ_API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
+      body:JSON.stringify({action:"ocr",imageBase64:b64,imageType:file.type})
+    });
+    if(!resp.ok)throw new Error("OCR 서버 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
+    let raw=await resp.text();
+    raw=raw.trim().replace(/^\x60\x60\x60[a-z]*\s*/,"").replace(/\s*\x60\x60\x60$/,"");
+    const parsed=JSON.parse(raw);
+    // 폼에 값 적용
+    if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
+    if(parsed.struct_understand!=null){gv("sStr").value=parsed.struct_understand;gv("sStrV").textContent=parsed.struct_understand;}
+    if(parsed.speed!=null){gv("sSpd").value=parseInt(parsed.speed)||0;}
+    if(parsed.vocabulary!=null){gv("sVoc").value=parsed.vocabulary;gv("sVocV").textContent=parsed.vocabulary;}
+    if(parsed.working_memory!=null){gv("sWm").value=parsed.working_memory;gv("sWmV").textContent=parsed.working_memory;}
+    if(parsed.inference!=null){gv("sInf").value=parsed.inference;gv("sInfV").textContent=parsed.inference;}
+    if(parsed.student_name){gv("iName").value=parsed.student_name;}
+    if(parsed.grade){
+      // iGrade는 select — buildGrade 후 value 설정
+      buildGrade();
+      var grSel=gv("iGrade");
+      var grVal=String(parsed.grade);
+      for(var gi=0;gi<grSel.options.length;gi++){
+        if(grSel.options[gi].value===grVal){grSel.selectedIndex=gi;break;}
+      }
+    }
+    if(parsed.school_level){
+      var lvRemap={"초저":"초등","초고":"초등","중등":"중등","고등":"고등","일반":"일반"};
+      var mappedLv=lvRemap[parsed.school_level]||parsed.school_level;
+      const sel=gv("iLevel");
+      for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===mappedLv){sel.selectedIndex=i;break;}}
+      buildScores();buildGrade();
+    }
+    // 독해습관 체크리스트 — boolean 배열 + 카운트 검증
+    if(parsed.hab_checks&&parsed.hab_checks.length>0){
+      var habTrue=parsed.hab_checks.filter(Boolean).length;
+      var habTarget=parsed.hab_count||habTrue;
+      // true 개수가 카운트와 다르면 마지막 항목부터 조정
+      if(habTrue>habTarget){
+        var adjusted=parsed.hab_checks.slice();
+        for(var j=adjusted.length-1;j>=0&&habTrue>habTarget;j--){
+          if(adjusted[j]){adjusted[j]=false;habTrue--;}
+        }
+        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!adjusted[i];});
+      } else {
+        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!parsed.hab_checks[i];});
+      }
+    }
+    // 독해효율성 체크리스트 — boolean 배열 + 카운트 검증
+    if(parsed.eff_checks&&parsed.eff_checks.length>0){
+      var effTrue=parsed.eff_checks.filter(Boolean).length;
+      var effTarget=parsed.eff_count||effTrue;
+      if(effTrue>effTarget){
+        var adjusted2=parsed.eff_checks.slice();
+        for(var k=adjusted2.length-1;k>=0&&effTrue>effTarget;k--){
+          if(adjusted2[k]){adjusted2[k]=false;effTrue--;}
+        }
+        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!adjusted2[i];});
+      } else {
+        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!parsed.eff_checks[i];});
+      }
+    }
+    updateChkScore();
+    updateAccuracy();
+    status.textContent="✓ 수치 + 체크리스트 자동 입력 완료";
+    setTimeout(()=>{status.textContent="";},3000);
+  }catch(e){
+    status.textContent="인식 실패: "+e.message;
+  }
+}
+document.getElementById("imgInput").addEventListener("change",function(){
+  if(this.files[0]) processOcrFile(this.files[0]);
+});
+
+// ── 클립보드 붙여넣기 ──
+document.addEventListener("paste",function(e){
+  const items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith("image/")){
+      const file=items[i].getAsFile();
+      if(!file)continue;
+      const zone=document.getElementById("ocrZone");
+      zone.style.borderColor="var(--teal)";
+      zone.style.background="var(--teal-bg)";
+      setTimeout(function(){zone.style.borderColor="";zone.style.background="";},1500);
+      processOcrFile(file);
+      break;
+    }
+  }
+});
+
+// ── 규칙 엔진 ──
+// ────────────────────────────────────────────────────────────
+// Part 1. 근거자료 수집 엔진
+// TQ워크샵 판독기준자료의 8개 항목을 완전 재현
+// ────────────────────────────────────────────────────────────
+
+
+// ── MESSAGES 연동 헬퍼 ──
+function msg(id) {
+  var msgs = (typeof MESSAGES !== 'undefined') ? MESSAGES : window.MESSAGES;
+  if (!msgs) return null;
+  for (var key in msgs) {
+    if (!Array.isArray(msgs[key])) continue;
+    var found = msgs[key].find(function(m){ return m && m.id === id; });
+    if (found) return { t: found.tag, s: found.text };
+  }
+  return null;
+}
+function mpush(bullets, id, fallbackT, fallbackS) {
+  var m = msg(id);
+  if (m) bullets.push(m);
+  else bullets.push({ t: fallbackT, s: fallbackS });
+}
+// collectEvidence는 서버에서 실행됩니다 (보안)
+function collectEvidence(){ return []; }
+
+function toI(v,t){if(v>=t)return 0;const g=t-v,r=g/t;return Math.round((g<=10?r*.5:Math.min(r,1))*100)/100;}
+function nbnd(v,t){return Math.abs(v-t)<=10;}
+function cInt(acc,kv){if(kv===null||acc>40)return 0;return Math.max(Math.round(Math.min((kv-acc*.9)/70,1)*100)/100,0);}
+function exLb(i){return i>=.8?"강":i>=.5?"중":i>=.2?"약":"최약";}
+function grA(v){return v>=90?"최상":v>=70?"상":v>=50?"중":v>=30?"하":"최하";}
+function grF(v){return v>=75?"상":v>=50?"중상":v>=35?"중하":"하";}
+const SPDLIM={"초저":3000,"초고":5000,"중등":6000,"고등":8000,"일반":5000};
+const SPDTH={"초저":[300,500,700],"초고":[400,650,900],"중등":[450,700,1000],"고등":[450,700,1000],"일반":[400,650,900]};
+function grSpd(s,l){const t=SPDTH[l]||SPDTH["중등"];return s<t[0]?"느림":s<t[1]?"보통이하":s<t[2]?"보통이상":"빠름";}
+
+// 독해습관 체크 항목 분류
+function classifyHabits(checked){
+  // ── 독해습관 분류 원칙 ──
+  // 독해습관 10개 항목은 모두 음독(소리내어 읽기, 목젖 움직임, 속으로 음가를 떠올리는 것)에서
+  // 파생된 미숙한 독해 습관의 발현입니다.
+  // 소리내어 읽는 표면음독뿐 아니라 내재음독(목젖·음가)도 모두 포함됩니다.
+  //
+  // [표면음독] 눈에 보이는 음독 행동
+  //   HAB[4] 소리 내어 읽거나 속발음을 함
+  //   HAB[3] 단어 단위로 또박또박 읽음 (목젖/입술 미세 움직임 동반)
+  //
+  // [내재음독 — 재처리·반복] 음독으로 인한 처리 불완전 → 다시 읽는 행동
+  //   HAB[0] 이미 읽은 곳을 다시 읽음
+  //   HAB[1] 읽다가 글줄을 자주 놓침 (시선이 발음 속도에 종속됨)
+  //   HAB[2] 짚어가며 읽거나 밑줄을 그음 (발음 위치 추적 행동)
+  //
+  // [내재음독 — 이해결손] 음독으로 인한 처리 한계가 이해에 영향
+  //   HAB[5] 긴 문장은 이해가 잘 안됨
+  //   HAB[6] 긴 문장은 훑어 읽기를 함 (처리 포기)
+  //   HAB[7] 긴 글은 내용 기억이 잘 안남 (워킹메모리 과부하)
+  //   HAB[8] 모르는 단어가 있어도 이해가 잘 안됨
+  //
+  // [속도인지] 자각 증상
+  //   HAB[9] 글 읽는 속도가 느린 편임
+
+  const 표면음독키=["소리 내어 읽거나 속발음","단어 단위로 또박또박"];
+  const 내재음독재처리키=["이미 읽은 곳을 다시","글줄을 자주 놓침","짚어가며 읽거나"];
+  const 내재음독이해키=["긴 문장은 이해","긴 문장은 훑어","긴 글은 내용 기억","모르는 단어가"];
+  const 속도키=["글 읽는 속도가 느린"];
+
+  const 표면음독수=checked.filter(c=>표면음독키.some(k=>c.includes(k))).length;
+  const 재처리수=checked.filter(c=>내재음독재처리키.some(k=>c.includes(k))).length;
+  const 이해결손수=checked.filter(c=>내재음독이해키.some(k=>c.includes(k))).length;
+  const 속도인지수=checked.filter(c=>속도키.some(k=>c.includes(k))).length;
+
+  return{
+    // 기존 호환성 유지
+    음독습관:표면음독수,
+    재처리습관:재처리수,
+    또박또박:checked.filter(c=>c.includes("또박또박")).length,
+    이해어려움:이해결손수,
+    속도문제:속도인지수,
+    전체:checked.length,
+    // 새 분류
+    표면음독:표면음독수,
+    내재음독재처리:재처리수,
+    내재음독이해:이해결손수,
+    전체음독관련:표면음독수+재처리수+이해결손수,  // 속도인지 제외한 실질 음독 발현
+    심각도: 표면음독수>=1 && (재처리수+이해결손수)>=2 ? "심함"
+           : 표면음독수>=1 || (재처리수+이해결손수)>=3 ? "보통"
+           : checked.length>=1 ? "경미" : "없음"
+  };
+}
+
+// runEngine은 서버에서 실행됩니다 (보안)
+function runEngine(inp){ return {}; }
+
+// ── 렌더링 ──
+const TC={"최상위 완성 역량형":"#059669","고역량 잠재력 미개방형":"#0d9488","성실한 암기 의존형":"#dc2626","논리 두뇌 미발현형":"#2563eb","조용한 학습 위기형":"#e11d48","전반 역량 미완성형":"#d97706","기초 회복 가능 위기형":"#ea580c","심각한 학습 기능 마비형":"#991b1b","전반 역량 공백형":"#475569","역량 모순 붕괴 예고형":"#7c3aed"};
+const UC={"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
+const UBG={"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
+const SC=["#1E40AF","#0BA98E","#B45309","#7C3AED"];
+const FL={acc:"독해정확도",inf:"추론능력",voc:"어휘능력",wm:"워킹메모리",hab:"독해습관",eff:"독해효율성"};
+function ibc(v){return v>=.7?"#DC2626":v>=.4?"#D97706":"#0BA98E";}
+function badge(lb,on,bg,tx,bd){
+  var _bg=on?bg:'var(--surface2)';
+  var _tx=on?tx:'var(--text-muted)';
+  var _bd=on?bd:'var(--border)';
+  var _op=on?1:.3;
+  return'<span class="bdg" style="background:'+_bg+';color:'+_tx+';border-color:'+_bd+';opacity:'+_op+'">' +lb+'</span>';
+}
+
+
+function renderEvidence(evidence){
+  var dotColor={"강점":"#0BA98E","보통":"#8E9BB0","주의":"#D97706","위험":"#DC2626"};
+  var tagStyle={
+    "강점":"background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7",
+    "보통":"background:#F1F5F9;color:#475569;border:1px solid #CBD5E1",
+    "주의":"background:#FEF3C7;color:#92400E;border:1px solid #FDE68A",
+    "위험":"background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5"
+  };
+
+  var header='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
+    +'<div style="width:2px;height:16px;background:var(--purple);border-radius:2px;flex-shrink:0"></div>'
+    +'<div><span style="font-size:11px;font-weight:700;color:var(--tx1);letter-spacing:.05em;display:block">PART 1. 근거자료 수집</span>'
+    +'<span style="font-size:10px;color:var(--tx3);letter-spacing:.6px">EVIDENCE COLLECTION</span></div>'
+    +'</div>';
+
+  var cards=evidence.map(function(item){
+    var bullets=item.bullets.filter(function(b){return b.t!=='_meta';});
+    var hasDanger=bullets.some(function(b){return b.t==='위험';});
+    var hasWarn=!hasDanger&&bullets.some(function(b){return b.t==='주의';});
+    var hasGood=!hasDanger&&!hasWarn&&bullets.some(function(b){return b.t==='강점';});
+    var cls='ev-card'+(hasDanger?' has-danger':hasWarn?' has-warn':hasGood?' has-good':'');
+
+    var bulletHtml=bullets.map(function(b){
+      var dc=dotColor[b.t]||"#8E9BB0";
+      var ts=tagStyle[b.t]||tagStyle["보통"];
+      return '<div class="ev-bullet">'
+        +'<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600;flex-shrink:0;'+ts+'">'
+        +(b.t==='강점'?'✓':b.t==='위험'?'●':b.t==='주의'?'△':'-')
+        +' '+b.t+'</span>'
+        +'<span style="font-size:13px;line-height:1.6;color:var(--text2)">'+b.s+'</span>'
+        +'</div>';
+    }).join("");
+
+    return '<div class="'+cls+'">'
+      +'<div class="ev-title">'+item.title+'</div>'
+      +bulletHtml
+      +'</div>';
+  }).join("");
+
+  return header+'<div class="ev-grid">'+cards+'</div>';
+}
+
+function renderResult(e,nm){
+  // 실제 수치 → 막대 표시 (0~100 스케일)
+  const rawScores={
+    "독해정확도":{v:e.acc,thresh:50},
+    "사실적 이해":{v:e.fct,thresh:50},
+    "구조적 이해":{v:e.str_,thresh:50},
+    "추론능력":{v:e.inf,thresh:50},
+    "어휘능력":{v:e.voc,thresh:50},
+    "워킹메모리":{v:e.wm,thresh:60},
+    "독해습관":{v:e.hab,thresh:50},
+    "독해효율성":{v:e.eff,thresh:50}
+  };
+  function barColor(v,t){return v>=61?"#22C55E":"#EF4444";}
+  const ibars=Object.entries(rawScores).map(([lb,d])=>{
+    const pct=Math.round(d.v);
+    const col=barColor(d.v,d.thresh);
+    const near=Math.abs(d.v-d.thresh)<=10;
+    return`<div class="ib"><div class="ib-row"><span style="color:#475569">${lb}${near?" <span style='font-size:9px;background:rgba(251,191,36,.15);color:#D97706;padding:1px 4px;border-radius:3px;margin-left:4px'>경계</span>":""}</span><span style="font-weight:700;color:${pct<=60?'#EF4444':'#1E293B'}">${pct}</span></div><div class="ib-bg" style="background:#E2E8F0"><div class="ib-f" style="width:${pct}%;background:${col}"></div></div></div>`;
+  }).join("");
+
+  const defH=(!e.def||e.def.length===0)
+    ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
+    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
+
+  const prescH=(!e.presc||e.presc.length===0)
+    ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
+    :(e.presc||[]).slice(0,5).map(p=>`<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:5px"><span style="font-size:9px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 6px;flex-shrink:0;margin-top:1px;font-family:'DM Sans',sans-serif">${p.p}</span><span style="font-size:11px;line-height:1.5">${p.c}</span></div>`).join("");
+
+
+  const cauH=e.cau&&e.cau.length>0
+    ?'<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:14px 16px;backdrop-filter:blur(12px)"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(255,255,255,.12)">인과 분석 경로</div><div style="display:flex;flex-direction:column;gap:6px">'+(e.cau||[]).map(function(c,i){return'<div style="display:flex;align-items:flex-start;gap:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">'+(i+1)+'</span><span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">'+c+'</span></div>';}).join('')+'</div></div>':"";
+
+  // 체크리스트 요약
+  var habSummary=(e.habChecked||[]).length>0
+    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--red)">'
+      +'<div class="sec" style="margin-top:0">독해습관 체크 항목 ('+(e.habChecked||[]).length+'/'+HAB_ITEMS.length+'개 문제)</div>'
+      +(e.habChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--red);margin-top:4px"></div><span style="font-size:11px;color:var(--red)">'+c+'</span></div>';}).join("")
+      +'</div>':""
+  ;
+  var effSummary=(e.effChecked||[]).length>0
+    ?'<div class="card" style="margin-bottom:10px;border-left:3px solid var(--amber)">'
+      +'<div class="sec" style="margin-top:0">독해효율성 체크 항목 ('+(e.effChecked||[]).length+'/'+EFF_ITEMS.length+'개 문제)</div>'
+      +(e.effChecked||[]).map(function(c){return'<div style="display:flex;gap:5px;align-items:flex-start;margin-bottom:4px"><div class="dot" style="background:var(--amber);margin-top:4px"></div><span style="font-size:11px;color:var(--amber)">'+c+'</span></div>';}).join("")
+      +'</div>':""
+  ;
+
+  // Part 1. 근거자료 수집 렌더링
+  const evidenceH=e.evidence?renderEvidence(e.evidence):"";
+
+  // 성적 카드
+  var scoreRows="";
+  var scoreData=[{lb:"국어",v:e.kor},{lb:"영어",v:e.eng},{lb:"수학",v:e.math}];
+  var SMAP_R={"90점 이상":93,"80~89점":85,"70~79점":75,"60~69점":65,"60점 미만":50,
+    "1등급":95,"2등급":89,"3등급":79,"4등급":65,"5등급 이하":45,
+    "매우잘함":93,"잘함":80,"보통":65,"노력요함":50};
+  scoreData.forEach(function(s){
+    if(!s.v||s.v==="-")return;
+    var sv=SMAP_R[s.v]||0;
+    var col=sv>=85?"#34D399":sv>=70?"#34D399":sv>=60?"#FBBF24":"#F87171";
+    scoreRows+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
+      +'<span style="font-size:12px;color:var(--text2)">'+s.lb+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:'+col+'">'+s.v+'</span>'
+      +'</div>';
+  });
+  var lvMap={"초등":"초등학생","초저":"초등학생","초고":"초등학생","중등":"중학생","고등":"고등학생","일반":"일반"};
+  var lvLabel=(lvMap[e.uiLevel||e.level]||"")+(e.grade&&e.grade>0?" "+e.grade+"학년":"");
+  var scoreCardH=scoreRows
+    ?'<div class="card" style="margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div class="sec" style="margin:0">학교 성적</div>'
+      +'<span style="font-size:10px;color:var(--purple);background:var(--purple-bg);padding:2px 8px;border-radius:6px;border:1px solid var(--purple-bd);font-weight:600">'+lvLabel+'</span>'
+      +'</div>'
+      +scoreRows
+      +'</div>'
+    :"";
+
+
+
+  var html=`
+  <!-- ══ 학생 정보 — 중앙 카드 좌측 absolute ══ -->
+  <div id="studentInfoCard" style="display:none">
+    <div style="padding:4px 2px">
+
+      <!-- 이름 크게 -->
+      <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;text-align:center;margin-top:7px;margin-bottom:27px">${nm}</div>
+
+      <!-- 유형 타이틀 배너 -->
+      <div id="type-title-banner" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:16px 18px;margin-bottom:16px;margin-top:4px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <div id="banner-bt" style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.3">—</div>
+          <div id="banner-urg" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.1px"></div>
+        </div>
+        <div id="banner-st" style="font-size:12px;font-weight:600;color:#C4B5FD;letter-spacing:-.1px;line-height:1.5"></div>
+      </div>
+
+      <!-- 검사일 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date?(e.date.slice(0,10)):"—"}</span>
+      </div>
+
+      <!-- 난이도 -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">난이도</span>
+        <span style="font-size:12px;color:#A78BFA;font-weight:700">${{초등:"초등 고학년",초저:"초등 저학년",중등:"중학교",고등:"고등학교"}[e.level]||e.level||"—"}</span>
+      </div>
+
+      <!-- 학년 -->
+      ${e.grade&&e.grade>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">학년</span><span style="font-size:12px;color:#fff;font-weight:700">${e.grade}학년</span></div>`:""}
+
+      <!-- 국어 -->
+      ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
+
+      <!-- 영어 -->
+      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
+
+      <!-- 수학 -->
+      ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:12px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
+
+    </div>
+  </div>
+
+
+
+  <!-- ══ 메인 히어로 존 — radarZone과 동일한 flex 구조 ══ -->
+  <div id="heroZone" style="position:relative;padding:0;z-index:1;margin-bottom:24px;display:flex;justify-content:center">
+
+    <!-- 좌측: 학생정보 + 정보처리습관 (flex-column 형제, 겹침 불가) -->
+    <div id="leftColWrap" style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-right:40px;padding-top:0;">
+      <div id="studentInfoSlot"></div>
+      <div id="ev-left-top"></div>
+    </div>
+
+    <!-- 중앙 카드 -->
+    <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+
+      <!-- 독해정확도 -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-size:20px;font-weight:300;color:#64748B;letter-spacing:-.02em">독해정확도</div>
+          <div style="font-size:12px;color:#94A3B8;font-weight:300">%</div>
+          <span id="accBadge" style="padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;background:${barColor(e.acc,50)}22;color:${barColor(e.acc,50)};border:1.5px solid ${barColor(e.acc,50)}66">${e.acc>=70?'상':e.acc>=50?'중':'하'}</span>
+        </div>
+        <div style="font-size:112px;font-weight:900;color:${barColor(e.acc,50)};line-height:1;font-family:Tahoma,sans-serif;letter-spacing:-4px;margin-bottom:14px">${e.acc}</div>
+        <div style="width:100%;max-width:220px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:10px;color:#94A3B8">사실적 이해</span>
+            <span style="font-size:10px;color:#94A3B8">구조적 이해</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:16px;font-weight:700;color:#3B82F6;font-family:Tahoma,sans-serif;min-width:24px;text-align:right">${e.fct}</span>
+            <div style="flex:1;display:flex;height:6px;border-radius:3px;overflow:hidden;background:#E2E8F0">
+              <div style="flex:1;display:flex;justify-content:flex-end">
+                <div style="width:${e.fct}%;background:#3B82F6;height:100%;border-radius:3px 0 0 3px"></div>
+              </div>
+              <div style="width:1px;background:rgba(255,255,255,.2);flex-shrink:0"></div>
+              <div style="flex:1;display:flex;justify-content:flex-start">
+                <div style="width:${e.str_}%;background:#84CC16;height:100%;border-radius:0 3px 3px 0"></div>
+              </div>
+            </div>
+            <span style="font-size:16px;font-weight:700;color:#84CC16;font-family:Tahoma,sans-serif;min-width:24px;text-align:left">${e.str_}</span>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- 독해속도 -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-size:20px;font-weight:300;color:#64748B;letter-spacing:-.02em">독해속도</div>
+          <div style="font-size:12px;color:var(--tx3);font-weight:300">자/분</div>
+          <span id="spdBadge" style="padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;background:${ {'느림':'rgba(248,113,113,.15)','보통이하':'rgba(251,191,36,.15)','보통이상':'rgba(52,211,153,.15)','빠름':'rgba(52,211,153,.15)'}[e.spdGrade]||'rgba(52,211,153,.15)' };color:${ {'느림':'#F87171','보통이하':'#FBBF24','보통이상':'#34D399','빠름':'#34D399'}[e.spdGrade]||'#34D399' };border:1.5px solid ${ {'느림':'rgba(248,113,113,.4)','보통이하':'rgba(251,191,36,.4)','보통이상':'rgba(52,211,153,.4)','빠름':'rgba(52,211,153,.4)'}[e.spdGrade]||'rgba(52,211,153,.4)' }">${e.spdGrade||"—"}</span>
+        </div>
+        <div id="heroSpd" style="font-size:92px;font-weight:900;color:#334155;line-height:1;font-family:Tahoma,sans-serif;letter-spacing:-4px;margin-bottom:14px">—</div>
+        <div style="font-size:13px;color:#64748B;text-align:center;line-height:1.6;max-width:200px">${e.spdDesc||""}</div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="height:1px;background:#E2E8F0;margin:0 -4px 16px"></div>
+
+      <!-- 독해습관 + 독해효율성 체크리스트 -->
+      <div style="display:flex;justify-content:center;gap:32px">
+        <div style="display:inline-flex;flex-direction:column">
+          <div style="margin-bottom:7px">
+            <span id="habTitle" style="font-size:12px;font-weight:700;color:#7EBF6F">독해습관</span>
+          </div>
+          ${HAB_ITEMS.map(function(item){
+            var on = e.habChecked && e.habChecked.indexOf(item) > -1;
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;white-space:nowrap">'
+              +'<span style="color:'+(on?'#EF4444':'#94A3B8')+';font-size:10px;min-width:10px">'+(on?'●':'○')+'</span>'
+              +'<span style="font-size:11px;color:#475569">'+item+'</span>'
+              +'</div>';
+          }).join('')}
+          <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
+            <span style="font-size:13px;color:#475569">잘못된 습관 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.habChecked?(e.habChecked||[]).length:0}</span>개</span>
+          </div>
+        </div>
+        <div style="display:inline-flex;flex-direction:column">
+          <div style="margin-bottom:7px">
+            <span id="effTitle" style="font-size:12px;font-weight:700;color:#647AB3">독해효율성</span>
+          </div>
+          ${EFF_ITEMS.map(function(item){
+            var on = e.effChecked && e.effChecked.indexOf(item) > -1;
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;white-space:nowrap">'
+              +'<span style="color:'+(on?'#EF4444':'#94A3B8')+';font-size:10px;min-width:10px">'+(on?'●':'○')+'</span>'
+              +'<span style="font-size:11px;color:#475569">'+item+'</span>'
+              +'</div>';
+          }).join('')}
+          <div style="border-top:1px solid #E2E8F0;margin-top:7px;padding-top:6px">
+            <span style="font-size:13px;color:#475569">결합증상 <span style="color:#EF4444;font-weight:800;font-size:15px;font-family:Tahoma,sans-serif">${e.effChecked?(e.effChecked||[]).length:0}</span>개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우측: 성적선행지수 / 독해속도 / 독해효율성 (flex-column 형제, 겹침 불가) -->
+    <div id="rightColWrap" style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-left:40px;padding-top:20px;">
+      <div id="ev-right-top"></div>
+      <div id="ev-right-mid"></div>
+      <div id="ev-right-bottom"></div>
+    </div>
+
+  </div>
+
+  <!-- ══ 유형 카드 (숨김) ══ -->
+  <div id="rightPanel" style="display:none">
+    <div id="rightPanelInner"></div>
+  </div>
+
+  <!-- ══ 아래 영역 ══ -->
+  <div id="belowArea">
+
+    <!-- 레이더 + 카드 고정 배치 컨테이너 -->
+    <div id="radarZone" style="position:relative;padding:0;z-index:1;margin-bottom:24px;display:flex;justify-content:center">
+
+      <!-- 좌측 카드: 독서의양 / 독해의질 -->
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-right:40px;padding-top:80px">
+        <div id="voc-left"></div>
+        <div id="doj-left"></div>
+        <div id="cauCard" style="margin-top:16px;width:300px"></div>
+      </div>
+
+      <!-- 흰색 카드 -->
+      <div style="background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:56px 36px;width:500px;flex-shrink:0;box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative">
+        <!-- 타이틀: 좌측 상단 -->
+        <div style="position:absolute;top:16px;left:20px;font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.2px;text-transform:uppercase">세부역량 프로파일</div>
+        <!-- 레이더 중앙 정렬 -->
+        <div style="display:flex;justify-content:center">
+          <div id="radarWrap" style="width:420px;max-width:100%"></div>
+        </div>
+        <!-- 역량 수치 바 — 카드 안 레이더 아래 -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #E2E8F0;max-width:390px;margin-left:auto;margin-right:auto">
+          ${ibars}
+        </div>
+      </div>
+
+      <!-- 우측 카드: 워킹메모리 / 추론능력 -->
+      <div style="display:flex;flex-direction:column;gap:16px;width:300px;flex-shrink:0;margin-left:40px;padding-top:80px">
+        <div id="wmCard-hero"></div>
+        <div id="reasonCard-hero"></div>
+        <div id="schoolCard-hero" style="margin-top:16px"></div>
+      </div>
+
+      <!-- 숨김 슬롯 -->
+      <div id="wmCard" style="display:none"></div>
+      <div id="vocCard" style="display:none"></div>
+      <div id="vocCard2" style="display:none"></div>
+      <div id="reasonCard" style="display:none"></div>
+    </div>
+
+
+    <!-- 원인분석 카드 그리드 -->
+    <div style="position:relative;z-index:1;margin-bottom:16px;max-width:1180px;margin-left:auto;margin-right:auto">
+      <div id="evidenceCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+    </div>
+
+
+  </div>
+
+
+
+`;
+
+  // 로그 섹션을 문자열로 별도 생성 후 삽입
+  return html;
+}
+
+function showErr(m){const b=gv("errBox");b.style.display="block";b.textContent=m;}
+function hideErr(){gv("errBox").style.display="none";}
+
+gv("btnA").addEventListener("click",async function(){
+  hideErr();
+  var b=document.getElementById("reanalyzeBanner");
+  if(b)b.remove();
+  var btnA=gv("btnA");
+  btnA.disabled=true; btnA.textContent="분석 중...";
+
+  try{
+    const inp = (window.__inp && window.__inp.name) ? window.__inp : getInputs();
+    if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
+    const resp=await fetch(TQ_API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
+      body:JSON.stringify({action:"engine",inp:inp})
+    });
+    if(!resp.ok)throw new Error("서버 응답 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
+    const res=await resp.json();
+    if(!res.ok||!res.engine)throw new Error(res.error||"엔진 응답 오류");
+    const eng=res.engine;
+    window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
+    if(gv("emptyView"))gv("emptyView").style.display="none";
+    const rv=gv("resultView");
+    // renderResult에 필요한 inp 필드를 eng에 보완
+    eng.grade   = inp.user_school_grade || eng.grade || null;
+    eng.level   = inp.user_section || eng.level || null;
+    eng.uiLevel = inp.uiLevel || inp.user_section || null;
+    eng.date    = inp.reg_date ? inp.reg_date.slice(0,10) : (eng.date || null);
+    eng.eng     = eng.eng    || inp.eng_score  || null;
+    eng.math    = eng.math   || inp.math_score || null;
+    eng.kor     = eng.kor    || inp.kor_score  || null;
+    rv.innerHTML=renderResult(eng,inp.name);
+
+    // 결과 페이지로 전환
+    showResultPage(inp.name);
+    // 등장 애니메이션 실행
+    runEntryAnimation(rv, eng, inp);
+    // imgSlot: 이미지 있으면 이미지, 없으면 결과지 썸네일
+    var wrap=gv("imgPreviewWrap");
+    var slot=document.getElementById("imgSlot");
+    if(slot){
+      slot.innerHTML="";
+      var hasImg = gv("imgPreview") && gv("imgPreview").src && gv("imgPreview").src.startsWith("data:");
+      var imgAndCards = document.getElementById("imgAndCards");
+      if(wrap && hasImg){
+        slot.appendChild(wrap);
+        slot.style.display="block";
+        if(imgAndCards) imgAndCards.style.gridTemplateColumns="1fr 1fr 1fr";
+        wrap.style.display="block";
+        gv("imgPreview").style.width="200px";
+        gv("imgPreview").style.height="100%";
+        gv("imgPreview").style.objectFit="cover";
+        gv("imgPreviewLeftImg").style.width="200px";
+      } else {
+        // 결과지 썸네일을 imgSlot에 직접 삽입
+        var thumbDiv = document.createElement("div");
+        thumbDiv.style.cssText="width:100%;cursor:zoom-in;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-sm);transition:box-shadow .2s;position:relative;";
+        thumbDiv.title="클릭하면 결과지 전체 보기";
+        thumbDiv.onclick=function(){ openResultPageOverlay(); };
+        // 축소 컨테이너: 실제 렌더 너비 기준으로 scale 동적 계산
+        var scaleWrap = document.createElement("div");
+        scaleWrap.style.cssText="width:100%;overflow:hidden;background:#0F172A;position:relative;";
+        var inner = document.createElement("div");
+        inner.style.cssText="transform-origin:top left;width:794px;flex-shrink:0;pointer-events:none;position:absolute;top:0;left:0;";
+        inner.innerHTML = rpBuildResultHTML(eng, inp);
+        scaleWrap.appendChild(inner);
+        thumbDiv.appendChild(scaleWrap);
+        slot.appendChild(thumbDiv);
+        // DOM 삽입 후 실제 너비로 scale 계산
+        requestAnimationFrame(function(){
+          var w = scaleWrap.offsetWidth || 300;
+          var sc = w / 794;
+          inner.style.transform = "scale("+sc+")";
+          var h = Math.round(1123 * sc);
+          scaleWrap.style.height = Math.min(h, 220) + "px";
+          inner.style.width = "794px";
+        });
+        // 호버 오버레이
+        var hoverLayer = document.createElement("div");
+        hoverLayer.style.cssText="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;background:rgba(0,0,0,.35);transition:opacity .2s;border-radius:6px;";
+        hoverLayer.innerHTML='<span style="color:#fff;font-size:11px;font-weight:700;background:rgba(0,0,0,.5);padding:5px 12px;border-radius:20px">🔍 전체 보기</span>';
+        thumbDiv.onmouseover=function(){ this.style.boxShadow="var(--shadow-md)"; if(hoverLayer) hoverLayer.style.opacity="1"; };
+        thumbDiv.onmouseout=function(){ this.style.boxShadow="var(--shadow-sm)"; if(hoverLayer) hoverLayer.style.opacity="0"; };
+        thumbDiv.appendChild(hoverLayer);
+        slot.style.display="block";
+        if(imgAndCards) imgAndCards.style.gridTemplateColumns="1fr 1fr 1fr";
+      }
+    }
+    gv("btnB").disabled=false;
+    // 분석 완료 → 편집바 즉시 표시 (적용 버튼은 판독 완료 전까지 비활성)
+    try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
+    // 판독문 자동 생성 — 기존 결과 로드 시에는 건너뜀
+    if (!window.__SKIP_AUTO_GENERATE) {
+      setTimeout(async function(){ if(gv("btnB")) gv("btnB").click(); }, 200);
+    }
+    window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
+  }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
+  finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
+});
+
+// ── (판독문 생성은 서버에서 처리) ──
+// SYS_P는 서버(Supabase Edge Function)에만 존재합니다
+
+if(gv("btnB")) gv("btnB").addEventListener("click",async function(){
+  const eng=window.__eng, nm=window.__nm||"학생", inp=window.__inp;
+  if(!eng)return;
+  hideErr();
+  const btnB=gv("btnB");
+  if(btnB) btnB.disabled=true; btnB.textContent="판독문 생성 중...";
+  // 리포트 탭 "생성 중" 표시
+  var _tabRptLoading = document.getElementById('resultTab_리포트');
+  if (_tabRptLoading) {
+    _tabRptLoading.style.color = 'rgba(255,255,255,.5)';
+    _tabRptLoading.innerHTML = '📄 리포트 <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;margin-left:4px" class="blink">생성 중…</span>';
+  }
+
+
+  try{
+    const resp=await fetch(TQ_API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
+      body:JSON.stringify({action:"generate",inp:inp,name:nm,engineResult:eng})
+    });
+    if(!resp.ok){
+      let errMsg="서버 오류 "+resp.status;
+      try{const e=await resp.json();errMsg=e.error||errMsg;}
+      catch(_){try{errMsg=await resp.text().then(t=>t.slice(0,200))||errMsg;}catch(_2){}}
+      console.error("[TQ API error]",resp.status,errMsg);
+      throw new Error(errMsg);
+    }
+    let raw=await resp.text();
+    raw=raw.trim().replace(/^\x60\x60\x60[a-z]*\s*/,"").replace(/\s*\x60\x60\x60$/,"");
+    var _s=raw.indexOf("{"),_e=raw.lastIndexOf("}");
+    if(_s>=0&&_e>_s)raw=raw.slice(_s,_e+1);
+    var slots;
+    try{slots=JSON.parse(raw);}
+    catch(_err){
+      slots={};
+      ["slot1","slot2","slot3","slot4"].forEach(function(k){
+        var rex=new RegExp('"'+k+'"\\s*:\\s*"((?:[^"\\\\]|\\\\[\\s\\S])*)"[\\s\\S]*?[,}]');
+        var _m=raw.match(rex);
+        if(_m)slots[k]=_m[1].replace(/\\n/g,"\n").replace(/\\"/g,'"');
+      });
+      if(!slots.slot1)throw new Error("응답 파싱 실패");
+    }
+    // roadmap_reasons 추출 및 D에 저장
+    if (slots.roadmap_reasons) {
+      try {
+        var _rr = typeof slots.roadmap_reasons === 'string'
+          ? JSON.parse(slots.roadmap_reasons) : slots.roadmap_reasons;
+        if (D) D.roadmapReasons = _rr;
+        if (window.__RPT_D) window.__RPT_D.roadmapReasons = _rr;
+        if (window.__eng) window.__eng.roadmapReasons = _rr;
+      } catch(e){}
+    }
+    window.__TQ_SLOTS=slots;
+    gv("btnR").disabled=false;
+    // 판독문 생성 완료 시 항상 재렌더
+    window.__reportRendered = false;
+    try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]', e); }
+    // 판독 결과 자동 저장
+    saveTqResult(inp, window.__eng, slots);
+  }catch(err){
+    showErr("판독문 생성 오류: "+err.message);
+    console.error("[TQ generate error]", err);
+  }finally{
+    btnB.disabled=false;
+    btnB.textContent="② 판독문 생성 — Claude AI";
+    // 리포트 탭 완료 상태 업데이트
+    var _tabRpt = document.getElementById('resultTab_리포트');
+    if (window.__TQ_SLOTS) {
+      if (_tabRpt) {
+        _tabRpt.style.color = '#34D399';
+        _tabRpt.style.borderBottomColor = 'transparent';
+        _tabRpt.innerHTML = '📄 리포트 <span style="font-size:10px;color:#34D399;font-weight:700;margin-left:4px">✓ 생성 완료</span>';
+      }
+      // 판독 완료 → 수정하기 버튼 활성화 (탭 요소 유무와 무관하게 항상 실행)
+      editBarReady = true;
+      if (document.getElementById('editBar')) {
+        rebuildEditBar();
+      } else {
+        // editBar가 아직 없으면 showEditBar로 새로 생성
+        try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
+      }
+    } else {
+      if (_tabRpt) {
+        _tabRpt.style.color = 'rgba(255,255,255,.35)';
+        _tabRpt.innerHTML = '📄 리포트';
+      }
+    }
+  }
+});
+
+// ── 샘플 데이터 ──
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 베타 피드백 시스템
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// CSS 동적 삽입
+(function(){
+  var s = document.createElement('style');
+  s.textContent = `
+    .beta-flag-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid rgba(234,88,12,.35);
+      color: rgba(234,88,12,.7);
+      font-size: 10px; font-weight: 600;
+      padding: 3px 10px; border-radius: 4px;
+      cursor: pointer; font-family: inherit;
+      transition: all .15s; white-space: nowrap;
+    }
+    .beta-flag-btn:hover {
+      background: rgba(234,88,12,.08);
+      border-color: #EA580C; color: #EA580C;
+    }
+    #beta-flag-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 9999;
+      align-items: center; justify-content: center;
+    }
+    #beta-flag-overlay.open { display: flex; }
+    #beta-flag-modal {
+      background: #fff; border-radius: 12px;
+      padding: 28px 28px 24px; width: 480px; max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    #beta-flag-modal h3 {
+      font-size: 15px; font-weight: 700; color: #1E293B;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    #beta-flag-modal .modal-slot-preview {
+      background: #F8FAFC; border: 1px solid #E2E8F0;
+      border-radius: 6px; padding: 10px 12px;
+      font-size: 11px; color: #64748B; line-height: 1.6;
+      max-height: 80px; overflow-y: auto; margin: 12px 0;
+    }
+    #beta-flag-modal label {
+      font-size: 12px; font-weight: 600; color: #475569;
+      display: block; margin-bottom: 6px;
+    }
+    #beta-flag-comment {
+      width: 100%; height: 80px;
+      border: 1px solid #CBD5E1; border-radius: 6px;
+      padding: 9px 12px; font-size: 12px; font-family: inherit;
+      resize: vertical; outline: none; color: #1E293B;
+      line-height: 1.6;
+    }
+    #beta-flag-comment:focus { border-color: #8B5CF6; }
+    .modal-actions {
+      display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;
+    }
+    .modal-btn-cancel {
+      background: #F1F5F9; color: #64748B; border: none;
+      padding: 8px 18px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .modal-btn-cancel:hover { background: #E2E8F0; }
+    .modal-btn-submit {
+      background: #EA580C; color: #fff; border: none;
+      padding: 8px 22px; border-radius: 6px;
+      font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: background .15s;
+    }
+    .modal-btn-submit:hover { background: #C2410C; }
+    .modal-btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+  `;
+  document.head.appendChild(s);
+})();
+
+// 🚩 플래그 모달 HTML 동적 생성
+(function(){
+  var overlay = document.createElement('div');
+  overlay.id = 'beta-flag-overlay';
+  overlay.innerHTML = `
+    <div id="beta-flag-modal">
+      <h3>🚩 <span id="flag-slot-title">슬롯 오류 신고</span></h3>
+      <p style="font-size:11px;color:#94A3B8;margin-bottom:4px">판독 내용 미리보기</p>
+      <div class="modal-slot-preview" id="flag-slot-preview"></div>
+      <label>어떤 부분이 부정확한가요?</label>
+      <textarea id="beta-flag-comment" placeholder="예) 이 학생의 음독 습관 분석이 실제와 다릅니다. 속도가 느린 이유가 음독이 아닌 것 같습니다."></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" onclick="closeFlagModal()">취소</button>
+        <button class="modal-btn-submit" id="flag-submit-btn" onclick="submitFlag()">신고 전송</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) closeFlagModal(); });
+  document.body.appendChild(overlay);
+})();
+
+var _flagSlotIdx = 0;
+var _flagSlotContent = '';
+
+function openFlagModal(slotIdx, slotTitle, slotContent) {
+  _flagSlotIdx = slotIdx;
+  _flagSlotContent = slotContent;
+  document.getElementById('flag-slot-title').textContent = '슬롯' + slotIdx + ' — ' + slotTitle;
+  document.getElementById('flag-slot-preview').textContent = slotContent.slice(0, 150) + (slotContent.length > 150 ? '...' : '');
+  document.getElementById('beta-flag-comment').value = '';
+  document.getElementById('beta-flag-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('beta-flag-comment').focus(); }, 100);
+}
+
+function closeFlagModal() {
+  document.getElementById('beta-flag-overlay').classList.remove('open');
+}
+
+function submitFlag() {
+  var comment = document.getElementById('beta-flag-comment').value.trim();
+  var btn = document.getElementById('flag-submit-btn');
+  btn.disabled = true; btn.textContent = '전송 중...';
+
+  var payload = {
+    type: 'slot_flag',
+    slot_idx: _flagSlotIdx,
+    slot_content: _flagSlotContent.slice(0, 500),
+    comment: comment,
+    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
+    created_at: new Date().toISOString()
+  };
+
+  sendFeedbackToSupabase(payload, function(ok){
+    btn.disabled = false; btn.textContent = '신고 전송';
+    closeFlagModal();
+    if(ok) showFeedbackToast('신고가 접수됐습니다. 감사합니다 🙏');
+    else showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
+  });
+}
+
+function submitFeedback() {
+  var text = (document.getElementById('beta-feedback-text')||{}).value || '';
+  text = text.trim();
+  if(!text){ showFeedbackToast('의견을 입력해주세요.', true); return; }
+
+  var payload = {
+    type: 'overall_feedback',
+    comment: text,
+    slots: window.__TQ_SLOTS ? JSON.stringify(window.__TQ_SLOTS).slice(0, 2000) : '',
+    eng_data: window.__eng ? JSON.stringify(window.__eng).slice(0, 2000) : '',
+    created_at: new Date().toISOString()
+  };
+
+  sendFeedbackToSupabase(payload, function(ok){
+    var el = document.getElementById('beta-feedback-text');
+    if(ok){
+      if(el) el.value = '';
+      showFeedbackToast('의견이 전송됐습니다. 감사합니다 🙏');
+    } else {
+      showFeedbackToast('전송 실패 — 잠시 후 다시 시도해주세요', true);
+    }
+  });
+}
+
+function sendFeedbackToSupabase(payload, cb) {
+  // Edge Function을 통해 저장 — API 키 프론트엔드 노출 없음
+  fetch(TQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-academy-token': TQ_API_TOKEN || ''
+    },
+    body: JSON.stringify(Object.assign({ action: 'feedback' }, payload))
+  })
+  .then(function(r){ cb(r.ok); })
+  .catch(function(){ cb(false); });
+}
+
+function showFeedbackToast(msg, isErr) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
+    + 'background:' + (isErr ? '#DC2626' : '#059669') + ';color:#fff;'
+    + 'padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;'
+    + 'z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);'
+    + 'animation:tq-fadein .3s ease both';
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3000);
+}
+
+var SAMPLES=[
+  // 0. 진호윤 — 초5 고역량 잠재력 미개방형
+  {
+    name:"진호윤", user_section:"초고", user_school_grade:5, reg_date:"2026-03-29",
+    kor_score:"매우잘함", eng_score:"잘함", math_score:"매우잘함",
+    fact_score:100, structure_score:80, reading_score:1794,
+    voca_score:65, wm_score:50, inference_score:70,
+    reading_habit_checks:[true,false,false,false,true,false,false,false,false,false],
+    reading_effect_checks:[false,false,false,false,false,false,false,false,false,false],
+    eng:{
+      bt:"고역량 잠재력 미개방형", btDisplay:"고역량 잠재력 미개방형",
+      st:"워킹메모리 강화 시 최상위 완전 안착 가능", stDisplay:"워킹메모리 강화 시 최상위 완전 안착 가능",
+      urg:"조기", tone:"격려확인", grade:5,
+      flagC:false, flagO:false, invSpd:false, retest:false,
+      acc:90, spd:1794, fct:100, str_:80, str_:80, voc:65, wm:50, inf:70, hab:80, eff:100,
+      kv:90, level:"초고",
+      patterns:[{id:"p_spd_high",label:"초고속독해",sym:"⚡",t:"초고속 독해",s:"독해 속도가 또래 대비 매우 빠릅니다.",tier:"주의"}],
+      cau:["사실적 이해와 구조적 이해 모두 상위권","독해 속도 매우 빠름 — 음독 습관은 속도 저해 요소","워킹메모리가 전체 역량 발현의 병목"],
+      slots:{
+        slot1:"진호윤 학생은 사실적 이해 100점, 구조적 이해 80점으로 독해 정확도가 또래 최상위권에 해당합니다. 글에서 정보를 정확하게 파악하는 능력이 이미 완성 단계에 가까우며, 초등 5학년으로서 이 수준의 독해력은 매우 드문 경우입니다.",
+        slot2:"현재 가장 주목할 지점은 워킹메모리입니다. 점수 50점으로 독해 정확도 대비 상대적으로 낮아, 긴 지문이나 복잡한 구조의 글에서 앞 내용을 유지하며 뒤를 읽는 처리가 아직 불안정합니다. 또한 이미 읽은 곳을 다시 읽는 습관이 확인되어 재처리 패턴이 있습니다.",
+        slot3:"지금 워킹메모리를 집중 강화하지 않으면 중학교 진입 시 지문 난이도 상승에 따라 독해 처리 속도가 급격히 떨어질 수 있습니다. 현재의 높은 정확도가 성적에 반영되지 못하는 상황이 반복될 위험이 있습니다.",
+        slot4:"워킹메모리 집중 훈련이 1순위입니다. 정보 유지 능력을 강화하는 훈련과 함께, 재처리 없이 한 번에 처리하는 습관 형성이 필요합니다. 현재 역량 수준이라면 6개월 내 최상위권 완전 안착이 현실적인 목표입니다."
+      },
+      log:[]
+    }
+  },
+  // 1. 이준혁 — 중2 역량 모순 붕괴 예고형
+  {
+    name:"이준혁", user_section:"중등", user_school_grade:2, reg_date:"2026-03-29",
+    kor_score:"90점 이상", eng_score:"80~89점", math_score:"90점 이상",
+    fact_score:20, structure_score:20, reading_score:540,
+    voca_score:45, wm_score:30, inference_score:50,
+    reading_habit_checks:[true,false,false,false,true,true,false,true,false,false],
+    reading_effect_checks:[false,false,true,true,true,false,false,false,false,true],
+    eng:{
+      bt:"조용한 학습 위기형", btDisplay:"역량 모순 붕괴 예고형",
+      st:"성적과 역량 간 극단적 괴리 — 즉각 개입 필요", stDisplay:"성적과 역량 간 극단적 괴리 — 즉각 개입 필요",
+      urg:"즉각", tone:"경고직시", grade:2,
+      flagC:true, flagO:false, invSpd:false, retest:false,
+      acc:20, spd:540, fct:20, str_:20, str_:20, voc:45, wm:30, inf:50, hab:40, eff:60,
+      kv:90, level:"중등",
+      patterns:[
+        {id:"p_contradiction",label:"역량모순",sym:"⚠",t:"성적-역량 모순",s:"성적은 최상위권이나 독해 역량은 최하위 수준입니다.",tier:"위험"},
+        {id:"p_wm_low",label:"워킹메모리결핍",sym:"🔴",t:"워킹메모리 심각",s:"워킹메모리가 매우 낮아 긴 지문 처리가 어렵습니다.",tier:"위험"}
+      ],
+      cau:["성적 최상위 — 독해 정확도 최하위의 극단적 모순 구조","암기와 문제풀이 패턴으로 성적을 유지 중","고등학교 진입 시 붕괴 가능성 매우 높음"],
+      slots:{
+        slot1:"이준혁 학생은 현재 국어·수학 최상위권 성적을 유지하고 있으나, 독해 정확도(사실적 이해 20점, 구조적 이해 20점)는 같은 학년 하위 5% 수준입니다. 성적과 독해 역량 사이의 격차가 극단적으로 큰 모순 구조입니다.",
+        slot2:"현재 성적이 높게 유지되는 이유는 독해력이 아닌 암기력과 문제 유형 패턴 학습에 의존하고 있기 때문입니다. 워킹메모리 30점으로 긴 지문을 처리하는 동안 앞 내용을 잊어버리는 현상이 빈번하며, 독해습관 체크에서 다수의 문제 항목이 확인됩니다.",
+        slot3:"고등학교 국어는 지문 길이와 복잡도가 중학교의 2배 이상입니다. 암기와 패턴 의존 전략은 고등 수준에서 통하지 않으며, 지금 개선하지 않으면 고1 1학기 내 성적 급락이 거의 확실합니다.",
+        slot4:"독해 기초 역량을 처음부터 재건해야 합니다. 사실적 이해와 구조적 이해 훈련을 동시에 시작하고, 워킹메모리 강화 프로그램을 병행해야 합니다. 지금이 개입 가능한 마지막 시점입니다."
+      },
+      log:[]
+    }
+  },
+  // 2. 박서연 — 중1 논리 두뇌 미발현형
+  {
+    name:"박서연", user_section:"중등", user_school_grade:1, reg_date:"2026-03-29",
+    kor_score:"60~69점", eng_score:"70~79점", math_score:"60~69점",
+    fact_score:30, structure_score:40, reading_score:420,
+    voca_score:40, wm_score:40, inference_score:65,
+    reading_habit_checks:[false,true,true,false,false,true,true,false,false,false],
+    reading_effect_checks:[true,true,false,true,false,true,false,false,true,false],
+    eng:{
+      bt:"논리 두뇌 미발현형", btDisplay:"논리 두뇌 미발현형",
+      st:"추론 잠재력 보유 — 어휘·정확도 향상 시 도약 가능", stDisplay:"추론 잠재력 보유 — 어휘·정확도 향상 시 도약 가능",
+      urg:"조기", tone:"잠재확인", grade:1,
+      flagC:false, flagO:false, invSpd:false, retest:false,
+      acc:35, spd:420, fct:30, str_:40, str_:40, voc:40, wm:40, inf:65, hab:40, eff:40,
+      kv:60, level:"중등",
+      patterns:[
+        {id:"p_inf_high",label:"추론잠재",sym:"💡",t:"추론 잠재력",s:"정확도 대비 추론 능력이 높아 잠재력이 있습니다.",tier:"주목"},
+        {id:"p_voc_low",label:"어휘부족",sym:"📖",t:"어휘력 부족",s:"어휘 점수가 낮아 독해 이해를 방해합니다.",tier:"주의"}
+      ],
+      cau:["추론능력 65점으로 정확도 대비 상대적으로 높음 — 잠재력 존재","어휘력 40점이 독해 정확도를 직접적으로 제한","독해 속도 420자/분으로 또래 하위권"],
+      slots:{
+        slot1:"박서연 학생은 추론능력이 65점으로, 사실적 이해(30점)·구조적 이해(40점) 대비 눈에 띄게 높습니다. 글의 맥락에서 결론을 도출하는 논리적 사고 능력은 이미 갖추고 있으나, 글 자체를 정확하게 읽어내는 기초 독해력이 아직 낮은 상태입니다.",
+        slot2:"가장 큰 장애물은 어휘력입니다. 어휘 점수 40점으로, 글을 읽는 과정에서 모르는 단어가 빈번하게 등장하여 이해를 방해하고 있습니다. 독해효율성 체크에서도 다수의 문제 항목이 확인되어, 읽는 방식 자체에 개선이 필요한 상태입니다.",
+        slot3:"지금 어휘력을 집중적으로 키우지 않으면 중학교 3학년 이후 지문 수준이 급격히 높아지면서 이해도가 급감할 위험이 있습니다. 추론 잠재력이 있음에도 어휘 한계로 인해 발현되지 못하는 상황이 지속됩니다.",
+        slot4:"어휘력 집중 강화가 1순위입니다. 어휘 점수가 60점 이상으로 올라가면 독해 정확도가 빠르게 따라오는 패턴을 보이는 유형입니다. 동시에 독해 기본기 훈련을 병행하면 6개월 내 성적 향상을 기대할 수 있습니다."
+      },
+      log:[]
+    }
+  },
+  // 3. 김민서 — 고1 성실한 암기 의존형
+  {
+    name:"김민서", user_section:"고등", user_school_grade:1, reg_date:"2026-03-29",
+    kor_score:"70~79점", eng_score:"60~69점", math_score:"60~69점",
+    fact_score:70, structure_score:40, reading_score:680,
+    voca_score:60, wm_score:50, inference_score:35,
+    reading_habit_checks:[false,false,false,true,false,true,false,true,false,false],
+    reading_effect_checks:[false,true,false,true,true,false,true,false,false,false],
+    eng:{
+      bt:"성실한 암기 의존형", btDisplay:"성실한 암기 의존형",
+      st:"사실적 처리 강점 — 추론·구조 훈련으로 상위권 진입 가능", stDisplay:"사실적 처리 강점 — 추론·구조 훈련으로 상위권 진입 가능",
+      urg:"중장기", tone:"구조개선", grade:1,
+      flagC:false, flagO:false, invSpd:false, retest:false,
+      acc:55, spd:680, fct:70, str_:40, str_:40, voc:60, wm:50, inf:35, hab:70, eff:60,
+      kv:70, level:"고등",
+      patterns:[
+        {id:"p_str_low",label:"구조이해약",sym:"📐",t:"구조적 이해 부족",s:"사실 파악은 되나 글 구조를 파악하는 능력이 낮습니다.",tier:"주의"},
+        {id:"p_inf_low",label:"추론부족",sym:"🧠",t:"추론능력 부족",s:"추론능력이 낮아 고난도 문제에서 약점이 드러납니다.",tier:"주의"}
+      ],
+      cau:["사실적 이해 70점으로 표면 정보 처리는 양호","구조적 이해 40점, 추론능력 35점 — 심층 독해 취약","고등 수능형 지문은 구조·추론 능력이 핵심"],
+      slots:{
+        slot1:"김민서 학생은 사실적 이해(70점)가 준수하여 글에서 직접 제시된 정보를 찾아내는 능력은 갖추고 있습니다. 성실하게 학습하는 학생으로, 노력이 성적에 반영되는 안정적인 패턴을 보입니다.",
+        slot2:"현재 가장 큰 약점은 구조적 이해(40점)와 추론능력(35점)입니다. 글의 전체 흐름을 파악하고 필자의 의도를 추론하는 능력이 부족하여, 고난도 문항에서 오답이 집중되는 패턴을 보입니다. 수능 국어에서 요구하는 핵심 능력이 바로 이 두 가지입니다.",
+        slot3:"지금 구조적 독해와 추론 훈련을 시작하지 않으면, 고2-3 수능 대비 시기에 국어 점수가 정체되거나 하락할 위험이 있습니다. 사실적 처리 강점만으로는 1등급권 진입이 어렵습니다.",
+        slot4:"구조적 이해 훈련과 추론능력 개발이 핵심 과제입니다. 비문학 지문을 중심으로 글의 논리 구조를 분석하는 훈련을 꾸준히 병행하면, 현재 역량으로 보아 1년 내 의미 있는 성적 향상이 가능합니다."
+      },
+      log:[]
+    }
+  }
+];
+
+function loadSample(idx){
+  var s=SAMPLES[idx];
+  if(!s)return;
+  // 기본 정보
+  gv("iName").value=s.name;
+  var lvRemap={"초저":"초등","초고":"초등","중등":"중등","고등":"고등","일반":"일반"};
+  var mappedLv=lvRemap[s.level]||s.level;
+  var lvSel=gv("iLevel");
+  for(var i=0;i<lvSel.options.length;i++){if(lvSel.options[i].value===mappedLv){lvSel.selectedIndex=i;break;}}
+  buildScores();buildGrade();
+  gv("iGrade").value=s.grade;
+  // 성적
+  function setScore(elId,val){
+    var el=gv(elId);if(!el)return;
+    for(var i=0;i<el.options.length;i++){if(el.options[i].value===val){el.selectedIndex=i;return;}}
+  }
+  setScore("sS0",s.kor); setScore("sS1",s.eng); setScore("sS2",s.math);
+  // 슬라이더
+  gv("sFct").value=s.fct; gv("sFctV").textContent=s.fct;
+  gv("sStr").value=s.str_; gv("sStrV").textContent=s.str_;
+  gv("sSpd").value=s.spd;
+  updateAccuracy();
+  // 요인
+  gv("sVoc").value=s.voc; gv("sVocV").textContent=s.voc;
+  gv("sWm").value=s.wm;   gv("sWmV").textContent=s.wm;
+  gv("sInf").value=s.inf; gv("sInfV").textContent=s.inf;
+  // 체크리스트
+  if(s.habChecks){
+    HAB_ITEMS.forEach(function(_,i){
+      var el=gv("h"+i);if(el)el.checked=!!s.habChecks[i];
+    });
+  }
+  if(s.effChecks){
+    EFF_ITEMS.forEach(function(_,i){
+      var el=gv("e"+i);if(el)el.checked=!!s.effChecks[i];
+    });
+  }
+  updateChkScore();
+  // 결과 초기화
+  gv("btnB").disabled=true;
+  gv("btnR").disabled=true;
+  if(gv("emptyView"))gv("emptyView").style.display="flex";
+  /* resultView display managed by page-result */
+}
+window.loadSample=loadSample;
+window.SAMPLES=SAMPLES;
+
+// 전역 변수 노출
+
+// ── 배지 → 카드 직선 연결 ──
+function drawConnector(badgeId, cardId, direction) {
+  var badge = document.getElementById(badgeId);
+  var card  = document.getElementById(cardId);
+  var rv    = document.getElementById('resultView');
+  if (!badge || !card || !rv) return;
+
+  var old = document.getElementById('conn_'+badgeId);
+  if (old) old.remove();
+
+  var rvRect    = rv.getBoundingClientRect();
+  var badgeRect = badge.getBoundingClientRect();
+  var cardRect  = card.getBoundingClientRect();
+  var scrollTop = rv.scrollTop || 0;
+  var scrollLeft= rv.scrollLeft || 0;
+
+  var badgeColor = window.getComputedStyle(badge).borderTopColor
+    || window.getComputedStyle(badge).color
+    || 'rgba(255,255,255,.3)';
+
+  // accBadge: 배지 좌측 → 카드 우측 상단 (좌카드)
+  // spdBadge: 배지 우측 → 카드 좌측 상단 (우카드)
+  var x1, y1, x2, y2;
+  // 배지/점 우측 → 카드 좌측 상단
+  x1 = badgeRect.right  - rvRect.left + scrollLeft;
+  y1 = badgeRect.top    - rvRect.top  + scrollTop + badgeRect.height / 2;
+  x2 = cardRect.left    - rvRect.left + scrollLeft;
+  y2 = cardRect.top     - rvRect.top  + scrollTop + 12;
+
+  // 카드 상단 선 없음
+
+  // SVG 직선
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'conn_' + badgeId;
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
+  svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+
+  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1.toFixed(1));
+  line.setAttribute('y1', y1.toFixed(1));
+  line.setAttribute('x2', x2.toFixed(1));
+  line.setAttribute('y2', y2.toFixed(1));
+  line.setAttribute('stroke', badgeColor);
+  line.setAttribute('stroke-width', '0.8');
+  line.setAttribute('stroke-opacity', '0.3');
+  svg.appendChild(line);
+
+  if (window.getComputedStyle(rv).position === 'static') rv.style.position = 'relative';
+  rv.appendChild(svg);
+}
+
+
+
+function drawConnectorToRightTop(dotId, cardId) {
+  var dot  = document.getElementById(dotId);
+  var card = document.getElementById(cardId);
+  var rv   = document.getElementById('resultView');
+  if (!dot || !card || !rv) return;
+
+  var old = document.getElementById('conn_rt_'+dotId);
+  if (old) old.remove();
+
+  var rvRect   = rv.getBoundingClientRect();
+  var dotRect  = dot.getBoundingClientRect();
+  var cardRect = card.getBoundingClientRect();
+  var scrollTop = rv.scrollTop || 0;
+
+  // 점 좌측 → 카드 우측 상단
+  var x1 = dotRect.left  - rvRect.left;
+  var y1 = dotRect.top   - rvRect.top + scrollTop + dotRect.height / 2;
+  var x2 = cardRect.right - rvRect.left;
+  var y2 = cardRect.top   - rvRect.top + scrollTop + 12;
+
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'conn_rt_' + dotId;
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
+
+  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1.toFixed(1));
+  line.setAttribute('y1', y1.toFixed(1));
+  line.setAttribute('x2', x2.toFixed(1));
+  line.setAttribute('y2', y2.toFixed(1));
+  line.setAttribute('stroke', '#F87171');
+  line.setAttribute('stroke-width', '0.8');
+  line.setAttribute('stroke-opacity', '0.3');
+  svg.appendChild(line);
+
+  if (window.getComputedStyle(rv).position === 'static') rv.style.position = 'relative';
+  rv.appendChild(svg);
+}
+
+function drawConnectorLeft(cardId) {
+  var card = document.getElementById(cardId);
+  var centerBox = document.querySelector('#resultView .ev-card')
+                  && document.querySelector('[style*="width:360px"]');
+  var rv = document.getElementById('resultView');
+  if (!card || !rv) return;
+
+  var old = document.getElementById('conn_l_'+cardId);
+  if (old) old.remove();
+
+  var rvRect   = rv.getBoundingClientRect();
+  var cardRect = card.getBoundingClientRect();
+  var scrollTop = rv.scrollTop || 0;
+
+  // 카드 우측 상단 → 중앙 영역 좌측 (카드 우측 중간)
+  var x1 = cardRect.right  - rvRect.left;
+  var y1 = cardRect.top    - rvRect.top + scrollTop + 12;
+  // 중앙 컬럼 좌측 엣지 추정 (카드 우측 + gap)
+  var x2 = cardRect.right  - rvRect.left + 14;
+  var y2 = y1;
+
+  var svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'conn_l_' + cardId;
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
+
+  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1.toFixed(1));
+  line.setAttribute('y1', y1.toFixed(1));
+  line.setAttribute('x2', x2.toFixed(1));
+  line.setAttribute('y2', y2.toFixed(1));
+  line.setAttribute('stroke', 'rgba(255,255,255,.2)');
+  line.setAttribute('stroke-width', '0.8');
+  line.setAttribute('stroke-opacity', '0.3');
+  svg.appendChild(line);
+
+  if (window.getComputedStyle(rv).position === 'static') rv.style.position = 'relative';
+  rv.appendChild(svg);
+}
+
+// ════════════════════════════════════════════════
+// 판독 등장 애니메이션 오케스트레이터
+// ════════════════════════════════════════════════
+function runEntryAnimation(rv, eng, inp) {
+
+  // 숫자 카운트업
+  function countUp(el, target, duration, format) {
+    if (!el) return;
+    el.style.animation = 'tq-number .5s cubic-bezier(.22,1,.36,1) both';
+    var start = 0, startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var p = Math.min((ts - startTime) / duration, 1);
+      var ease = 1 - Math.pow(1 - p, 3);
+      var val = Math.round(ease * target);
+      el.textContent = format ? val.toLocaleString() : val;
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = format ? target.toLocaleString() : target;
+    }
+    requestAnimationFrame(step);
+  }
+
+  // 요소에 애니메이션 적용
+  function appear(el, animName, delay, duration) {
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){
+      el.style.animation = animName + ' ' + (duration||500) + 'ms cubic-bezier(.22,1,.36,1) both';
+    }, delay);
+  }
+
+  // 스캔 라인 효과
+  function addScanLine(container) {
+    var scan = document.createElement('div');
+    scan.style.cssText = 'position:absolute;left:0;right:0;height:80px;background:linear-gradient(to bottom,transparent,rgba(139,92,246,.06),transparent);pointer-events:none;z-index:99;animation:tq-scan-line 1.2s ease-out forwards;top:-60px;';
+    container.style.position = 'relative';
+    container.style.overflow = 'hidden';
+    container.appendChild(scan);
+    setTimeout(function(){ scan.remove(); }, 1400);
+  }
+
+  // postRenderSWOT 먼저 실행 (카드 배치)
+  postRenderSWOT(eng, inp);
+
+  // ── 순차 등장 시퀀스 ──
+  var t = 0;
+
+  // 0. 스캔 라인
+  setTimeout(function(){ addScanLine(rv); }, t);
+
+  // 1. 상단 정보바
+  t += 80;
+  appear(rv.querySelector('[style*="정보 바"]') || rv.firstElementChild, 'tq-fadein', t, 400);
+
+  // 2. 독해정확도 숫자
+  t += 300;
+  setTimeout(function(){
+    var accEl = rv.querySelector('#resultView [style*="font-size:96px"]') ||
+                document.querySelector('[style*="font-size:96px"]');
+    if (accEl) countUp(accEl, eng.acc, 800, false);
+  }, t);
+
+  // 3. 독해속도 숫자
+  t += 400;
+  setTimeout(function(){
+    var spdEl = document.getElementById('heroSpd');
+    var _rawSpd2 = (eng&&eng.spd)||(inp&&inp.reading_score)||0;
+    var _spd = isNaN(Number(_rawSpd2)) ? 0 : Number(_rawSpd2);
+    if (spdEl && _spd) {
+      spdEl.style.animation = 'tq-number .6s cubic-bezier(.22,1,.36,1) both';
+      var start = 0, startTime = null, target = _spd;
+      function step(ts) {
+        if (!startTime) startTime = ts;
+        var p = Math.min((ts - startTime) / 900, 1);
+        var ease = 1 - Math.pow(1-p, 3);
+        spdEl.textContent = Math.round(ease * target).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+        else spdEl.textContent = target.toLocaleString();
+      }
+      requestAnimationFrame(step);
+    }
+  }, t);
+
+  // 4. 좌측 카드
+  t += 200;
+  setTimeout(function(){
+    var lc = document.getElementById('ev-left-top');
+    if (lc) { lc.style.opacity='0'; lc.style.animation='tq-fadein-left 500ms cubic-bezier(.22,1,.36,1) both'; }
+  }, t);
+
+  // 5. 우측 카드들 순차
+  ['ev-right-top','ev-right-mid','ev-right-bottom'].forEach(function(id, i){
+    setTimeout(function(){
+      var el = document.getElementById(id);
+      if (el) { el.style.opacity='0'; el.style.animation='tq-fadein-right 500ms cubic-bezier(.22,1,.36,1) both'; }
+    }, t + i * 120);
+  });
+
+  // 6. 체크리스트 항목 순차 등장
+  t += 300;
+  setTimeout(function(){
+    var items = rv.querySelectorAll('.chk-item, [style*="●"], [style*="○"]');
+    // 독해습관/효율성 줄들
+    var rows = rv.querySelectorAll('[style*="display:flex;align-items:center;gap:6px;margin-bottom:4px"]');
+    rows.forEach(function(row, i){
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(-8px)';
+      row.style.transition = 'opacity .3s, transform .3s';
+      setTimeout(function(){
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+      }, i * 40);
+    });
+  }, t);
+
+  // 7. 유형 카드
+  t += 600;
+  setTimeout(function(){
+    var rp = document.getElementById('rightPanel');
+    if (rp) { rp.style.opacity='0'; rp.style.animation='tq-fadein 600ms cubic-bezier(.22,1,.36,1) both'; }
+  }, t);
+
+  // 8. 하단 레이더 + 원인분석 카드들
+  t += 400;
+  setTimeout(function(){
+    var below = document.getElementById('belowArea');
+    if (below) { below.style.opacity='0'; below.style.animation='tq-fadein 700ms cubic-bezier(.22,1,.36,1) both'; }
+  }, t);
+}
+
+
+// ════════════════════════════════════════════════
+// 결과 페이지 판독 / 리포트 탭 전환
+// ════════════════════════════════════════════════
+function switchResultTab(tab) {
+  ['판독','리포트'].forEach(function(t) {
+    var pane = document.getElementById('resultPane_'+t);
+    var btn  = document.getElementById('resultTab_'+t);
+    if (!pane || !btn) return;
+    var isActive = (t === tab);
+    pane.style.display = isActive ? 'block' : 'none';
+    btn.style.color = isActive ? '#A78BFA' : 'rgba(255,255,255,.5)';
+    btn.style.borderBottomColor = isActive ? '#8B5CF6' : 'transparent';
+    btn.style.background = isActive ? 'rgba(139,92,246,.12)' : 'transparent';
+    btn.style.fontWeight = '700';
+  });
+  // 리포트 탭: 인쇄 버튼 표시
+  var printBtn = document.getElementById('headerPrintBtn');
+  if (printBtn) printBtn.style.visibility = (tab === '리포트') ? 'visible' : 'hidden';
+  var pr = document.getElementById('page-result');
+  if (pr) pr.scrollTop = 0;
+}
+window.switchResultTab = switchResultTab;
+
+
+
+// ════════════════════════════════════════════════
+// 페이지 전환: 입력 ↔ 결과
+// ════════════════════════════════════════════════
+function showResultPage(nm) {
+  // postMessage 로딩 인디케이터 제거
+  var loadingDiv = document.getElementById('_postMsgLoading');
+  if (loadingDiv) loadingDiv.remove();
+
+  var inp  = document.getElementById('page-input');
+  var res  = document.getElementById('page-result');
+  if (!inp || !res) return;
+  // 헤더에 학생명 + 학교/학년 + 검사일 표시
+  var nameEl = document.getElementById('result-student-name');
+  var tabBar = document.getElementById('resultTabBar');
+  if (tabBar) tabBar.style.display = 'flex';
+  // 전환 애니메이션
+  inp.style.transition = 'opacity .3s';
+  inp.style.opacity = '0';
+  setTimeout(function(){
+    inp.style.display = 'none';
+    inp.style.opacity = '1';
+    res.style.display = 'block';
+    res.style.opacity = '0';
+    res.style.transition = 'opacity .4s';
+    setTimeout(function(){ res.style.opacity = '1'; }, 20);
+  }, 300);
+}
+
+function showInputPage() {
+  var inp = document.getElementById('page-input');
+  var res = document.getElementById('page-result');
+  if (!inp || !res) return;
+  res.style.transition = 'opacity .25s';
+  res.style.opacity = '0';
+  setTimeout(function(){
+    res.style.display = 'none';
+    res.style.opacity = '1';
+    inp.style.display = 'flex';
+    inp.style.opacity = '0';
+    inp.style.transition = 'opacity .3s';
+    setTimeout(function(){ inp.style.opacity = '1'; }, 20);
+  }, 250);
+}
+window.showInputPage      = showInputPage;
+window.showResultPage     = showResultPage;
+window.renderResult       = renderResult;
+window.runEntryAnimation  = runEntryAnimation;
+
+window.HAB_ITEMS=HAB_ITEMS;
+window.EFF_ITEMS=EFF_ITEMS;
+window.FACTORS=FACTORS;
+window.buildScores=buildScores;
+window.buildFactors=buildFactors;
+window.buildChecklists=buildChecklists;
+window.updateAccuracy=updateAccuracy;
+
+// ════════════════════════════════════════════════════════
+// SWOT 레이아웃 후처리: evidence 카드 배치 + 레이더 SVG
+// ════════════════════════════════════════════════════════
+
+// evidence id → 슬롯 매핑
+var SWOT_MAP = {
+  "워킹메모리":   "ev-card-워킹메모리",
+  "추론능력":     "ev-card-추론능력",
+  "정보처리습관": "ev-card-독해습관",
+  "독해효율성":   "ev-card-독해효율성",
+  "독서의양":     "ev-card-어휘력",
+};
+// 하단 텍스트 섹션 ID
+var BOTTOM_IDS = ["성적선행지수","독해속도","독해의질","학교학업"];
+
+var dotColor = {"강점":"#34D399","보통":"#8896B3","주의":"#FBBF24","위험":"#F87171"};
+var tagStyle = {
+  "강점":"background:rgba(52,211,153,.12);color:#34D399;border:1px solid rgba(52,211,153,.25)",
+  "보통":"background:rgba(255,255,255,.06);color:#8896B3;border:1px solid rgba(255,255,255,.1)",
+  "주의":"background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.25)",
+  "위험":"background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.25)"
+};
+
+function buildEvBulletsOnly(item) {
+  return buildEvCardHTML(item);
+}
+
+function buildEvCardHTML(item) {
+  var bullets = item.bullets.filter(function(b){ return b.t !== '_meta'; });
+  if (!bullets.length) return '';
+  var hasDanger = bullets.some(function(b){ return b.t==='위험'; });
+  var hasWarn   = !hasDanger && bullets.some(function(b){ return b.t==='주의'; });
+  var hasGood   = !hasDanger && !hasWarn && bullets.some(function(b){ return b.t==='강점'; });
+  var accent = hasDanger?'#F87171':hasWarn?'#FBBF24':hasGood?'#34D399':'rgba(255,255,255,.15)';
+  var dkStyle = {
+    '강점':'background:rgba(52,211,153,.12);color:#34D399;border:1px solid rgba(52,211,153,.25)',
+    '보통':'background:rgba(255,255,255,.06);color:#8896B3;border:1px solid rgba(255,255,255,.1)',
+    '주의':'background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.25)',
+    '위험':'background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.25)'
+  };
+  var bHTML = bullets.map(function(b){
+    var ts = dkStyle[b.t] || dkStyle['보통'];
+    var sym = b.t==='강점'?'✓':b.t==='위험'?'●':b.t==='주의'?'△':'–';
+    return '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">'
+      +'<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;flex-shrink:0;white-space:nowrap;'+ts+'">'
+      +sym+' '+b.t+'</span>'
+      +'<span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.92)">'+b.s+'</span>'
+      +'</div>';
+  }).join('');
+  return '<div style="background:rgba(20,28,54,.88);border:1px solid rgba(255,255,255,.13);border-left:3px solid '+accent
+    +';border-radius:12px;padding:16px 18px;backdrop-filter:blur(16px)'
+    +';box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08),0 0 0 0.5px rgba(255,255,255,.06)">'
+    +(function(){
+      var t = item.title;
+      var numMatch = t.match(/^(\d+)\)\s*/);
+      var num = numMatch ? numMatch[1] : '';
+      var label = numMatch ? t.replace(/^\d+\)\s*/, '') : t;
+      var numBadge = num
+        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;line-height:1;border-radius:7px;background:'+accent+'22;border:1.5px solid '+accent+'66;color:'+accent+';font-size:11px;font-weight:800;flex-shrink:0;margin-right:8px;padding:0;text-align:center">'+num+'</span>'
+        : '';
+      return '<div style="display:flex;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed rgba(255,255,255,.12)">'+numBadge+'<span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.82);letter-spacing:.1px">'+label+'</span></div>';
+    })()
+    + bHTML
+    +'</div>';
+}
+function polarToXY(cx, cy, r, angleDeg) {
+  var rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+function sectorPath(cx, cy, r, startDeg, endDeg) {
+  var rotOff = -36;
+  var s = polarToXY(cx, cy, r, endDeg + rotOff);
+  var e = polarToXY(cx, cy, r, startDeg + rotOff);
+  var large = (endDeg - startDeg) <= 180 ? 0 : 1;
+  return ['M',cx,cy,'L',s.x.toFixed(2),s.y.toFixed(2),
+          'A',r.toFixed(2),r.toFixed(2),0,large,0,e.x.toFixed(2),e.y.toFixed(2),'Z'].join(' ');
+}
+function buildRadarSVG(factors) {
+  var cx=70, cy=70, maxR=45;
+  var sliceColors=['rgba(139,92,246,.5)','rgba(14,165,233,.5)','rgba(132,204,22,.5)','rgba(34,197,94,.5)','rgba(100,116,139,.5)'];
+  var scoreColors=['#A78BFA','#38BDF8','#A3E635','#4ADE80','#94A3B8'];
+  var labelPos=[
+    {x:70,  y:3,   anchor:'middle'},
+    {x:127, y:50,  anchor:'middle'},
+    {x:114, y:102, anchor:'middle'},
+    {x:26,  y:102, anchor:'middle'},
+    {x:13,  y:50,  anchor:'middle'}
+  ];
+  // 동심원 배경: 홀(0~20,40~60,80~100) / 짝(20~40,60~80) 구간 표시
+  var bandA = 'rgba(241,245,249,.9)';  // 0~20, 40~60, 80~100 — 옅은 회색
+  var bandB = '#ffffff';               // 20~40, 60~80 — 흰색
+  var bg=''
+    +'<circle cx="70" cy="70" r="45" fill="'+bandA+'"/>'
+    +'<circle cx="70" cy="70" r="36" fill="'+bandB+'"/>'
+    +'<circle cx="70" cy="70" r="27" fill="'+bandA+'"/>'
+    +'<circle cx="70" cy="70" r="18" fill="'+bandB+'"/>'
+    +'<circle cx="70" cy="70" r="9"  fill="'+bandA+'"/>';
+  var grid=[9,18,27,36,45].map(function(r){
+    return '<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="#E2E8F0" stroke-width="0.5"/>';
+  }).join('');
+  var gridLines='<g stroke="#E2E8F0" stroke-width="0.5" transform="rotate(-36,70,70)">'
+    +'<line x1="70" y1="70" x2="70" y2="25"/><line x1="70" y1="70" x2="112.8" y2="56.1"/>'
+    +'<line x1="70" y1="70" x2="96.4" y2="106.4"/><line x1="70" y1="70" x2="43.6" y2="106.4"/>'
+    +'<line x1="70" y1="70" x2="27.2" y2="56.1"/></g>';
+  var ticks='<g fill="#AAAAAA" font-size="3" font-weight="600" text-anchor="middle">'+'<text x="74" y="83">20</text>'+'<text x="74" y="92">40</text>'+'<text x="74" y="101">60</text>'+'<text x="74" y="110">80</text>'+'<text x="74" y="119">100</text>'+'</g>';
+  var slices=factors.map(function(f,i){
+    var r=Math.max((Math.min(f.score,100)/100)*maxR,0.5);
+    return '<path d="'+sectorPath(cx,cy,r,i*72,(i+1)*72)+'" fill="'+sliceColors[i]+'" stroke="rgba(255,255,255,.35)" stroke-width="0.25" paint-order="stroke fill"/>';
+  }).join('');
+  var labels=factors.map(function(f,i){
+    var lp=labelPos[i];
+    var needsBadge = f.score<=60;
+    var badgeTopY = lp.y + 9;
+    var badgeH    = 6.5;
+    var badgeW    = 16;
+    var textY     = badgeTopY + 2 + 1.75;
+    var badgeEl = needsBadge
+      ? '<rect x="'+(lp.x-badgeW/2)+'" y="'+badgeTopY+'" width="'+badgeW+'" height="'+badgeH+'" rx="2" fill="rgba(239,68,68,.12)" stroke="rgba(239,68,68,.3)" stroke-width="0.5"/>'        +'<text x="'+lp.x+'" y="'+textY+'" text-anchor="middle" dominant-baseline="middle" font-size="3.5" font-weight="800" fill="#EF4444">개선필요</text>'
+      : '';
+    return '<text x="'+lp.x+'" y="'+lp.y+'" text-anchor="'+lp.anchor+'" font-family="Noto Sans KR,sans-serif">'      +'<tspan x="'+lp.x+'" dy="0" fill="#64748B" font-size="4" font-weight="400">'+f.name+'</tspan>'      +'<tspan x="'+lp.x+'" dy="7" fill="'+(needsBadge?'#EF4444':'#1E293B')+'" font-size="8" font-weight="900">'+f.score+'</tspan>'      +'</text>'      + badgeEl;
+  }).join('');
+  var shadowFilter = '<defs><filter id="slice-shadow" x="-20%" y="-20%" width="140%" height="140%">'
+    +'<feDropShadow dx="0" dy="0.8" stdDeviation="1.2" flood-color="rgba(0,0,0,.25)"/>'
+    +'</filter></defs>';
+  var slicesShadow = slices.replace(/fill="rgba/g, 'filter="url(#slice-shadow)" fill="rgba');
+  return '<svg viewBox="0 0 140 140" width="100%" style="overflow:visible">'
+    +shadowFilter+bg+grid+gridLines+ticks+slicesShadow+labels
+    +'<circle cx="70" cy="70" r="1.2" fill="rgba(255,255,255,.6)"/>'
+    +'</svg>';
+}
+
+
+function postRenderSWOT(eng, inp) {
+  if (!eng.evidence) return;
+
+  var factorOrder = ["어휘력","워킹메모리","추론능력","독해습관","독해효율성"];
+  var factorScores = {
+    "어휘력":    eng.voc  || inp.voca_score      || 0,
+    "워킹메모리":eng.wm   || inp.wm_score         || 0,
+    "추론능력":  eng.inf  || inp.inference_score  || 0,
+    "독해습관":  eng.hab  || 0,
+    "독해효율성":eng.eff  || 0
+  };
+
+  // 레이더 SVG 삽입
+  var radarWrap = document.getElementById('radarWrap');
+  if (radarWrap) {
+    var factors = factorOrder.map(function(name){
+      return { name:name, score:factorScores[name]||0 };
+    });
+    radarWrap.innerHTML = buildRadarSVG(factors);
+
+    // SVG 렌더 후 라벨 위치 기준으로 카드 절대 좌표 계산
+    requestAnimationFrame(function(){
+      var svg = radarWrap.querySelector('svg');
+      if (!svg) return;
+      var svgRect = svg.getBoundingClientRect();
+      var container = document.querySelector('#belowArea [style*="position:relative"]');
+      if (!container) return;
+      var contRect = container.getBoundingClientRect();
+      var scaleX = svgRect.width  / 140;
+      var scaleY = svgRect.height / 140;
+
+      // SVG 좌표 → 컨테이너 기준 픽셀 변환
+      // labelPos: [어휘력(70,8), 워킹메모리(128,50), 추론능력(110,122), 독해습관(30,122), 독해효율성(12,50)]
+      var labels = [
+        { id:'vocCard',    svgX:70,  svgY:8,   anchor:'middle' },
+        { id:'wmCard',     svgX:128, svgY:50,  anchor:'start'  },
+        { id:'reasonCard', svgX:110, svgY:122, anchor:'start'  },
+      ];
+
+      labels.forEach(function(lbl){
+        var el = document.getElementById(lbl.id);
+        if (!el) return;
+        // SVG → 화면 좌표
+        var px = svgRect.left + lbl.svgX * scaleX;
+        var py = svgRect.top  + lbl.svgY * scaleY;
+        // 컨테이너 기준
+        var cx = px - contRect.left;
+        var cy = py - contRect.top + container.scrollTop;
+        // 라벨 텍스트 폭 보정 (약 35 SVG units = 텍스트 끝)
+        var textEndX = cx + (lbl.anchor === 'start' ? 0 : -40);
+        // 수치 tspan 높이(약 7 SVG units) 고려한 y 오프셋
+        var cardY = cy + 4 * scaleY;
+
+        var offsetX = 60;
+        if (lbl.id === 'wmCard')    offsetX = 76;
+        if (lbl.id === 'vocCard')   offsetX = 65;
+        el.style.top  = Math.round(cardY - 30) + 'px';
+        el.style.left = Math.round(textEndX + offsetX) + 'px';
+      });
+    });
+  }
+
+  // 인라인 수치 배지 제거됨
+
+  // 좌우 슬롯 배치: 성적선행지수 → 좌 / 독해속도 → 우 / 나머지 → 아래 evidenceCards
+  var SLOT_MAP = {
+    '성적선행지수': 'ev-right-top',
+    '독해속도':     'ev-right-mid',
+    '독해효율성':   'ev-right-bottom',
+    '정보처리습관': 'ev-left-top',
+    '워킹메모리':   'wmCard-hero',
+    '독서의양':     'voc-left',
+    '독해의질':     'doj-left',
+    '추론능력':     'reasonCard-hero',
+    '학교학업':     'schoolCard-hero'
+  };
+  var BELOW_IDS = ['워킹메모리','추론능력','정보처리습관','독해효율성','독서의양','독해의질','학교학업','성적선행지수','독해속도'];
+
+  if (eng.evidence) {
+    eng.evidence.forEach(function(item){
+      var slotId = SLOT_MAP[item.id];
+      if (slotId) {
+        var el = document.getElementById(slotId);
+        if (el) {
+          // 모든 슬롯 동일한 카드 디자인
+          el.innerHTML = buildEvCardHTML(item);
+        }
+      }
+    });
+  }
+
+  // 우측 카드: rightColWrap flex-column 자동 배치
+
+
+  var evidenceEl = document.getElementById('evidenceCards');
+  if (evidenceEl && eng.evidence) {
+    // 요인별 색상
+    var FACTOR_COLORS_EV = {
+      '워킹메모리':'#0EA5E9','추론능력':'#84CC16',
+      '정보처리습관':'#22C55E','독해효율성':'#8B5CF6','독서의양':'#A78BFA',
+      '성적선행지수':'#34D399','독해속도':'#60A5FA',
+      '독해의질':'#F472B6','학교학업':'#FBBF24'
+    };
+    // 독서의양(3) + 독해의질(4) 병합 처리
+    var mergedEvidence = [];
+    var dok = null, doj = null;
+    eng.evidence.filter(function(item){ return !SLOT_MAP[item.id]; })
+      .forEach(function(item){
+        if (item.id === '독서의양') { dok = item; }
+        else if (item.id === '독해의질') { doj = item; }
+        else { mergedEvidence.push(item); }
+      });
+    // 둘 다 있으면 병합, 하나만 있으면 그대로
+    if (dok || doj) {
+      var merged = {
+        id: '어휘력분석',
+        title: '어휘력 — 독서의 양과 질',
+        bullets: [].concat(dok ? dok.bullets : [], doj ? doj.bullets : [])
+      };
+      // 학업상태 앞에 삽입
+      var insertIdx = mergedEvidence.findIndex(function(i){ return i.id === '학교학업'; });
+      if (insertIdx > -1) mergedEvidence.splice(insertIdx, 0, merged);
+      else mergedEvidence.push(merged);
+    }
+
+    function renderEvCard(item) {
+      var bullets = item.bullets.filter(function(b){ return b.t !== '_meta'; });
+      if (!bullets.length) return '';
+      var accentColor = FACTOR_COLORS_EV[item.id] || '#A78BFA';
+      var hasDanger = bullets.some(function(b){ return b.t==='위험'; });
+      var hasWarn   = !hasDanger && bullets.some(function(b){ return b.t==='주의'; });
+      var ts = {
+        '강점':'background:rgba(52,211,153,.12);color:#34D399;border:1px solid rgba(52,211,153,.25)',
+        '보통':'background:rgba(255,255,255,.06);color:#8896B3;border:1px solid rgba(255,255,255,.1)',
+        '주의':'background:rgba(251,191,36,.12);color:#FBBF24;border:1px solid rgba(251,191,36,.25)',
+        '위험':'background:rgba(248,113,113,.12);color:#F87171;border:1px solid rgba(248,113,113,.25)'
+      };
+      var bHTML = bullets.map(function(b){
+        var style = ts[b.t]||ts['보통'];
+        var sym = b.t==='강점'?'✓':b.t==='위험'?'●':b.t==='주의'?'△':'–';
+        return '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">'
+          +'<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;flex-shrink:0;'+style+'">'+sym+' '+b.t+'</span>'
+          +'<span style="font-size:12.5px;line-height:1.6;color:var(--tx1)">'+b.s+'</span>'
+          +'</div>';
+      }).join('');
+      return '<div style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-left:3px solid '+accentColor+';border-radius:0 10px 10px 0;padding:14px 16px;backdrop-filter:blur(8px)">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+        +'<div style="width:6px;height:6px;border-radius:50%;background:'+accentColor+';flex-shrink:0"></div>'
+        +'<span style="font-size:10px;font-weight:700;color:'+accentColor+';letter-spacing:.6px;text-transform:uppercase">'+item.title+'</span>'
+        +'</div>'
+        + bHTML
+        +'</div>';
+    }
+
+    evidenceEl.innerHTML = mergedEvidence.map(function(item){
+      // 학업상태 카드는 ibars와 나란히 2컬럼으로
+      if (item.id === '학교학업') { return buildEvCardHTML(item); }
+      return renderEvCard(item);
+    }).join('');
+  }
+
+  // 인과분석 경로 → cauCard 슬롯에 각 항목 개별 카드로 세로 나열
+  var cauCard = document.getElementById('cauCard');
+  if (cauCard && eng.cau && eng.cau.length > 0) {
+    cauCard.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:16px';
+    cauCard.innerHTML = eng.cau.map(function(c, i) {
+      return '<div style="background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.08);border-left:2px solid #8B5CF6;border-radius:12px;padding:12px 14px;backdrop-filter:blur(12px);display:flex;align-items:flex-start;gap:8px">'
+        + '<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:5px;background:rgba(139,92,246,.2);color:#A78BFA;font-size:9px;font-weight:800;flex-shrink:0">' + (i+1) + '</span>'
+        + '<span style="font-size:12px;line-height:1.6;color:rgba(240,244,255,.85)">' + c + '</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  // 히어로 속도 직접 패치
+  var heroSpd = document.getElementById('heroSpd');
+  if (heroSpd) {
+    var _rawSpd = (eng&&eng.spd) || (inp&&inp.reading_score) || 0;
+    var _s = isNaN(Number(_rawSpd)) ? 0 : Number(_rawSpd);
+    heroSpd.textContent = _s > 0 ? _s.toLocaleString() : '—';
+  }
+
+  // 학생 정보 카드 → studentInfoSlot으로 이동
+  var srcCard = document.getElementById('studentInfoCard');
+  var dstSlot = document.getElementById('studentInfoSlot');
+  if (srcCard && dstSlot) {
+    dstSlot.innerHTML = srcCard.querySelector('div').outerHTML;
+    srcCard.style.display = 'none';
+
+    // ── 유형 타이틀 배너 세팅 (dstSlot 복사 직후) ──
+    var TC_BANNER={"최상위 완성 역량형":"#34D399","고역량 잠재력 미개방형":"#34D399",
+      "성실한 암기 의존형":"#F87171","논리 두뇌 미발현형":"#60A5FA",
+      "조용한 학습 위기형":"#F87171","전반 역량 미완성형":"#FBBF24",
+      "기초 회복 가능 위기형":"#FB923C","심각한 학습 기능 마비형":"#F87171",
+      "전반 역량 공백형":"#94A3B8","역량 모순 붕괴 예고형":"#C084FC"};
+    var btName   = eng.btDisplay||eng.bt||'—';
+    var stName   = eng.stDisplay||eng.st||'';
+    var urgMap   = {즉각:'즉각 개입 필요',조기:'조기 개입 권장',중장기:'중장기 관리'};
+    var urgLabel = urgMap[eng.urg]||eng.urg||'';
+    var btColor  = TC_BANNER[btName]||'#A78BFA';
+    var bb = dstSlot.querySelector('#banner-bt');
+    var bs = dstSlot.querySelector('#banner-st');
+    var bu = dstSlot.querySelector('#banner-urg');
+    if(bb){ bb.textContent=btName; bb.style.color=btColor; }
+    if(bs){ bs.textContent=stName; }
+    if(bu){ bu.textContent=urgLabel?('('+urgLabel+')'):''; }
+    // 플래그 배지: 학생 카드 바로 아래 추가
+    var flagHtml = '';
+    if (eng.flagC) flagHtml += '<span style="background:rgba(185,28,28,.25);color:#FCA5A5;border:1px solid rgba(252,165,165,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">⚠ 모순패턴</span>';
+    if (eng.flagO) flagHtml += '<span style="background:rgba(180,83,9,.25);color:#FCD34D;border:1px solid rgba(252,211,77,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">⚡ 선행과부하</span>';
+    if (eng.invSpd) flagHtml += '<span style="background:rgba(180,83,9,.25);color:#FCD34D;border:1px solid rgba(252,211,77,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">△ 속도이상</span>';
+    if (eng.retest) flagHtml += '<span style="background:rgba(30,64,175,.25);color:#93C5FD;border:1px solid rgba(147,197,253,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">↺ 재검사권고</span>';
+  // 플래그 배지: 있으면 강조, 없으면 흐릿하게 — 항상 표시
+  var flagItems = [
+    { key:'flagC',  label:'⚠ 모순패턴',   bg:'rgba(185,28,28,.25)',  tx:'#FCA5A5', bd:'rgba(252,165,165,.4)'  },
+    { key:'flagO',  label:'⚡ 선행과부하', bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
+    { key:'invSpd', label:'△ 속도이상',   bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
+    { key:'retest', label:'↺ 재검사권고', bg:'rgba(30,64,175,.25)',  tx:'#93C5FD', bd:'rgba(147,197,253,.4)'  }
+  ];
+  var flagDiv = document.createElement('div');
+  flagDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:8px 2px 0';
+  var flagMap = { flagC: eng.flagC, flagO: eng.flagO, invSpd: eng.invSpd, retest: eng.retest };
+  flagItems.forEach(function(fi) {
+    var on = !!flagMap[fi.key];
+    var sp = document.createElement('span');
+    sp.style.cssText = 'padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700;transition:opacity .2s;'
+      + (on
+        ? 'background:'+fi.bg+';color:'+fi.tx+';border:1px solid '+fi.bd+';opacity:1'
+        : 'background:rgba(255,255,255,.04);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.08);opacity:.5');
+    sp.textContent = fi.label;
+    flagDiv.appendChild(sp);
+  });
+  dstSlot.appendChild(flagDiv);
+
+  }
+
+
+
+  // cascadeRightCards 제거 — rightColWrap flex-column 자동 배치
+
+  // ── 배지 → 카드 연결선 (DOM 렌더 후 실행) ──
+  requestAnimationFrame(function(){
+    setTimeout(function(){
+      drawConnector('accBadge',  'ev-right-top',    'left-to-left');
+      drawConnector('spdBadge',  'ev-right-mid',    'left-to-left');
+      drawConnector('effDot',    'ev-right-bottom', 'left-to-left');
+      drawConnectorToRightTop('habDot', 'ev-left-top');
+
+      // 좌측(studentInfoSlot + ev-left-top)은 flex-column 구조로 겹침 방지 (CSS)    // 우측 카드 포지셔닝만 처리
+      window.positionLeftCard = function positionLeftCard() {
+        var heroBox  = document.querySelector('#resultView [style*="flex-shrink:0;position:relative"]');
+        if (!heroBox) return;
+        // 우측 카드: rightColWrap flex-column 자동 배치
+      }
+      setTimeout(positionLeftCard, 250);
+      setTimeout(positionLeftCard, 600);
+    }, 120);
+  });
+
+  // 우측 패널 Row 렌더링
+  var rightInner = document.getElementById('rightPanelInner');
+  if (rightInner) {
+    var C_BORDER = 'rgba(255,255,255,.07)';
+    function makeRow(label, labelSub, color, bodyHTML, noBorder) {
+      return '<div style="display:flex;gap:10px;align-items:flex-start;padding-top:'+(noBorder?0:10)+'px;'+(noBorder?'':'border-top:1px solid '+C_BORDER+';')+'margin-bottom:10px">'
+        +'<div style="min-width:52px;max-width:52px;background:'+color+'18;border-radius:6px;padding:5px 6px;text-align:center;flex-shrink:0">'
+        +'<div style="font-size:9px;color:'+color+';font-weight:700;line-height:1.3">'+label+'</div>'
+        +(labelSub?'<div style="font-size:8px;color:'+color+';opacity:0.7;line-height:1.2;margin-top:1px">'+labelSub+'</div>':'')
+        +'</div>'
+        +'<div style="flex:1;padding-top:2px">'+bodyHTML+'</div>'
+        +'</div>';
+    }
+
+    var typeColor = (window.__eng&&window.__eng.bt&&typeof TC!=='undefined') ? (TC[eng.bt]||'#8B5CF6') : '#8B5CF6';
+    var rows = '';
+
+    // 유형명 + 태그
+    var bowlHTML = '';
+    if (eng.bowlType) {
+      var BOWL_SHORT = {역량충실:'역량 충실',언어우세:'언어 우세',논리우세:'논리 우세',역량취약:'역량 취약'};
+      var BOWL_COLOR = {역량충실:'#00C9B1',언어우세:'#3B82F6',논리우세:'#8B5CF6',역량취약:'#EF4444'};
+      var bc = BOWL_COLOR[eng.bowlType]||'#8B5CF6';
+      var bs = BOWL_SHORT[eng.bowlType]||eng.bowlType;
+      var vColor = (inp.voca_score>=70)?'#00C9B1':'#EF4444';
+      var rColor = (inp.inference_score>=70)?'#8B5CF6':'#F97316';
+      var vLabel = (inp.voca_score>=70)?'어휘↑':'어휘↓';
+      var rLabel = (inp.inference_score>=70)?'추론↑':'추론↓';
+      bowlHTML = '<span style="display:flex;gap:4px;align-items:center;margin-top:4px">'
+        +'<span style="background:'+bc+'22;border:1px solid '+bc+'55;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:'+bc+'">'+bs+'</span>'
+        +'<span style="background:'+vColor+'18;border:1px solid '+vColor+'44;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;color:'+vColor+'">'+vLabel+'</span>'
+        +'<span style="background:'+rColor+'18;border:1px solid '+rColor+'44;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;color:'+rColor+'">'+rLabel+'</span>'
+        +'</span>';
+    }
+    var typeBody = '<div style="font-size:20px;font-weight:900;color:var(--tx1);line-height:1.2;margin-bottom:4px">'+(eng.bt||'—')+'</div>'
+      +'<div style="font-size:12px;color:var(--tx2)">'+(eng.tag||eng.st||'')+'</div>'
+      + bowlHTML;
+    rows += makeRow('공부역량','36유형', typeColor, typeBody, true);
+
+    // 독해력 판독
+    if (eng.who||eng.state) {
+      var readBody = '<p style="font-size:13px;color:var(--tx2);line-height:1.85;margin:0">'+(eng.who||'')+(eng.who&&eng.state?' ':''+(eng.state||''))+'</p>';
+      if (eng.isContra && eng.contraDesc) {
+        readBody += '<p style="font-size:13px;color:#F97316;line-height:1.8;margin:6px 0 0">'+eng.contraDesc+'</p>';
+      }
+      rows += makeRow('독해력','판독','#00C9A7', readBody, false);
+    }
+
+    // 역량 vs 성적 괴리
+    if (eng.l3 && eng.l3.desc) {
+      var l3Label = eng.l3.name + (eng.l3.danger>0?' '+'⚠'.repeat(eng.l3.danger):'');
+      var l3Body = '<p style="font-size:13px;color:var(--tx2);line-height:1.8;margin:0">'+eng.l3.desc+'</p>';
+      if (eng.possibility) {
+        l3Body += '<p style="font-size:13px;color:var(--tx2);line-height:1.8;margin:8px 0 0;padding-top:8px;border-top:1px solid rgba(255,255,255,.07)">'+eng.possibility+'</p>';
+      }
+      rows += makeRow(l3Label,'', eng.l3.color||'#F59E0B', l3Body, false);
+    }
+
+    // 과목별 (국어/영어/수학)
+    var SUBJ_MSGS = {
+      국어: eng.korMsg, 영어: eng.engMsg, 수학: eng.mathMsg
+    };
+    Object.keys(SUBJ_MSGS).forEach(function(lb){
+      var msgs = SUBJ_MSGS[lb];
+      if (!msgs || !msgs.length) return;
+      var body = msgs.map(function(m){ return '<p style="font-size:13px;color:var(--tx2);line-height:1.75;margin:0 0 4px">'+m+'</p>'; }).join('');
+      rows += makeRow(lb,'','#94A3B8', body, false);
+    });
+
+    rightInner.innerHTML = rows;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 결과지 렌더링 엔진 (ResultPage — 순수 JS 변환)
+// ════════════════════════════════════════════════════════════════
+
+var RP_FACTOR_COLORS = {
+  "어휘력":"#9589D9","워킹메모리":"#68C1F4",
+  "추론능력":"#8ED962","독해습관":"#7EBF6F","독해효율성":"#647AB3"
+};
+var RP_FACTOR_LABEL = {
+  "어휘력":"어휘의 의미를 정확히 파악하고 실제 문장 속에서 활용할 수 있는 능력.",
+  "워킹메모리":"문장을 읽을 때마다 실시간 정보를 처리하고 그것을 다시 단위로 재처리하여 생성하는 작업기억 능력.",
+  "추론능력":"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력.",
+  "독해습관":"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준.",
+  "독해효율성":"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단."
+};
+
+function rpBuildResultHTML(eng, inp) {
+  var name     = inp.name || "—";
+  var school   = ({초등:"초등학교",중등:"중학교",고등:"고등학교"})[inp.uiLevel] || inp.uiLevel || "";
+  var grade    = inp.user_school_grade ? inp.user_school_grade + "학년" : "";
+  var dateStr = (function(){
+    var raw = (D && D.date) || (window.__inp && window.__inp.reg_date) || '';
+    if (raw) {
+      var parts = raw.slice(0,10).split('-');
+      if (parts.length === 3) return parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+    }
+    var d = new Date(); return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+  })();
+
+  var fct      = inp.fact_score  > 0 ? inp.fact_score  : eng.acc;
+  var str_     = inp.structure_score  > 0 ? inp.structure_score  : eng.acc;
+  var avgAcc   = Math.round((fct + str_) / 2);
+  var _spdRaw = (inp&&inp.reading_score)||(eng&&eng.spd)||0;
+  var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
+
+  // 체크 항목
+  var habChecked = HAB_ITEMS.map(function(item){ return inp.reading_habit_checks && inp.reading_habit_checks.indexOf(item) > -1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return inp.reading_effect_checks && inp.reading_effect_checks.indexOf(item) > -1; });
+  var habitCount = habChecked.filter(Boolean).length;
+  var effCount   = effChecked.filter(Boolean).length;
+
+  // 역량 요인
+  var factors = [
+    {name:"어휘력",    score:inp.voca_score,  color:RP_FACTOR_COLORS["어휘력"]},
+    {name:"워킹메모리",score:inp.wm_score,   color:RP_FACTOR_COLORS["워킹메모리"]},
+    {name:"추론능력",  score:inp.inference_score,  color:RP_FACTOR_COLORS["추론능력"]},
+    {name:"독해습관",  score:eng.hab,  color:RP_FACTOR_COLORS["독해습관"]},
+    {name:"독해효율성",score:eng.eff,  color:RP_FACTOR_COLORS["독해효율성"]},
+  ];
+
+  // 정확도 색상
+  var accColor = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
+
+  // PolarArea SVG
+  var polarSVG = rpBuildPolarSVG(factors, 317);
+
+  // 습관 체크리스트 HTML
+  var habitRows = HAB_ITEMS.map(function(item, i){
+    var on = habChecked[i];
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+      +'<span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span>'
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span>'
+      +'</div>';
+  }).join("");
+
+  // 효율성 체크리스트 HTML
+  var effRows = EFF_ITEMS.map(function(item, i){
+    var on = effChecked[i];
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
+      +'<span style="color:'+(on?"#EF4444":"#CBD5E1")+';font-size:11px;min-width:11px;line-height:1">'+(on?"●":"○")+'</span>'
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:-0.02em">'+item+'</span>'
+      +'</div>';
+  }).join("");
+
+  // 요인분석 테이블
+  var factorRows = factors.map(function(f){
+    return '<div style="display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:flex-start;margin-bottom:10px;padding-left:20px">'
+      +'<div style="text-align:center;padding:5px 4px;background:'+f.color+'11;border-radius:6px;border:1px solid '+f.color+'33">'
+      +'<div style="font-size:16px;font-weight:400;color:#111111">'+f.name+'</div>'
+      +'</div>'
+      +'<div style="font-size:12px;color:#475569;line-height:1.55">'+RP_FACTOR_LABEL[f.name]+'</div>'
+      +'</div>';
+  }).join("");
+
+  return ''
+  +'<div style="width:794px;height:1123px;flex-shrink:0;background:white;display:flex;flex-direction:column;overflow:hidden;">'
+
+  // ── 헤더
+  +'<div style="background:#0F172A;padding:21px 36px;display:flex;justify-content:space-between;align-items:center;">'
+    +'<div style="display:flex;align-items:center;gap:12px;overflow:hidden">'
+      +'<div>'
+        +'<div style="line-height:1">'
+          +'<span style="color:#EF4444;font-weight:900;font-size:43px;letter-spacing:-0.5px">TQ</span>'
+          +'<span style="color:white;font-weight:400;font-size:43px;letter-spacing:-0.5px">TEST</span>'
+        +'</div>'
+        +'<div style="color:#64748B;font-size:13.5px;letter-spacing:0.04em">Textual Quotient Test</div>'
+      +'</div>'
+      +'<div style="padding-left:24px;color:#CBD5E1;font-size:34.4px;font-weight:400;letter-spacing:-0.1em">문자정보 처리역량 테스트</div>'
+    +'</div>'
+    +'<div style="text-align:right">'
+      +'<div style="color:white;font-weight:400;font-size:21px">'
+        +'<span style="font-size:14.7px">'+school+' '+grade+'</span>&nbsp;&nbsp;'
+        +'<span style="font-size:31.5px">'+name+'</span>'
+      +'</div>'
+      +'<div style="margin-top:6px"><span style="background:#1E293B;border-radius:4px;padding:3px 10px;color:#CBD5E1;font-size:15px">진단일 : '+dateStr+'</span></div>'
+    +'</div>'
+  +'</div>'
+
+  // ── 본문
+  +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0;">'
+
+    // 상단 3열
+    +'<div style="display:grid;grid-template-columns:45fr 27.5fr 27.5fr;gap:8px;">'
+
+      // 열1: 정확도 + 속도
+      +'<div style="padding-right:20px;display:flex;flex-direction:column;align-items:center;">'
+        +'<div style="margin-bottom:20px;width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">'
+          +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0;">'
+            +'<span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em;">독해정확도</span>'
+            +'<span style="font-size:16px;color:#666;font-weight:400;">(%)</span>'
+          +'</div>'
+          +'<div style="font-size:128px;font-weight:900;color:'+accColor+';line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif;">'+avgAcc+'</div>'
+          +'<div style="margin-top:8px;width:calc(65% - 30px);">'
+            +'<div style="display:flex;justify-content:space-between;margin-bottom:3px;">'
+              +'<span style="font-size:11px;color:#64748B;">사실적 이해</span>'
+              +'<span style="font-size:11px;color:#64748B;">구조적 이해</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px;">'
+              +'<span style="font-size:20px;font-weight:700;color:#3B82F6;font-family:Tahoma,sans-serif;min-width:28px;text-align:right;">'+fct+'</span>'
+              +'<div style="flex:1;display:flex;height:8px;border-radius:4px;overflow:hidden;background:#E2E8F0;">'
+                +'<div style="flex:1;display:flex;justify-content:flex-end;background:transparent;">'
+                  +'<div style="width:'+fct+'%;background:#3B82F6;height:100%;border-radius:4px 0 0 4px;"></div>'
+                +'</div>'
+                +'<div style="width:2px;background:#fff;flex-shrink:0;"></div>'
+                +'<div style="flex:1;display:flex;justify-content:flex-start;background:transparent;">'
+                  +'<div style="width:'+str_+'%;background:#84CC16;height:100%;border-radius:0 4px 4px 0;"></div>'
+                +'</div>'
+              +'</div>'
+              +'<span style="font-size:20px;font-weight:700;color:#84CC16;font-family:Tahoma,sans-serif;min-width:28px;text-align:left;">'+str_+'</span>'
+            +'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div style="width:100%;display:flex;flex-direction:column;align-items:center;">'
+          +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0;">'
+            +'<span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em;">독해속도</span>'
+            +'<span style="font-size:16px;color:#666;font-weight:400;">(자/분)</span>'
+          +'</div>'
+          +'<div style="font-size:92px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif;">'+Number(spd).toLocaleString()+'</div>'
+        +'</div>'
+      +'</div>'
+
+      // 열2: 독해습관
+      +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%;">'
+        +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px;">독해습관</div>'
+        +habitRows
+        +'<div style="margin-top:8px;font-size:14px;color:#64748B;font-weight:400;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<span style="color:#1E293B;font-size:15px;">잘못된 독해습관</span>'
+          +'<span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif;">'+habitCount+'</span>'
+        +'</div>'
+      +'</div>'
+
+      // 열3: 독해효율성
+      +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%;">'
+        +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;border-bottom:2px solid #1E293B;padding-bottom:5px;margin-bottom:8px;">독해효율성</div>'
+        +effRows
+        +'<div style="margin-top:8px;font-size:14px;color:#64748B;font-weight:400;border-top:3px solid #1E293B;padding-top:6px;display:flex;justify-content:space-between;align-items:center;">'
+          +'<span style="color:#1E293B;font-size:15px;">독해효율성 결합증상</span>'
+          +'<span style="color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif;">'+effCount+'</span>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    // 구분선
+    +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0;"></div>'
+
+    // 하단: 차트 + 요인분석
+    +'<div style="display:grid;grid-template-columns:45fr 55fr;gap:20px;align-items:start;">'
+      +'<div style="display:flex;flex-direction:column;align-items:center;padding-top:50px;">'+polarSVG+'</div>'
+      +'<div style="padding-right:20px;padding-top:30px;">'
+        +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:12px;margin-left:20px;margin-top:20px;">독해역량 요인분석</div>'
+        +factorRows
+      +'</div>'
+    +'</div>'
+  +'</div>'
+
+  // ── 푸터
+  +'<div style="background:#0F172A;border-top:2px solid #E2E8F0;padding:19px 24px;display:flex;justify-content:space-between;align-items:center;position:relative;">'
+    +'<div style="font-size:15px;font-weight:500;color:#94A3B8;">스터디포스 공부의철인</div>'
+    +'<div style="font-size:17px;font-weight:900;color:white;letter-spacing:-0.3px;">스터디포스 <span style="font-size:14px;font-weight:500;color:#94A3B8;">언어과학연구소</span></div>'
+  +'</div>'
+
+  +'</div>';
+}
+
+function rpBuildPolarSVG(factors, size) {
+  var cx = size/2, cy = size/2;
+  var maxR = size * 0.355;
+  var n = factors.length;
+  var step = (Math.PI * 2) / n;
+  var paths = [], labels = [], badges = [];
+  var gridLines = '';
+
+  // 구간 배경
+  var bgCircles = '';
+  [[40,60],[80,100]].forEach(function(range){
+    var rLo=(range[0]/100)*maxR, rHi=(range[1]/100)*maxR;
+    bgCircles += '<circle cx="'+cx+'" cy="'+cy+'" r="'+rHi+'" fill="#f5f5f5" fill-opacity="0.45"/>';
+    bgCircles += '<circle cx="'+cx+'" cy="'+cy+'" r="'+rLo+'" fill="white" fill-opacity="0.6"/>';
+  });
+
+  // 격자 원
+  var gridCircles = [20,40,60,80,100].map(function(g){
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+((g/100)*maxR)+'" fill="none" stroke="#D1D5DB" stroke-width="0.7"/>';
+  }).join('');
+
+  // 격자 선
+  factors.forEach(function(_, i){
+    var a = -Math.PI/2 - (Math.PI/5) + i*step;
+    gridLines += '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+maxR*Math.cos(a)).toFixed(1)+'" y2="'+(cy+maxR*Math.sin(a)).toFixed(1)+'" stroke="#D1D5DB" stroke-width="0.7"/>';
+  });
+
+  // 세그먼트 + 라벨
+  factors.forEach(function(f, i){
+    var sa = -Math.PI/2 - (Math.PI/5) + i*step;
+    var ea = sa + step;
+    var r  = Math.max((Math.min(f.score,100)/100)*maxR, 2);
+    var x1=(cx+r*Math.cos(sa)).toFixed(1), y1=(cy+r*Math.sin(sa)).toFixed(1);
+    var x2=(cx+r*Math.cos(ea)).toFixed(1), y2=(cy+r*Math.sin(ea)).toFixed(1);
+    var mid= sa + step/2;
+    var lR = maxR*1.38;
+    var lxOff = f.name==="독해효율성"?5 : f.name==="워킹메모리"?-5 : 0;
+    var lyOff = f.name==="독해습관"?-5 : f.name==="추론능력"?-5 : 0;
+    var lx=(cx+lR*Math.cos(mid)+lxOff).toFixed(1);
+    var ly=(cy+lR*Math.sin(mid)+lyOff).toFixed(1);
+    var bx=(cx+(maxR*1.68)*Math.cos(mid)).toFixed(1);
+    var by=(cy+(maxR*1.68)*Math.sin(mid)).toFixed(1);
+
+    paths.push('<path d="M '+cx.toFixed(1)+' '+cy.toFixed(1)+' L '+x1+' '+y1+' A '+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 1 '+x2+' '+y2+' Z" fill="'+f.color+'" fill-opacity="0.80" stroke="white" stroke-width="1.2"/>');
+    labels.push(
+      '<text x="'+lx+'" y="'+(parseFloat(ly)-10).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="14" fill="#555" font-weight="700" font-family="system-ui">'+f.name+'</text>'
+      +'<text x="'+lx+'" y="'+(parseFloat(ly)+11).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="'+(f.score<=60?"#EF4444":"#1E293B")+'" font-weight="900" font-family="Tahoma,sans-serif">'+f.score+'</text>'
+    );
+    if (f.score <= 60) {
+      badges.push(
+        '<rect x="'+(parseFloat(lx)-26).toFixed(1)+'" y="'+(parseFloat(ly)+22).toFixed(1)+'" width="52" height="16" rx="3" fill="#EF4444"/>'
+        +'<text x="'+lx+'" y="'+(parseFloat(ly)+30).toFixed(1)+'" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="white" font-weight="800" font-family="system-ui">개선 필요</text>'
+      );
+    }
+  });
+
+  // 수치 레이블 (중앙 아래)
+  var pctLabels = [0,20,40,60,80,100].map(function(pct){
+    var r=(pct/100)*maxR;
+    return '<text x="'+(cx+4)+'" y="'+(cy+r+7).toFixed(1)+'" text-anchor="start" dominant-baseline="middle" font-size="11" fill="#000" fill-opacity="0.6" font-weight="600" font-family="system-ui">'+pct+'%</text>';
+  }).join('');
+
+  return '<svg viewBox="0 0 '+size+' '+size+'" style="width:100%;max-width:'+size+'px" overflow="visible">'
+    + bgCircles + gridCircles + gridLines
+    + paths.join('') + pctLabels + labels.join('') + badges.join('')
+    +'</svg>';
+}
+
+function renderResultPageThumb(eng, inp) {
+  var thumb = document.getElementById('resultPageThumb');
+  var inner = document.getElementById('resultPageThumbInner');
+  if (!thumb || !inner) return;
+  inner.innerHTML = rpBuildResultHTML(eng, inp);
+  thumb.style.display = 'block';
+}
+
+function openResultPageOverlay() {
+  var eng = window.__eng, inp = window.__inp;
+  if (!eng || !inp) return;
+
+  var existing = document.getElementById('resultPageOverlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'resultPageOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,20,35,.85);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px;';
+
+  // 상단 툴바
+  var toolbar = document.createElement('div');
+  toolbar.style.cssText = 'width:794px;max-width:100%;display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-shrink:0;';
+  toolbar.innerHTML = ''
+    +'<div style="font-size:13px;font-weight:600;color:#fff;">결과지 미리보기</div>'
+    +'<div style="margin-left:auto;display:flex;gap:8px;">'
+      +'<button onclick="rpPrint()" style="padding:8px 18px;background:#0BA98E;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;">&#128424;&#65039; 인쇄 / PDF 저장</button>'
+      +'<button onclick="document.getElementById(\'resultPageOverlay\').remove()" style="padding:8px 14px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;">&#10005; 닫기</button>'
+    +'</div>';
+
+  var pageWrap = document.createElement('div');
+  pageWrap.id = 'resultPagePrintTarget';
+  pageWrap.style.cssText = 'box-shadow:0 8px 40px rgba(0,0,0,.5);border-radius:4px;overflow:hidden;flex-shrink:0;';
+  pageWrap.innerHTML = rpBuildResultHTML(eng, inp);
+
+  overlay.appendChild(toolbar);
+  overlay.appendChild(pageWrap);
+  document.body.appendChild(overlay);
+
+  // 배경 클릭 닫기
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+}
+
+
+// ── 초기화 (다음 학생) ──
+function resetAll(){
+  // 결과만 초기화 — 입력값 유지
+  var hasResult=document.getElementById("resultView").style.display!=="none";
+  var hasSlots=window.__TQ_SLOTS;
+  if((hasResult||hasSlots)&&!confirm("판독 결과를 초기화합니다. 계속하시겠습니까?"))return;
+  /* resultView display managed by page-result */
+  if(gv("emptyView"))gv("emptyView").style.display="flex";
+  gv("btnB").disabled=true;
+  gv("btnR").disabled=true;
+
+  window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
+  // 리포트 탭 초기화
+  var repPlaceholder = document.getElementById('reportInlinePlaceholder');
+  if(repPlaceholder) repPlaceholder.style.display='block';
+  var rptWrap = document.getElementById('rptPageWrap');
+  if(rptWrap){ rptWrap.innerHTML=''; rptWrap.style.display='none'; }
+  // 리포트 렌더 초기화 플래그 (다음 판독문 생성 시 재렌더)
+  window.__reportRendered = false;
+  var tabRpt = document.getElementById('resultTab_리포트');
+  if(tabRpt){ tabRpt.style.color='rgba(255,255,255,.35)'; tabRpt.style.borderBottomColor='transparent'; tabRpt.innerHTML='📄 리포트'; }
+  var _tabBar = document.getElementById('resultTabBar');
+  if (_tabBar) _tabBar.style.display = 'none';
+  var _nm = document.getElementById('result-student-name');
+  if (_nm) { _nm.textContent=''; _nm.style.display='none'; }
+
+  var _pb = document.getElementById('headerPrintBtn');
+  if (_pb) _pb.style.display = 'none';
+  var oldEditBar = document.getElementById('editBar');
+  if (oldEditBar) oldEditBar.remove();
+  editMode = false;
+  editUnlocked = false;
+  editBarReady = false;
+  switchResultTab('판독');
+  var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
+  closeReport();
+  document.querySelector(".R").scrollTop=0;
+}
+window.resetAll=resetAll;
+
+function resetAllFull(){
+  if(!confirm("입력값과 판독 결과 모두 초기화됩니다. 계속하시겠습니까?"))return;
+  gv("iName").value="";
+  gv("iGrade").selectedIndex=0;
+  ["sS0","sS1","sS2"].forEach(function(id){
+    var el=gv(id);
+    if(el){for(var i=0;i<el.options.length;i++){if(el.options[i].value==="-"){el.selectedIndex=i;break;}}}
+  });
+  gv("sFct").value=50; gv("sFctV").textContent=50;
+  gv("sStr").value=50; gv("sStrV").textContent=50;
+  gv("sSpd").value=500;
+  updateAccuracy();
+  FACTORS.forEach(function(f){
+    var el=gv(f.id);
+    if(el){el.value=f.def; var vEl=gv(f.id+"V"); if(vEl)vEl.textContent=f.def;}
+  });
+  HAB_ITEMS.forEach(function(_,i){var el=gv("h"+i);if(el)el.checked=false;});
+  EFF_ITEMS.forEach(function(_,i){var el=gv("e"+i);if(el)el.checked=false;});
+  updateChkScore();
+  clearImg();
+  /* resultView display managed by page-result */
+  if(gv("emptyView"))gv("emptyView").style.display="flex";
+  gv("btnB").disabled=true;
+  gv("btnR").disabled=true;
+  window.__eng=null; window.__nm=null; window.__inp=null; window.__TQ_SLOTS=null;
+  var b=document.getElementById("reanalyzeBanner");if(b)b.remove();
+  closeReport();
+  var rEl=document.querySelector(".R"); if(rEl)rEl.scrollTop=0;
+  showInputPage();
+}
+window.resetAllFull=resetAllFull;
+document.getElementById("btnReset").addEventListener("click",resetAll);
+// ── 리포트 열기 ──
+function openReport(){
+  var eng=window.__eng;
+  var slots=window.__TQ_SLOTS;
+  if(!eng){alert("① 분석을 먼저 실행해주세요.");return;}
+  if(!slots){alert("② 판독문 생성을 먼저 완료해주세요.");return;}
+  var imgEl=document.getElementById("imgPreview");
+  var imgSrc=imgEl&&imgEl.src&&imgEl.src.startsWith("data:")?imgEl.src:null;
+  var d={
+    name:gv("iName").value||"",
+    level:gv("iLevel").value,
+    grade:parseInt(gv("iGrade").value)||0,
+    uiLevel:gv("iLevel").value,
+    kor:gv("sS0")?gv("sS0").value:"-",
+    eng_score:gv("sS1")?gv("sS1").value:"-",
+    math:gv("sS2")?gv("sS2").value:"-",
+    bt:eng.btDisplay||eng.bt, st:eng.stDisplay||eng.st, urg:eng.urg,
+    flagC:eng.flagC, flagO:eng.flagO,
+    acc:eng.acc, fct:eng.fct, str_:eng.str_,
+    spd:parseInt(eng.spd||(window.__inp&&window.__inp.reading_score))||0,
+    inf:eng.inf, voc:eng.voc, wm:eng.wm,
+    hab:eng.hab, eff:eng.eff,
+    habChecked:eng.habChecked||[], effChecked:eng.effChecked||[],
+    exStr:eng.inten?eng.inten.ex:"",
+    presc:eng.presc||[],
+    slots:slots,
+    imgSrc:imgSrc
+  };
+  try {
+    sessionStorage.setItem("__TQ_REPORT__", JSON.stringify(d));
+  } catch(e) { alert("데이터 저장 실패: "+e.message); return; }
+  window.open("tq_report_standalone_v2.html", "_blank");
+}
+window.openReport=openReport;
+
+gv("btnR").addEventListener("click",openReport);
+
+})();
+</script>
