@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.92</span> · 버튼label1적용</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.93</span> · 버튼label1적용</div>
 
   </div>
 </div>
@@ -1772,10 +1772,10 @@ gv("btnA").addEventListener("click",async function(){
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
     // renderResult에 필요한 inp 필드를 eng에 보완
-    eng.grade   = eng.grade  || inp.user_school_grade || null;
-    eng.level   = eng.level  || inp.user_section || null;
+    eng.grade   = inp.user_school_grade || eng.grade || null;
+    eng.level   = inp.user_section || eng.level || null;
     eng.uiLevel = inp.uiLevel || inp.user_section || null;
-    eng.date    = inp.reg_date ? inp.reg_date.slice(0,10) : null;
+    eng.date    = inp.reg_date ? inp.reg_date.slice(0,10) : (eng.date || null);
     eng.eng     = eng.eng    || inp.eng_score  || null;
     eng.math    = eng.math   || inp.math_score || null;
     eng.kor     = eng.kor    || inp.kor_score  || null;
@@ -1841,7 +1841,7 @@ gv("btnA").addEventListener("click",async function(){
     try { showEditBar(); } catch(e){ console.error('[showEditBar]', e); }
     // 판독문 자동 생성 — 기존 결과 로드 시에는 건너뜀
     if (!window.__SKIP_AUTO_GENERATE) {
-      setTimeout(function(){ gv("btnB").click(); }, 200);
+      setTimeout(async function(){ if(gv("btnB")) gv("btnB").click(); }, 200);
     }
     window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
@@ -1851,12 +1851,12 @@ gv("btnA").addEventListener("click",async function(){
 // ── (판독문 생성은 서버에서 처리) ──
 // SYS_P는 서버(Supabase Edge Function)에만 존재합니다
 
-gv("btnB").addEventListener("click",async function(){
+if(gv("btnB")) gv("btnB").addEventListener("click",async function(){
   const eng=window.__eng, nm=window.__nm||"학생", inp=window.__inp;
   if(!eng)return;
   hideErr();
   const btnB=gv("btnB");
-  btnB.disabled=true; btnB.textContent="판독문 생성 중...";
+  if(btnB) btnB.disabled=true; btnB.textContent="판독문 생성 중...";
   // 리포트 탭 "생성 중" 표시
   var _tabRptLoading = document.getElementById('resultTab_리포트');
   if (_tabRptLoading) {
@@ -3118,9 +3118,13 @@ function rpBuildResultHTML(eng, inp) {
   var name     = inp.name || "—";
   var school   = ({초등:"초등학교",중등:"중학교",고등:"고등학교"})[inp.uiLevel] || inp.uiLevel || "";
   var grade    = inp.user_school_grade ? inp.user_school_grade + "학년" : "";
-  var dateStr  = (function(){
-    var d = new Date(); 
-    return d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일";
+  var dateStr = (function(){
+    var raw = (D && D.date) || (window.__inp && window.__inp.reg_date) || '';
+    if (raw) {
+      var parts = raw.slice(0,10).split('-');
+      if (parts.length === 3) return parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+    }
+    var d = new Date(); return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
   })();
 
   var fct      = inp.fact_score  > 0 ? inp.fact_score  : eng.acc;
@@ -5326,6 +5330,10 @@ document.addEventListener('DOMContentLoaded', function() {
               // 슬롯 복원 후 리포트 렌더
               window.__TQ_SLOTS = saved.slots;
               if (!window.__reportRendered) {
+                // eng.date 보완 (load 경로)
+                if (window.__eng && window.__inp && window.__inp.reg_date) {
+                  window.__eng.date = window.__inp.reg_date.slice(0,10);
+                }
                 try { renderReportTab(); window.__reportRendered = true; } catch(e){}
               }
               // 저장된 결과 알림
@@ -5605,8 +5613,15 @@ function rptJosa(name, pair) {
 }
 var RPT_SLOT_DESC = ["강점과 가능성을 중심으로","현재 역량 상태와 원인 분석","지금 개선하지 않을 때의 리스크","맞춤 처방과 앞으로의 방향"];
 
-var RPT_now = new Date();
-var RPT_dateStr = RPT_now.getFullYear()+"년 "+(RPT_now.getMonth()+1)+"월 "+RPT_now.getDate()+"일";
+// 진단일: TQ 테스트 날짜 (D.date = inp.reg_date)
+var RPT_dateStr = (function(){
+  var raw = (D && D.date) || (window.__inp && window.__inp.reg_date) || '';
+  if (raw) {
+    var parts = raw.slice(0,10).split('-');
+    if (parts.length === 3) return parts[0]+'년 '+parseInt(parts[1])+'월 '+parseInt(parts[2])+'일';
+  }
+  var d = new Date(); return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+})();
 var lvMap = {초등:"초등학교",초저:"초등학교",초고:"초등학교",중등:"중학교",고등:"고등학교"};
 // RPT_lvLabel은 renderReportTab() 호출 후 D가 주입된 시점에 사용
 
@@ -5666,7 +5681,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.92</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.93</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
