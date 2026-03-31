@@ -5357,27 +5357,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     console.log('[TQ] 출처 허용:', event.origin);
 
-    // ★ 디버그: 수신 데이터 전체 출력
-    var d_check = msg.data;
-    console.log('[TQ] 수신 데이터 전체:', JSON.stringify(d_check, null, 2));
-    console.log('[TQ] 영어성적 필드 확인:', {
-      eng_score: d_check.eng_score,
-      eng: d_check.eng,
-      english: d_check.english,
-      english_score: d_check.english_score,
-    });
-    console.log('[TQ] 검사일 필드 확인:', {
-      reg_date: d_check.reg_date,
-      test_date: d_check.test_date,
-      date: d_check.date,
-    });
-
     // 데이터 형식 검증
     var msg = event.data;
     if (!msg || msg.type !== 'tqdata' || !msg.data) return;
 
     var d = msg.data;
     if (!d.name) return;
+
+    // ★ 디버그: 수신 데이터 전체 출력
+    console.log('[TQ] 수신 데이터 전체:', JSON.stringify(d, null, 2));
+    console.log('[TQ] 영어성적 필드:', {
+      eng_score: d.eng_score,
+      eng: d.eng,
+      english: d.english,
+      english_score: d.english_score,
+    });
+    console.log('[TQ] 검사일 필드:', {
+      reg_date: d.reg_date,
+      test_date: d.test_date,
+      date: d.date,
+    });
 
     // 학제 정규화
     var _lvNorm = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
