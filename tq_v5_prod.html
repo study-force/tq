@@ -564,7 +564,7 @@ details summary:hover{color:var(--tx2)}
   <!-- 로고 (좌측 고정) -->
   <div style="display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0;min-width:200px">
     <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 <span style="color:#EF4444;font-weight:800;font-size:12px">【 <span style="color:#fff">TQ TEST</span> 】</span> 결과 분석 시스템</span>
-  <span id="versionBadge" style="font-size:9px;color:#A78BFA;font-weight:600;margin-left:8px;letter-spacing:.3px;">v5.83</span> · 랜딩삭제</div>
+  <span id="versionBadge" style="font-size:9px;color:#A78BFA;font-weight:600;margin-left:8px;letter-spacing:.3px;">v5.84</span> · 랜딩삭제</div>
   <!-- 중앙: 학생명 + 탭 -->
   <div style="flex:1;display:flex;align-items:center;justify-content:center;height:100%;gap:0">
     <div id="result-student-name" style="display:none"></div>
@@ -1662,7 +1662,8 @@ gv("btnA").addEventListener("click",async function(){
   btnA.disabled=true; btnA.textContent="분석 중...";
 
   try{
-    const inp=getInputs();
+    // postMessage로 받은 데이터가 있으면 폼 대신 사용
+    const inp = (window.__inp && window.__inp.name) ? window.__inp : getInputs();
     if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
     const resp=await fetch(TQ_API_URL,{
       method:"POST",
@@ -5118,6 +5119,7 @@ function injectTqDataAndRun(d) {
     }, 3000);
   } else {
     setTimeout(function() {
+      window.__inp = d;  // btnA 클릭 전 __inp 세팅
       var btnA = document.getElementById('btnA');
       if (btnA) btnA.click();
     }, 80);
@@ -5177,13 +5179,14 @@ document.addEventListener('DOMContentLoaded', function() {
   safeRenderNav();
   v5Switch('판독');
 
-  // 숨겨진 폼 DOM 초기화 (buildScores / buildGrade / buildFactors / buildChecklists)
+  // 숨겨진 폼 DOM 초기화
   if(window.buildScores) window.buildScores();
   if(window.buildGrade) window.buildGrade();
   if(window.buildFactors) window.buildFactors();
   if(window.buildChecklists) window.buildChecklists();
   if(window.updateAccuracy) window.updateAccuracy();
-  document.getElementById("iGrade").value = "2";
+  var _iGrade = document.getElementById("iGrade");
+  if (_iGrade) _iGrade.value = "2";
 
   // URL 파라미터 ?tqdata=... 감지 → B안: 랜딩 건너뛰고 바로 분석
   var params = new URLSearchParams(window.location.search);
@@ -5556,7 +5559,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.83</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.84</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
