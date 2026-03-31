@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.73</span> · 검사일영수성적학년수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.74</span> · 수신데이터디버그</div>
 
   </div>
 </div>
@@ -5357,6 +5357,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     console.log('[TQ] 출처 허용:', event.origin);
 
+    // ★ 디버그: 수신 데이터 전체 출력
+    var d_check = msg.data;
+    console.log('[TQ] 수신 데이터 전체:', JSON.stringify(d_check, null, 2));
+    console.log('[TQ] 영어성적 필드 확인:', {
+      eng_score: d_check.eng_score,
+      eng: d_check.eng,
+      english: d_check.english,
+      english_score: d_check.english_score,
+    });
+    console.log('[TQ] 검사일 필드 확인:', {
+      reg_date: d_check.reg_date,
+      test_date: d_check.test_date,
+      date: d_check.date,
+    });
+
     // 데이터 형식 검증
     var msg = event.data;
     if (!msg || msg.type !== 'tqdata' || !msg.data) return;
@@ -5646,7 +5661,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.73</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.74</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
