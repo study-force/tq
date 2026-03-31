@@ -564,7 +564,7 @@ details summary:hover{color:var(--tx2)}
   <!-- 로고 (좌측 고정) -->
   <div style="display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0;min-width:200px">
     <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 <span style="color:#EF4444;font-weight:800;font-size:12px">【 <span style="color:#fff">TQ TEST</span> 】</span> 결과 분석 시스템</span>
-  <span id="versionBadge" style="font-size:9px;color:#A78BFA;font-weight:600;margin-left:8px;letter-spacing:.3px;">v5.84</span> · 랜딩삭제</div>
+  <span id="versionBadge" style="font-size:9px;color:#A78BFA;font-weight:600;margin-left:8px;letter-spacing:.3px;">v5.86</span> · 랜딩삭제</div>
   <!-- 중앙: 학생명 + 탭 -->
   <div style="flex:1;display:flex;align-items:center;justify-content:center;height:100%;gap:0">
     <div id="result-student-name" style="display:none"></div>
@@ -1654,16 +1654,15 @@ function renderResult(e,nm){
 function showErr(m){const b=gv("errBox");b.style.display="block";b.textContent=m;}
 function hideErr(){gv("errBox").style.display="none";}
 
-gv("btnA").addEventListener("click",async function(){
+async function runAnalysisDirect(inpOverride) {
   hideErr();
   var b=document.getElementById("reanalyzeBanner");
   if(b)b.remove();
-  var btnA=gv("btnA");
-  btnA.disabled=true; btnA.textContent="분석 중...";
+  // 분석 시작
 
   try{
-    // postMessage로 받은 데이터가 있으면 폼 대신 사용
-    const inp = (window.__inp && window.__inp.name) ? window.__inp : getInputs();
+    const inp = inpOverride || (window.__inp && window.__inp.name ? window.__inp : (typeof getInputs==="function" ? getInputs() : null));
+    if (!inp || !inp.name) { return; }
     if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
     const resp=await fetch(TQ_API_URL,{
       method:"POST",
@@ -1752,8 +1751,11 @@ gv("btnA").addEventListener("click",async function(){
     window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
   finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
-});
+}}
+window.runAnalysisDirect = runAnalysisDirect;
 
+// btnA 핸들러 (폼 방식 호환)
+if(gv("btnA")) gv("btnA").addEventListener("click", function(){ runAnalysisDirect(); });
 // ── (판독문 생성은 서버에서 처리) ──
 // SYS_P는 서버(Supabase Edge Function)에만 존재합니다
 
@@ -5113,15 +5115,13 @@ function injectTqDataAndRun(d) {
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
     setTimeout(function() {
       if (!_loaded && !window.__TQ_SLOTS) {
-        var btnA = document.getElementById('btnA');
-        if (btnA) btnA.click();
+        runAnalysisDirect(window.__inp);
       }
     }, 3000);
   } else {
     setTimeout(function() {
-      window.__inp = d;  // btnA 클릭 전 __inp 세팅
-      var btnA = document.getElementById('btnA');
-      if (btnA) btnA.click();
+      window.__inp = d;
+      runAnalysisDirect(d);
     }, 80);
   }
 }
@@ -5559,7 +5559,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.84</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.86</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
