@@ -1750,8 +1750,8 @@ async function runAnalysisDirect(inpOverride) {
     }
     window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
   }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
-  finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
-}}
+  finally{ var _btnA=document.getElementById('btnA'); if(_btnA){_btnA.disabled=false;_btnA.textContent='① 분석 — 규칙 엔진 실행';} }
+}
 window.runAnalysisDirect = runAnalysisDirect;
 
 // btnA 핸들러 (폼 방식 호환)
