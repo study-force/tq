@@ -585,11 +585,103 @@ details summary:hover{color:var(--tx2)}
 </div>
 <div id="v5panel_판독" style="display:block">
 <!-- ══ 샘플 랜딩 페이지 (입력 폼 제거, tqdata 파라미터 없을 때 표시) ══ -->
+<div id="page-input" style="display:flex;flex-direction:column;height:calc(100vh - 40px);background:var(--bg);overflow:hidden">
 
-<div id="page-result" style="display:block;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
-  <!-- 버전 정보 -->
-  <div style="text-align:center;padding:8px 0 4px;font-size:10px;color:#6366F1;letter-spacing:.5px;">
-    TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.87</span> · 랜딩삭제</div>
+  <!-- 숨겨진 폼 DOM (JS 엔진이 읽는 값만 유지 — 화면에 표시 안 됨) -->
+  <div id="hidden-form-inputs" style="display:none;visibility:hidden;position:absolute;left:-9999px">
+    <div id="imgFullWrap"><img id="imgFull" src=""></div>
+    <div id="imgPreviewLeft"><img id="imgPreviewLeftImg" src=""></div>
+    <div id="ocrZone"><input type="file" id="imgInput" accept="image/*"><span id="ocrStatus"></span><div id="ocrPlaceholder"></div></div>
+    <input type="text" id="iName" value="" autocomplete="off">
+    <input type="date" id="iDate" value="">
+    <select id="iLevel" onchange="onLevelChange()">
+      <option value="초등">초등학생</option>
+      <option value="중등" selected>중학생</option>
+      <option value="고등">고등학생</option>
+      <option value="일반">일반</option>
+    </select>
+    <select id="iGrade"></select>
+    <div class="fl3" id="scoreArea"></div>
+    <span id="accVal">20</span>
+    <span id="sFctV">20</span><input type="range" id="sFct" min="0" max="100" step="10" value="20">
+    <span id="sStrV">0</span><input type="range" id="sStr" min="0" max="100" step="10" value="0">
+    <input type="number" id="sSpd" min="0" max="9999" step="10" value="584">
+    <div id="factorSliders"></div>
+    <div id="habChecks"></div>
+    <div id="effChecks"></div>
+    <span class="chk-score" id="habScore">점수: 100</span>
+    <span class="chk-score" id="effScore">점수: 100</span>
+    <div class="err" id="errBox"></div>
+    <button class="btn bA" id="btnA">분석</button>
+    <button class="btn bB" id="btnB" disabled>판독문</button>
+    <button class="btn" id="btnR" disabled>리포트</button>
+    <button class="btn" id="btnReset">다음 학생</button>
+  </div>
+
+  <!-- ── 랜딩 화면 ── -->
+  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 48px">
+
+    <!-- 헤더 로고 -->
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin:0 auto 14px;box-shadow:0 8px 24px rgba(139,92,246,.35)">TQ</div>
+      <div style="font-size:17px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.3px;margin-bottom:5px">TQ TEST 결과 분석 시스템</div>
+      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase">STUDYFORCE LANGUAGE RESEARCH INSTITUTE</div>
+    </div>
+
+    <!-- 안내 문구 -->
+    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);border-radius:10px;padding:12px 18px;margin-bottom:28px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:11px;font-weight:600;color:#A78BFA;margin-bottom:3px">📡 외부 연동 대기 중</div>
+      <div style="font-size:11px;color:#1E293B;line-height:1.7">관리 사이트의 <strong style="color:#0F172A;font-weight:700">[결과판독]</strong> 버튼을 클릭하면<br>학생 데이터가 자동으로 전달되어 분석이 시작됩니다.</div>
+    </div>
+
+    <!-- 샘플 테스트 버튼 4개 -->
+    <div style="max-width:400px;width:100%">
+      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;text-align:center">— 샘플 데이터로 테스트 —</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <button onclick="runSampleDirect(0)" style="background:rgba(139,92,246,.09);border:1px solid rgba(139,92,246,.22);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(139,92,246,.18)';this.style.borderColor='rgba(139,92,246,.4)'" onmouseout="this.style.background='rgba(139,92,246,.09)';this.style.borderColor='rgba(139,92,246,.22)'">
+          <div style="font-size:13px;font-weight:700;color:#C4B5FD;margin-bottom:4px">진호윤</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">초등 5학년<br>고역량 · 잠재력 미개방형</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(139,92,246,.15);border-radius:4px;padding:2px 7px">
+            <span style="font-size:9px;font-weight:700;color:#A78BFA">▶ 분석 시작</span>
+          </div>
+        </button>
+
+        <button onclick="runSampleDirect(1)" style="background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(220,38,38,.16)';this.style.borderColor='rgba(220,38,38,.4)'" onmouseout="this.style.background='rgba(220,38,38,.07)';this.style.borderColor='rgba(220,38,38,.2)'">
+          <div style="font-size:13px;font-weight:700;color:#FCA5A5;margin-bottom:4px">이준혁</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">중학교 2학년<br>역량 모순 · 즉각 개입 필요</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(220,38,38,.13);border-radius:4px;padding:2px 7px">
+            <span style="font-size:9px;font-weight:700;color:#FCA5A5">▶ 분석 시작</span>
+          </div>
+        </button>
+
+        <button onclick="runSampleDirect(2)" style="background:rgba(217,119,6,.07);border:1px solid rgba(217,119,6,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(217,119,6,.16)';this.style.borderColor='rgba(217,119,6,.4)'" onmouseout="this.style.background='rgba(217,119,6,.07)';this.style.borderColor='rgba(217,119,6,.2)'">
+          <div style="font-size:13px;font-weight:700;color:#FCD34D;margin-bottom:4px">박서연</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">중학교 1학년<br>논리 두뇌 미발현형 · 조기 개입</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(217,119,6,.13);border-radius:4px;padding:2px 7px">
+            <span style="font-size:9px;font-weight:700;color:#FCD34D">▶ 분석 시작</span>
+          </div>
+        </button>
+
+        <button onclick="runSampleDirect(3)" style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:10px;padding:14px 14px;cursor:pointer;text-align:left;transition:all .2s;font-family:inherit" onmouseover="this.style.background='rgba(37,99,235,.16)';this.style.borderColor='rgba(37,99,235,.4)'" onmouseout="this.style.background='rgba(37,99,235,.07)';this.style.borderColor='rgba(37,99,235,.2)'">
+          <div style="font-size:13px;font-weight:700;color:#93C5FD;margin-bottom:4px">김민서</div>
+          <div style="font-size:9.5px;color:#1E293B;line-height:1.6">고등학교 1학년<br>성실한 암기 의존형 · 중장기</div>
+          <div style="margin-top:8px;display:inline-flex;align-items:center;gap:4px;background:rgba(37,99,235,.13);border-radius:4px;padding:2px 7px">
+            <span style="font-size:9px;font-weight:700;color:#93C5FD">▶ 분석 시작</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- 하단 버전 표시 -->
+    <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.80</span> · 버튼label1적용</div>
+
+  </div>
+</div>
+
+<div id="page-result" style="display:none;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
   <div id="resultPane_판독" style="display:block">
@@ -1654,21 +1746,10 @@ function renderResult(e,nm){
   return html;
 }
 
-function showErr(m){const b=gv("errBox");if(b){b.style.display="block";b.textContent=m;}}
-function hideErr(){const b=gv("errBox");if(b)b.style.display="none";}
+function showErr(m){const b=gv("errBox");b.style.display="block";b.textContent=m;}
+function hideErr(){gv("errBox").style.display="none";}
 
-// btnA 핸들러 (폼 방식)
-if(gv("btnA")) gv("btnA").addEventListener("click", function(){ runAnalysisDirect(); });
-
-async function runAnalysisDirect(inpArg) {
-  var _btnA = document.getElementById("btnA");
-  if (_btnA) { _btnA.disabled=true; _btnA.textContent="분석 중..."; }
-  var _err = document.getElementById("errBox");
-  function _showErr(m){ if(_err){ _err.style.display="block"; _err.textContent=m; } else { console.error(m); } }
-  function _hideErr(){ if(_err) _err.style.display="none"; }
-  _hideErr();
-  var b=document.getElementById("reanalyzeBanner"); if(b)b.remove();
-  {
+gv("btnA").addEventListener("click",async function(){
   hideErr();
   var b=document.getElementById("reanalyzeBanner");
   if(b)b.remove();
@@ -1676,8 +1757,8 @@ async function runAnalysisDirect(inpArg) {
   btnA.disabled=true; btnA.textContent="분석 중...";
 
   try{
-    const inp = inpArg || (window.__inp && window.__inp.name ? window.__inp : getInputs());
-    if (!inp.name) { _showErr("학생 이름이 없습니다. 데이터를 확인하세요."); if(_btnA){_btnA.disabled=false; _btnA.textContent="① 분석 — 규칙 엔진 실행";} return; }
+    const inp=getInputs();
+    if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
     const resp=await fetch(TQ_API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
@@ -1763,11 +1844,9 @@ async function runAnalysisDirect(inpArg) {
       setTimeout(function(){ gv("btnB").click(); }, 200);
     }
     window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
-  }catch(err){_showErr("분석 오류: "+err.message);console.error(err);}
-  finally{ if(_btnA){_btnA.disabled=false; _btnA.textContent="① 분석 — 규칙 엔진 실행";} }
-  }
-}
-window.runAnalysisDirect = runAnalysisDirect;
+  }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
+  finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
+});
 
 // ── (판독문 생성은 서버에서 처리) ──
 // SYS_P는 서버(Supabase Edge Function)에만 존재합니다
@@ -5134,13 +5213,14 @@ function injectTqDataAndRun(d) {
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
     setTimeout(function() {
       if (!_loaded && !window.__TQ_SLOTS) {
-        runAnalysisDirect(window.__inp);
+        var btnA = document.getElementById('btnA');
+        if (btnA) btnA.click();
       }
     }, 3000);
   } else {
     setTimeout(function() {
-      window.__inp = d;
-      runAnalysisDirect(d);
+      var btnA = document.getElementById('btnA');
+      if (btnA) btnA.click();
     }, 80);
   }
 }
@@ -5204,7 +5284,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if(window.buildFactors) window.buildFactors();
   if(window.buildChecklists) window.buildChecklists();
   if(window.updateAccuracy) window.updateAccuracy();
-  var _ig=document.getElementById("iGrade"); if(_ig) _ig.value="2";
+  document.getElementById("iGrade").value = "2";
 
   // URL 파라미터 ?tqdata=... 감지 → B안: 랜딩 건너뛰고 바로 분석
   var params = new URLSearchParams(window.location.search);
@@ -5233,8 +5313,8 @@ document.addEventListener('DOMContentLoaded', function() {
             window.__TQ_SLOTS = saved.slots;
             window.__TQ_SAVED_ID = saved.id;
             // 판독 페이지로 이동
-            window.__inp = d;
-            runAnalysisDirect(d);
+            var btnA = document.getElementById('btnA');
+            if (btnA) btnA.click(); // 엔진 재실행 (inp 세팅 후)
             setTimeout(function() {
               // 슬롯 복원 후 리포트 렌더
               window.__TQ_SLOTS = saved.slots;
@@ -5577,7 +5657,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.87</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.80</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
