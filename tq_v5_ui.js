@@ -1499,7 +1499,6 @@ if(_tDate) showSavedResultToast(_tDate);
 
   event.source.postMessage({ type: 'tqdata_received', name: d.name }, event.origin);
 });
-</script>
 
 // ── Resizer ──
   function initResizer() {
