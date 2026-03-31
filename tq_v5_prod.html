@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.77</span> · 리스너DOM밖으로이동</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.79</span> · 체크리스트변환+토스트수정</div>
 
   </div>
 </div>
@@ -5084,14 +5084,14 @@ function injectTqDataAndRun(d) {
   if(window.updateAccuracy) window.updateAccuracy();
 
   // 독해습관 체크리스트 (tqdata: hab_checks / SAMPLES: habChecks)
-  var hArr = d.reading_habit_checks;
+  var hArr = Array.isArray(d.reading_habit_checks) ? d.reading_habit_checks.map(function(v){return !!v;}) : [];
   if (Array.isArray(hArr)) {
     hArr.forEach(function(v, i) {
       var el = document.getElementById('h'+i); if(el) el.checked = !!v;
     });
   }
   // 독해효율성 체크리스트 (tqdata: eff_checks / SAMPLES: effChecks)
-  var eArr = d.reading_effect_checks;
+  var eArr = Array.isArray(d.reading_effect_checks) ? d.reading_effect_checks.map(function(v){return !!v;}) : [];
   if (Array.isArray(eArr)) {
     eArr.forEach(function(v, i) {
       var el = document.getElementById('e'+i); if(el) el.checked = !!v;
@@ -5207,7 +5207,7 @@ function injectTqDataAndRun(d) {
           }
         }, 500);
 
-        showSavedResultToast(saved.reg_date || saved.test_date);
+        if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
       }, 300);
     });
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
@@ -5322,7 +5322,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 try { renderReportTab(); window.__reportRendered = true; } catch(e){}
               }
               // 저장된 결과 알림
-              showSavedResultToast(saved.reg_date || saved.test_date);
+              if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
             }, 1500);
           });
         }
@@ -5412,7 +5412,7 @@ window.addEventListener('message', function(event) {
         if (!window.__reportRendered) {
           try { renderReportTab(); window.__reportRendered = true; } catch(e){}
         }
-        showSavedResultToast(saved.reg_date || saved.test_date);
+        if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
       }, 1500);
     });
   }
@@ -5657,7 +5657,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.77</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.79</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
@@ -5927,7 +5927,7 @@ var ALL_PROGRAMS = [
       return r.join(" ");
     }
   },
-  { key:"초급예비과정", label1:"초급예비과정",
+  { key:"초급예비과정", label1:"초급예비",
     goal:"독해 훈련에 앞서 워킹메모리 용량을 집중 향상하는 준비 과정. 정보를 읽으면서 동시에 기억·처리하는 능력을 키워 본격 독해 훈련의 효과를 높입니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){
@@ -5938,7 +5938,7 @@ var ALL_PROGRAMS = [
       return r.join(" ");
     }
   },
-  { key:"초급기본과정", label1:"초급기본과정",
+  { key:"초급기본과정", label1:"초급기본",
     goal:"사실적 이해와 구조적 이해를 균형 있게 훈련하는 초급 독해 핵심 과정. 글의 세부 정보를 정확히 파악하고 전체 흐름을 파악하는 능력을 동시에 형성합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){
@@ -5950,17 +5950,17 @@ var ALL_PROGRAMS = [
       return r.join(" ");
     }
   },
-  { key:"초급심화과정", label1:"초급심화과정",
+  { key:"초급심화과정", label1:"초급심화",
     goal:"초급 수준의 독해 속도와 정확도를 통합적으로 높이는 심화 과정. 다양한 비문학 주제 지문을 빠르고 정확하게 처리하는 능력을 완성합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){ return "초급기본과정에서 형성한 독해 정확도를 속도와 결합하여 실전 독해 능력으로 완성하는 단계입니다. 비문학 지문의 핵심 정보를 빠르게 처리하는 훈련이 본격화됩니다."; }
   },
-  { key:"중급예비과정", label1:"중급예비과정",
+  { key:"중급예비과정", label1:"중급예비",
     goal:"중급 독해 훈련 진입 전 워킹메모리를 중급 수준으로 향상하는 준비 과정. 중학 교과 수준의 복잡한 지문을 처리할 수 있는 인지 기반을 마련합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){ return "중급 독해 지문은 정보 밀도가 높아 워킹메모리가 충분하지 않으면 훈련 효과가 제한됩니다. 중급 과정 진입 전 워킹메모리를 집중적으로 강화합니다."; }
   },
-  { key:"중급기본과정", label1:"중급기본과정",
+  { key:"중급기본과정", label1:"중급기본",
     goal:"중학 교과 수준 지문의 사실적·구조적 이해와 추론능력을 통합 훈련하는 핵심 과정. 논리적 읽기 능력과 글의 의도 파악 능력을 형성합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){
@@ -5970,17 +5970,17 @@ var ALL_PROGRAMS = [
       return r.join(" ");
     }
   },
-  { key:"중급심화과정", label1:"중급심화과정",
+  { key:"중급심화과정", label1:"중급심화",
     goal:"중급 수준의 속도·정확도·추론을 통합하는 심화 과정. 고등 수준 독해 진입을 위한 교량 역할을 합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){ return "중급 독해 역량을 완성하고 고등 수준 지문 처리를 위한 고급 추론 능력을 준비하는 단계입니다."; }
   },
-  { key:"고급기본과정", label1:"고급기본과정",
+  { key:"고급기본과정", label1:"고급기본",
     goal:"고등 수준 지문의 논리적 구조 파악과 복합 추론을 훈련하는 과정. 수능형 비문학 독해의 기초를 완성합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){ return "고난도 지문에서 필요한 논리적 사고력과 복합 추론 능력을 체계적으로 훈련합니다."; }
   },
-  { key:"고급심화과정", label1:"고급심화과정",
+  { key:"고급심화과정", label1:"고급심화",
     goal:"수능·고난도 비문학 지문을 제한 시간 내에 정확하게 독해하는 최종 완성 과정. 실전 시험 대응 능력을 극대화합니다.",
     sessions:60, period:"3~5개월",
     reasonFn: function(d){ return "수능 및 고난도 시험에서 비문학 지문을 빠르고 정확하게 처리하는 실전 능력을 완성합니다."; }
