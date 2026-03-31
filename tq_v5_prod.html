@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.72</span> · 출처검증와일드카드</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.73</span> · 검사일영수성적학년수정</div>
 
   </div>
 </div>
@@ -1556,7 +1556,7 @@ function renderResult(e,nm){
       <!-- 검사일 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
         <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
-        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date||"—"}</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date?(e.date.slice(0,10)):"—"}</span>
       </div>
 
       <!-- 난이도 -->
@@ -1771,7 +1771,14 @@ gv("btnA").addEventListener("click",async function(){
     window.__eng=eng; window.__nm=inp.name; window.__inp=inp;
     if(gv("emptyView"))gv("emptyView").style.display="none";
     const rv=gv("resultView");
-    eng.grade = eng.grade || inp.user_school_grade || null;
+    // renderResult에 필요한 inp 필드를 eng에 보완
+    eng.grade   = eng.grade  || inp.user_school_grade || null;
+    eng.level   = eng.level  || inp.user_section || null;
+    eng.uiLevel = inp.uiLevel || inp.user_section || null;
+    eng.date    = inp.reg_date || null;
+    eng.eng     = eng.eng    || inp.eng_score  || null;
+    eng.math    = eng.math   || inp.math_score || null;
+    eng.kor     = eng.kor    || inp.kor_score  || null;
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -5639,7 +5646,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.72</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.73</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
