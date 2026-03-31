@@ -1641,4 +1641,3 @@ if (DEV_BYPASS) {
     var _bB = document.getElementById("btnB"); if (_bB) _bB.disabled = false;
   });
 }
-</script>

@@ -2804,4 +2804,3 @@ window.openReport=openReport;
 gv("btnR").addEventListener("click",openReport);
 
 })();
-</script>

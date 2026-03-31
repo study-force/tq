@@ -1129,4 +1129,3 @@ function showEditBar() {
   console.log('[showEditBar] 편집바 생성 완료, currentActiveKeys:', currentActiveKeys);
 }
 window.showEditBar = showEditBar;
-</script>
