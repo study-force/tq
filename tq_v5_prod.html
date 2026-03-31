@@ -589,7 +589,7 @@ details summary:hover{color:var(--tx2)}
 <div id="page-result" style="display:block;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
   <!-- 버전 정보 -->
   <div style="text-align:center;padding:8px 0 4px;font-size:10px;color:#6366F1;letter-spacing:.5px;">
-    TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.81</span> · 랜딩삭제</div>
+    TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.87</span> · 랜딩삭제</div>
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
   <div id="resultPane_판독" style="display:block">
@@ -1654,10 +1654,21 @@ function renderResult(e,nm){
   return html;
 }
 
-function showErr(m){const b=gv("errBox");b.style.display="block";b.textContent=m;}
-function hideErr(){gv("errBox").style.display="none";}
+function showErr(m){const b=gv("errBox");if(b){b.style.display="block";b.textContent=m;}}
+function hideErr(){const b=gv("errBox");if(b)b.style.display="none";}
 
-gv("btnA").addEventListener("click",async function(){
+// btnA 핸들러 (폼 방식)
+if(gv("btnA")) gv("btnA").addEventListener("click", function(){ runAnalysisDirect(); });
+
+async function runAnalysisDirect(inpArg) {
+  var _btnA = document.getElementById("btnA");
+  if (_btnA) { _btnA.disabled=true; _btnA.textContent="분석 중..."; }
+  var _err = document.getElementById("errBox");
+  function _showErr(m){ if(_err){ _err.style.display="block"; _err.textContent=m; } else { console.error(m); } }
+  function _hideErr(){ if(_err) _err.style.display="none"; }
+  _hideErr();
+  var b=document.getElementById("reanalyzeBanner"); if(b)b.remove();
+  {
   hideErr();
   var b=document.getElementById("reanalyzeBanner");
   if(b)b.remove();
@@ -1665,8 +1676,8 @@ gv("btnA").addEventListener("click",async function(){
   btnA.disabled=true; btnA.textContent="분석 중...";
 
   try{
-    const inp=getInputs();
-    if (!inp.name) { showErr("학생 이름이 없습니다. 데이터를 확인하세요."); btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행"; return; }
+    const inp = inpArg || (window.__inp && window.__inp.name ? window.__inp : getInputs());
+    if (!inp.name) { _showErr("학생 이름이 없습니다. 데이터를 확인하세요."); if(_btnA){_btnA.disabled=false; _btnA.textContent="① 분석 — 규칙 엔진 실행";} return; }
     const resp=await fetch(TQ_API_URL,{
       method:"POST",
       headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
@@ -1752,9 +1763,11 @@ gv("btnA").addEventListener("click",async function(){
       setTimeout(function(){ gv("btnB").click(); }, 200);
     }
     window.__SKIP_AUTO_GENERATE = false; // 플래그 초기화
-  }catch(err){showErr("분석 오류: "+err.message);console.error(err);}
-  finally{btnA.disabled=false; btnA.textContent="① 분석 — 규칙 엔진 실행";}
-});
+  }catch(err){_showErr("분석 오류: "+err.message);console.error(err);}
+  finally{ if(_btnA){_btnA.disabled=false; _btnA.textContent="① 분석 — 규칙 엔진 실행";} }
+  }
+}
+window.runAnalysisDirect = runAnalysisDirect;
 
 // ── (판독문 생성은 서버에서 처리) ──
 // SYS_P는 서버(Supabase Edge Function)에만 존재합니다
@@ -5121,14 +5134,13 @@ function injectTqDataAndRun(d) {
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
     setTimeout(function() {
       if (!_loaded && !window.__TQ_SLOTS) {
-        var btnA = document.getElementById('btnA');
-        if (btnA) btnA.click();
+        runAnalysisDirect(window.__inp);
       }
     }, 3000);
   } else {
     setTimeout(function() {
-      var btnA = document.getElementById('btnA');
-      if (btnA) btnA.click();
+      window.__inp = d;
+      runAnalysisDirect(d);
     }, 80);
   }
 }
@@ -5192,7 +5204,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if(window.buildFactors) window.buildFactors();
   if(window.buildChecklists) window.buildChecklists();
   if(window.updateAccuracy) window.updateAccuracy();
-  document.getElementById("iGrade").value = "2";
+  var _ig=document.getElementById("iGrade"); if(_ig) _ig.value="2";
 
   // URL 파라미터 ?tqdata=... 감지 → B안: 랜딩 건너뛰고 바로 분석
   var params = new URLSearchParams(window.location.search);
@@ -5221,8 +5233,8 @@ document.addEventListener('DOMContentLoaded', function() {
             window.__TQ_SLOTS = saved.slots;
             window.__TQ_SAVED_ID = saved.id;
             // 판독 페이지로 이동
-            var btnA = document.getElementById('btnA');
-            if (btnA) btnA.click(); // 엔진 재실행 (inp 세팅 후)
+            window.__inp = d;
+            runAnalysisDirect(d);
             setTimeout(function() {
               // 슬롯 복원 후 리포트 렌더
               window.__TQ_SLOTS = saved.slots;
@@ -5565,7 +5577,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.81</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.87</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
