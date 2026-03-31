@@ -1501,6 +1501,7 @@ if(_tDate) showSavedResultToast(_tDate);
 });
 
 // ── Resizer ──
+(function() {
   function initResizer() {
     var r = document.getElementById('layoutResizer');
     var lp = document.querySelector('.L');
