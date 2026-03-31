@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.89</span> · 버튼label1적용</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.90</span> · 버튼label1적용</div>
 
   </div>
 </div>
@@ -5207,7 +5207,8 @@ function injectTqDataAndRun(d) {
           }
         }, 500);
 
-        if(saved.reg_date || saved.test_date) if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
+        if(saved.reg_date || saved.test_date) var _tDate = (window.__inp && window.__inp.reg_date) ? window.__inp.reg_date.slice(0,10) : (saved.reg_date || saved.test_date || '');
+if(_tDate) showSavedResultToast(_tDate);
       }, 300);
     });
     // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
@@ -5323,7 +5324,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 try { renderReportTab(); window.__reportRendered = true; } catch(e){}
               }
               // 저장된 결과 알림
-              if(saved.reg_date || saved.test_date) if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
+              if(saved.reg_date || saved.test_date) var _tDate = (window.__inp && window.__inp.reg_date) ? window.__inp.reg_date.slice(0,10) : (saved.reg_date || saved.test_date || '');
+if(_tDate) showSavedResultToast(_tDate);
             }, 1500);
           });
         }
@@ -5413,7 +5415,8 @@ window.addEventListener('message', function(event) {
         if (!window.__reportRendered) {
           try { renderReportTab(); window.__reportRendered = true; } catch(e){}
         }
-        if(saved.reg_date || saved.test_date) if(saved.reg_date || saved.test_date) showSavedResultToast(saved.reg_date || saved.test_date);
+        if(saved.reg_date || saved.test_date) var _tDate = (window.__inp && window.__inp.reg_date) ? window.__inp.reg_date.slice(0,10) : (saved.reg_date || saved.test_date || '');
+if(_tDate) showSavedResultToast(_tDate);
       }, 1500);
     });
   }
@@ -5658,7 +5661,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.89</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.90</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
