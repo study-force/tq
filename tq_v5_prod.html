@@ -676,7 +676,7 @@ details summary:hover{color:var(--tx2)}
 
     <!-- 하단 버전 표시 -->
     <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.69</span> · 막대그래프색상수정</div>
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v5.70</span> · postMessage즉시처리</div>
 
   </div>
 </div>
@@ -2576,6 +2576,10 @@ window.switchResultTab = switchResultTab;
 // 페이지 전환: 입력 ↔ 결과
 // ════════════════════════════════════════════════
 function showResultPage(nm) {
+  // postMessage 로딩 인디케이터 제거
+  var loadingDiv = document.getElementById('_postMsgLoading');
+  if (loadingDiv) loadingDiv.remove();
+
   var inp  = document.getElementById('page-input');
   var res  = document.getElementById('page-result');
   if (!inp || !res) return;
@@ -5348,9 +5352,19 @@ document.addEventListener('DOMContentLoaded', function() {
       '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
     if (d.user_section) d.user_section = _lvNorm[d.user_section] || d.user_section;
 
-    // 랜딩 페이지 숨김
+    // 랜딩 페이지 즉시 숨김
     var landingEl = document.getElementById('page-input');
     if (landingEl) landingEl.style.display = 'none';
+
+    // 로딩 인디케이터 표시 (분석 완료까지)
+    var loadingDiv = document.getElementById('_postMsgLoading');
+    if (!loadingDiv) {
+      loadingDiv = document.createElement('div');
+      loadingDiv.id = '_postMsgLoading';
+      loadingDiv.style.cssText = 'position:fixed;inset:0;background:#020617;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999;';
+      loadingDiv.innerHTML = '<div style="width:40px;height:40px;border:3px solid rgba(139,92,246,.3);border-top-color:#8B5CF6;border-radius:50%;animation:tq-spin .8s linear infinite"></div><div style="color:rgba(255,255,255,.7);font-size:13px;">데이터 수신 중...</div>';
+      document.body.appendChild(loadingDiv);
+    }
 
     // 기존 판독 결과 조회
     if (d.name && d.reading_score) {
@@ -5615,7 +5629,7 @@ function buildFooter(pageNum, total) {
     +'<div style="display:flex;align-items:center;gap:8px">'
     +''
     +'<span style="font-size:9px;color:rgba(255,255,255,.7);letter-spacing:.5px">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.69</span>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.3px;margin-left:8px">v5.70</span>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<span style="font-size:9px;color:rgba(255,255,255,.6)">'+D.name+'</span>'
