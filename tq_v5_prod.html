@@ -483,6 +483,7 @@ details summary:hover{color:var(--tx2)}
 #page-input .div { background: rgba(255,255,255,.06); }
 
 /* ── 판독 등장 애니메이션 ── */
+@keyframes tq-pulse { 0%,100%{opacity:.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
 @keyframes tq-fadein       { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 @keyframes tq-fadein-left  { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
 @keyframes tq-fadein-right { from{opacity:0;transform:translateX(20px)}  to{opacity:1;transform:translateX(0)} }
@@ -2962,6 +2963,8 @@ function postRenderSWOT(eng, inp) {
     if (eng.retest) flagHtml += '<span style="background:rgba(30,64,175,.25);color:#93C5FD;border:1px solid rgba(147,197,253,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">↺ 재검사권고</span>';
   // 플래그 배지: 있으면 강조, 없으면 흐릿하게 — 항상 표시
   var flagItems = [
+    { key:'flagMolip',  label:'⚡ 몰입훈련 권장', bg:'rgba(234,88,12,.3)',   tx:'#FB923C', bd:'rgba(251,146,60,.5)', highlight:true },
+    { key:'flagTeukmok',label:'🎯 특목자사고 권장', bg:'rgba(109,40,217,.3)',  tx:'#A78BFA', bd:'rgba(167,139,250,.5)', highlight:true },
     { key:'flagC',  label:'⚠ 모순패턴',   bg:'rgba(185,28,28,.25)',  tx:'#FCA5A5', bd:'rgba(252,165,165,.4)'  },
     { key:'flagO',  label:'⚡ 선행과부하', bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
     { key:'invSpd', label:'△ 속도이상',   bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
@@ -2969,14 +2972,19 @@ function postRenderSWOT(eng, inp) {
   ];
   var flagDiv = document.createElement('div');
   flagDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:8px 2px 0';
-  var flagMap = { flagC: eng.flagC, flagO: eng.flagO, invSpd: eng.invSpd, retest: eng.retest };
+  var flagMap = { flagC: eng.flagC, flagO: eng.flagO, invSpd: eng.invSpd, retest: eng.retest, flagMolip: eng.flagMolip, flagTeukmok: eng.flagTeukmok };
   flagItems.forEach(function(fi) {
     var on = !!flagMap[fi.key];
+    if (!on && fi.highlight) return;
     var sp = document.createElement('span');
-    sp.style.cssText = 'padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700;transition:opacity .2s;'
-      + (on
-        ? 'background:'+fi.bg+';color:'+fi.tx+';border:1px solid '+fi.bd+';opacity:1'
-        : 'background:rgba(255,255,255,.04);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.08);opacity:.5');
+    var isHL = on && fi.highlight;
+    sp.style.cssText = 'border-radius:8px;font-weight:700;transition:opacity .2s;'
+      + (isHL
+        ? 'padding:5px 14px;font-size:12px;background:'+fi.bg+';color:'+fi.tx+';border:2px solid '+fi.bd+';opacity:1;box-shadow:0 0 12px '+fi.bd+';animation:tq-pulse 2s ease-in-out infinite'
+        : 'padding:3px 10px;font-size:10px;'
+          + (on
+            ? 'background:'+fi.bg+';color:'+fi.tx+';border:1px solid '+fi.bd+';opacity:1'
+            : 'background:rgba(255,255,255,.04);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.08);opacity:.5'));
     sp.textContent = fi.label;
     flagDiv.appendChild(sp);
   });
