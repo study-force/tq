@@ -1556,7 +1556,7 @@ function renderResult(e,nm){
       <!-- 진단일 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
         <span style="font-size:11px;color:rgba(255,255,255,.4)">진단일</span>
-        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date?(e.date.slice(0,10)):"—"}</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${(e.date||(window.__inp&&window.__inp.reg_date)||"").slice(0,10)||"—"}</span>
       </div>
 
       <!-- 난이도 -->
