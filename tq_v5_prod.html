@@ -618,25 +618,56 @@ details summary:hover{color:var(--tx2)}
     <button class="btn" id="btnReset">다음 학생</button>
   </div>
 
-  <!-- ── 랜딩 화면 ── -->
-  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 48px">
+  <!-- ── 데이터 수신 대기 화면 ── -->
+  <div id="landing-wait" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px 48px">
+    <style>
+      @keyframes tqPulse { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.08);opacity:1} }
+      @keyframes tqScan { 0%{left:-30%} 100%{left:130%} }
+      @keyframes tqFade { 0%,100%{opacity:.3} 50%{opacity:1} }
+      @keyframes tqBar { 0%{width:5%} 50%{width:65%} 75%{width:80%} 100%{width:92%} }
+      @keyframes tqDot { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
+      .tq-wait-ring { width:80px;height:80px;border-radius:50%;border:3px solid rgba(139,92,246,.12);border-top-color:#8B5CF6;animation:spin 1.2s linear infinite;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;position:relative }
+      .tq-wait-ring::after { content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(0,201,167,.08);border-bottom-color:#00C9A7;animation:spin 1.8s linear infinite reverse }
+      @keyframes spin { to{transform:rotate(360deg)} }
+      .tq-wait-logo { width:36px;height:36px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;animation:tqPulse 2.5s ease-in-out infinite;z-index:1 }
+      .tq-wait-bar-wrap { width:220px;height:4px;background:rgba(139,92,246,.1);border-radius:4px;overflow:hidden;margin:20px auto 0;position:relative }
+      .tq-wait-bar-fill { height:100%;background:linear-gradient(90deg,#8B5CF6,#00C9A7);border-radius:4px;animation:tqBar 8s ease-out forwards }
+      .tq-wait-bar-scan { position:absolute;top:0;height:100%;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:tqScan 2s ease-in-out infinite }
+      .tq-wait-steps { margin-top:28px;display:flex;flex-direction:column;gap:6px;align-items:center }
+      .tq-wait-step { font-size:10px;color:rgba(139,92,246,.5);font-weight:500;display:flex;align-items:center;gap:6px;transition:all .5s }
+      .tq-wait-step.active { color:#A78BFA }
+      .tq-wait-step .dot { width:5px;height:5px;border-radius:50%;background:rgba(139,92,246,.25) }
+      .tq-wait-step.active .dot { background:#8B5CF6;animation:tqDot 1.5s ease-in-out infinite }
+    </style>
 
-    <!-- 헤더 로고 -->
-    <div style="text-align:center;margin-bottom:36px">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;margin:0 auto 14px;box-shadow:0 8px 24px rgba(139,92,246,.35)">TQ</div>
-      <div style="font-size:17px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.3px;margin-bottom:5px">TQ TEST 결과 분석 시스템</div>
-      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:1.2px;text-transform:uppercase">STUDYFORCE LANGUAGE RESEARCH INSTITUTE</div>
+    <!-- 스피너 -->
+    <div class="tq-wait-ring">
+      <div class="tq-wait-logo">TQ</div>
     </div>
 
-    <!-- 안내 문구 -->
-    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);border-radius:10px;padding:12px 18px;margin-bottom:28px;max-width:400px;width:100%;text-align:center">
-      <div style="font-size:11px;font-weight:600;color:#A78BFA;margin-bottom:3px">📡 외부 연동 대기 중</div>
-      <div style="font-size:11px;color:#1E293B;line-height:1.7">관리 사이트의 <strong style="color:#0F172A;font-weight:700">[결과판독]</strong> 버튼을 클릭하면<br>학생 데이터가 자동으로 전달되어 분석이 시작됩니다.</div>
+    <!-- 상태 텍스트 -->
+    <div style="text-align:center;margin-bottom:4px">
+      <div id="tq-wait-status" style="font-size:14px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.2px">데이터 수신 대기 중</div>
+      <div style="font-size:10.5px;color:rgba(255,255,255,.35);margin-top:5px">관리 시스템에서 [결과판독] 버튼을 클릭해주세요</div>
     </div>
 
-    <!-- 하단 버전 표시 -->
-    <div style="margin-top:32px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
-      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v6.0</span> · 진단일 수정, 샘플 제거, 판독규칙 정비</div>
+    <!-- 프로그레스 바 -->
+    <div class="tq-wait-bar-wrap">
+      <div class="tq-wait-bar-fill" id="tq-wait-bar"></div>
+      <div class="tq-wait-bar-scan"></div>
+    </div>
+
+    <!-- 분석 단계 표시 -->
+    <div class="tq-wait-steps" id="tq-wait-steps">
+      <div class="tq-wait-step active"><span class="dot"></span>시스템 연결 대기</div>
+      <div class="tq-wait-step"><span class="dot"></span>학생 데이터 수신</div>
+      <div class="tq-wait-step"><span class="dot"></span>독해 역량 분석</div>
+      <div class="tq-wait-step"><span class="dot"></span>판독문 생성</div>
+    </div>
+
+    <!-- 버전 -->
+    <div style="margin-top:36px;font-size:10px;color:#6366F1;letter-spacing:.5px;background:rgba(99,102,241,.08);padding:6px 16px;border-radius:6px;border:1px solid rgba(99,102,241,.25);font-weight:600">
+      TQ Analysis Engine <span style="color:#8B5CF6;font-weight:800">v6.0</span></div>
 
   </div>
 </div>
@@ -5359,26 +5390,33 @@ window.addEventListener('message', function(event) {
     '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
   if (d.user_section) d.user_section = _lvNorm[d.user_section] || d.user_section;
 
-  // 랜딩 페이지 즉시 숨김
-  var landingEl = document.getElementById('page-input');
-  if (landingEl) landingEl.style.display = 'none';
-
-  // 로딩 인디케이터
-  var loadingDiv = document.getElementById('_postMsgLoading');
-  if (!loadingDiv) {
-    loadingDiv = document.createElement('div');
-    loadingDiv.id = '_postMsgLoading';
-    loadingDiv.style.cssText = 'position:fixed;inset:0;background:#020617;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999;';
-    loadingDiv.innerHTML = '<div style="width:40px;height:40px;border:3px solid rgba(139,92,246,.3);border-top-color:#8B5CF6;border-radius:50%;animation:tq-spin .8s linear infinite"></div><div style="color:rgba(255,255,255,.7);font-size:13px;">데이터 수신 중...</div>';
-    document.body.appendChild(loadingDiv);
+  // 대기 화면 단계 업데이트
+  function updateWaitStep(stepIdx, statusText) {
+    var statusEl = document.getElementById('tq-wait-status');
+    if (statusEl) statusEl.textContent = statusText;
+    var steps = document.querySelectorAll('#tq-wait-steps .tq-wait-step');
+    steps.forEach(function(s, i) {
+      if (i < stepIdx) { s.style.color = '#00C9A7'; s.querySelector('.dot').style.background = '#00C9A7'; s.querySelector('.dot').style.animation = 'none'; s.classList.remove('active'); }
+      else if (i === stepIdx) { s.classList.add('active'); s.style.color = '#A78BFA'; }
+      else { s.classList.remove('active'); }
+    });
   }
+  updateWaitStep(1, d.name + ' 학생 데이터 수신 완료');
 
   // 먼저 폼 필드 세팅 (진단일 포함)
+  setTimeout(function(){ updateWaitStep(2, '독해 역량 분석 중...'); }, 600);
   injectTqDataAndRun(d);
+
+  // 대기 화면 숨기기 함수
+  function hideWaitScreen() {
+    var landing = document.getElementById('page-input');
+    if (landing) landing.style.display = 'none';
+  }
 
   // 기존 판독 결과 조회
   if (d.name && d.reading_score) {
     loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
+      updateWaitStep(3, '판독문 구성 중...');
       window.__inp  = d;
       window.__eng  = saved.eng;
       // 저장된 eng에 진단일 보완
@@ -5394,7 +5432,8 @@ window.addEventListener('message', function(event) {
           try { renderReportTab(); window.__reportRendered = true; } catch(e){}
         }
         if(saved.reg_date || saved.test_date) var _tDate = (saved.created_at || '').slice(0,10);
-if(_tDate) showSavedResultToast(_tDate);
+        if(_tDate) showSavedResultToast(_tDate);
+        hideWaitScreen();
       }, 1500);
     });
   }
