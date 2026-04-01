@@ -1553,9 +1553,9 @@ function renderResult(e,nm){
         <div id="banner-st" style="font-size:12px;font-weight:600;color:#C4B5FD;letter-spacing:-.1px;line-height:1.5"></div>
       </div>
 
-      <!-- 검사일 -->
+      <!-- 진단일 -->
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)">
-        <span style="font-size:11px;color:rgba(255,255,255,.4)">검사일</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.4)">진단일</span>
         <span style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">${e.date?(e.date.slice(0,10)):"—"}</span>
       </div>
 
@@ -5413,11 +5413,16 @@ window.addEventListener('message', function(event) {
     document.body.appendChild(loadingDiv);
   }
 
+  // 먼저 폼 필드 세팅 (진단일 포함)
+  injectTqDataAndRun(d);
+
   // 기존 판독 결과 조회
   if (d.name && d.reading_score) {
     loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
       window.__inp  = d;
       window.__eng  = saved.eng;
+      // 저장된 eng에 진단일 보완
+      if (d.reg_date && saved.eng) saved.eng.date = d.reg_date.slice(0,10);
       window.__nm   = d.name;
       window.__TQ_SLOTS    = saved.slots;
       window.__TQ_SAVED_ID = saved.id;
@@ -5433,7 +5438,6 @@ if(_tDate) showSavedResultToast(_tDate);
       }, 1500);
     });
   }
-  injectTqDataAndRun(d);
 
   event.source.postMessage({ type: 'tqdata_received', name: d.name }, event.origin);
 });
