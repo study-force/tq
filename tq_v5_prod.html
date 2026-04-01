@@ -626,10 +626,7 @@ details summary:hover{color:var(--tx2)}
       @keyframes tqFade { 0%,100%{opacity:.3} 50%{opacity:1} }
       @keyframes tqBar { 0%{width:5%} 50%{width:65%} 75%{width:80%} 100%{width:92%} }
       @keyframes tqDot { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
-      .tq-wait-ring { width:80px;height:80px;border-radius:50%;border:3px solid rgba(139,92,246,.12);border-top-color:#8B5CF6;animation:spin 1.2s linear infinite;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;position:relative }
-      .tq-wait-ring::after { content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(0,201,167,.08);border-bottom-color:#00C9A7;animation:spin 1.8s linear infinite reverse }
       @keyframes spin { to{transform:rotate(360deg)} }
-      .tq-wait-logo { width:36px;height:36px;background:linear-gradient(135deg,#8B5CF6,#00C9A7);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;animation:tqPulse 2.5s ease-in-out infinite;z-index:1 }
       .tq-wait-bar-wrap { width:220px;height:4px;background:rgba(139,92,246,.1);border-radius:4px;overflow:hidden;margin:20px auto 0;position:relative }
       .tq-wait-bar-fill { height:100%;background:linear-gradient(90deg,#8B5CF6,#00C9A7);border-radius:4px;animation:tqBar 8s ease-out forwards }
       .tq-wait-bar-scan { position:absolute;top:0;height:100%;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:tqScan 2s ease-in-out infinite }
@@ -639,11 +636,6 @@ details summary:hover{color:var(--tx2)}
       .tq-wait-step .dot { width:5px;height:5px;border-radius:50%;background:rgba(139,92,246,.25) }
       .tq-wait-step.active .dot { background:#8B5CF6;animation:tqDot 1.5s ease-in-out infinite }
     </style>
-
-    <!-- 스피너 -->
-    <div class="tq-wait-ring">
-      <div class="tq-wait-logo">TQ</div>
-    </div>
 
     <!-- 상태 텍스트 -->
     <div style="text-align:center;margin-bottom:4px">
