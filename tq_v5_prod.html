@@ -564,7 +564,7 @@ details summary:hover{color:var(--tx2)}
 <div style="background:#020617;display:flex;align-items:center;height:40px;flex-shrink:0;border-bottom:2px solid rgba(139,92,246,.5);box-shadow:0 2px 12px rgba(0,0,0,.4);position:fixed;top:0;left:0;right:0;z-index:200">
   <!-- 로고 (좌측 고정) -->
   <div style="display:flex;align-items:center;gap:8px;padding:0 16px;flex-shrink:0;min-width:200px">
-    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 <span style="color:#EF4444;font-weight:800;font-size:12px">【 <span style="color:#fff">TQ TEST</span> 】</span> 결과 분석 시스템</span><span style="font-size:9px;color:#22D3EE;font-weight:700;margin-left:8px;background:rgba(34,211,238,.12);padding:2px 8px;border-radius:4px;border:1px solid rgba(34,211,238,.3)">v6.2 · 리포트 특목/몰입 카드 디자인 통일</span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:-.1px">스터디포스 <span style="color:#EF4444;font-weight:800;font-size:12px">【 <span style="color:#fff">TQ TEST</span> 】</span> 결과 분석 시스템</span><span style="font-size:9px;color:#22D3EE;font-weight:700;margin-left:8px;background:rgba(34,211,238,.12);padding:2px 8px;border-radius:4px;border:1px solid rgba(34,211,238,.3)">v7.0 · 9유형+4도장 분류체계 적용</span>
   </div>
   <!-- 중앙: 학생명 + 탭 -->
   <div style="flex:1;display:flex;align-items:center;justify-content:center;height:100%;gap:0">
@@ -2963,16 +2963,17 @@ function postRenderSWOT(eng, inp) {
     if (eng.retest) flagHtml += '<span style="background:rgba(30,64,175,.25);color:#93C5FD;border:1px solid rgba(147,197,253,.4);padding:3px 10px;border-radius:8px;font-size:10px;font-weight:700">↺ 재검사권고</span>';
   // 플래그 배지: 있으면 강조, 없으면 흐릿하게 — 항상 표시
   var flagItems = [
-    { key:'flagMolip',  label:'⚡ 몰입훈련 권장', bg:'rgba(234,88,12,.3)',   tx:'#FB923C', bd:'rgba(251,146,60,.5)', highlight:true },
     { key:'flagTeukmok',label:'🎯 특목자사고 권장', bg:'rgba(109,40,217,.3)',  tx:'#A78BFA', bd:'rgba(167,139,250,.5)', highlight:true },
-    { key:'flagC',  label:'⚠ 모순패턴',   bg:'rgba(185,28,28,.25)',  tx:'#FCA5A5', bd:'rgba(252,165,165,.4)'  },
+    { key:'flagScience',label:'💎 이과적 소양 잠재', bg:'rgba(37,99,235,.3)',   tx:'#60A5FA', bd:'rgba(96,165,250,.5)', highlight:true },
+    { key:'flagEmergency',label:'🚨 학습 역량 부재', bg:'rgba(185,28,28,.3)',  tx:'#FCA5A5', bd:'rgba(252,165,165,.5)', highlight:true },
+    { key:'flagCollapse',label:'⚠️ 성적 붕괴 위기', bg:'rgba(234,88,12,.3)',   tx:'#FB923C', bd:'rgba(251,146,60,.5)', highlight:true },
     { key:'flagO',  label:'⚡ 선행과부하', bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
     { key:'invSpd', label:'△ 속도이상',   bg:'rgba(180,83,9,.25)',   tx:'#FCD34D', bd:'rgba(252,211,77,.4)'   },
     { key:'retest', label:'↺ 재검사권고', bg:'rgba(30,64,175,.25)',  tx:'#93C5FD', bd:'rgba(147,197,253,.4)'  }
   ];
   var flagDiv = document.createElement('div');
   flagDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:8px 2px 0';
-  var flagMap = { flagC: eng.flagC, flagO: eng.flagO, invSpd: eng.invSpd, retest: eng.retest, flagMolip: eng.flagMolip, flagTeukmok: eng.flagTeukmok };
+  var flagMap = { flagTeukmok: eng.flagTeukmok, flagScience: eng.flagScience, flagEmergency: eng.flagEmergency, flagCollapse: eng.flagCollapse, flagO: eng.flagO, invSpd: eng.invSpd, retest: eng.retest };
   flagItems.forEach(function(fi) {
     var on = !!flagMap[fi.key];
     if (!on && fi.highlight) return;
@@ -3049,10 +3050,10 @@ function postRenderSWOT(eng, inp) {
         +'<span style="background:'+rColor+'18;border:1px solid '+rColor+'44;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;color:'+rColor+'">'+rLabel+'</span>'
         +'</span>';
     }
-    var typeBody = '<div style="font-size:20px;font-weight:900;color:var(--tx1);line-height:1.2;margin-bottom:4px">'+(eng.bt||'—')+'</div>'
+    var typeBody = '<div style="font-size:20px;font-weight:900;color:var(--tx1);line-height:1.2;margin-bottom:4px">'+(eng.btName||eng.bt||'—')+'</div>'
       +'<div style="font-size:12px;color:var(--tx2)">'+(eng.tag||eng.st||'')+'</div>'
       + bowlHTML;
-    rows += makeRow('공부역량','36유형', typeColor, typeBody, true);
+    rows += makeRow('공부역량','9유형', typeColor, typeBody, true);
 
     // 독해력 판독
     if (eng.who||eng.state) {
@@ -5599,7 +5600,7 @@ var HABIT_ITEMS = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자
 var EFF_ITEMS   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
 var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
 var FACTOR_LABEL = {어휘력:"어휘의 의미를 문장의 맥락을 통해 정확하게 파악하고 정교하게 처리하는 능력",워킹메모리:"실시간으로 정보를 처리하고 그것을 다시 하나의 단위로 재처리하여 생성하는 작업기억 능력",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단"};
-var TC = {"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
+var TC = {"S1":"#0BA98E","S2":"#10B981","A1":"#2563EB","A2":"#3B82F6","A3":"#D97706","M1":"#8B5CF6","M2":"#F59E0B","L":"#EA580C","C":"#DC2626","통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
 var RPT_UC = {"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
 var RPT_UBG = {"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
 var RPT_SC = ["#1E40AF","#0BA98E","#B45309","#7C3AED"];
@@ -6640,12 +6641,15 @@ function renderReportTab() {
     kor:        inp.kor_score,
     eng:        inp.eng_score,
     math:       inp.math_score,
-    bt:  eng.btDisplay || eng.bt || '',
+    bt:  eng.bt || '',
+    btName: eng.btName || '',
     st:  eng.stDisplay || eng.st || '',
     urg: eng.urg || '',
     flagC: eng.flagC, flagO: eng.flagO,
     flagMolip: eng.flagMolip, flagMolipRequired: eng.flagMolipRequired,
     flagTeukmok: eng.flagTeukmok,
+    flagScience: eng.flagScience, flagEmergency: eng.flagEmergency, flagCollapse: eng.flagCollapse,
+    wmTag: eng.wmTag || '', vocFlag: eng.vocFlag || '', spdGrade5: eng.spdGrade5 || '',
     acc:  eng.acc  || 0,
     fct:  eng.fct  || 0,
     str_: eng.str_ || 0,
