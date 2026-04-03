@@ -5999,20 +5999,25 @@ function getAccPercentileTop(acc) {
   return (100 - DIST[idx]).toFixed(1);
 }
 
-function buildNormalCurve(studentAcc, dark) {
+function buildNormalCurve(studentScore, dark) {
   var W = 700, H = 200, PAD = 40;
   var chartW = W - PAD * 2, chartH = H - 60;
 
-  // 정규분포 곡선 포인트 생성 (평균 52.2, 표준편차 약 25)
-  var mean = 52.2, sd = 25;
+  // 실데이터 기반 분포 (73,032명, 2% 단위 밀도)
+  var COMP_DIST = [[0,0.00],[2,0.01],[4,0.01],[6,0.04],[8,0.07],[10,0.14],[12,0.20],[14,0.28],[16,0.41],[18,0.54],[20,0.78],[22,0.90],[24,1.16],[26,1.36],[28,1.64],[30,1.98],[32,2.16],[34,2.54],[36,2.65],[38,2.92],[40,3.16],[42,3.49],[44,3.72],[46,3.90],[48,3.99],[50,4.07],[52,4.11],[54,4.18],[56,4.04],[58,4.25],[60,4.24],[62,4.05],[64,3.82],[66,3.74],[68,3.63],[70,3.31],[72,3.06],[74,2.86],[76,2.47],[78,2.06],[80,1.89],[82,1.57],[84,1.33],[86,1.01],[88,0.78],[90,0.64],[92,0.42],[94,0.27],[96,0.14],[98,0.04],[100,0.00]];
+
+  // 포인트 생성 (X = 상위% 위치를 뒤집어서 0=하위, 100=상위로)
   var points = [];
   var maxY = 0;
-  for (var x = 0; x <= 100; x += 1) {
-    var z = (x - mean) / sd;
-    var y = Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+  for (var i = 0; i < COMP_DIST.length; i++) {
+    var x = 100 - COMP_DIST[i][0]; // 뒤집기: 상위%가 높을수록 우측
+    var y = COMP_DIST[i][1];
     if (y > maxY) maxY = y;
     points.push({x: x, y: y});
   }
+  points.sort(function(a,b){ return a.x - b.x; });
+  // studentScore는 백분위(하위%) — 100에서 빼서 상위% 위치
+  var studentAcc = studentScore;
 
   // SVG 좌표 변환
   function sx(v) { return PAD + (v / 100) * chartW; }
@@ -6042,19 +6047,19 @@ function buildNormalCurve(studentAcc, dark) {
   var studentY = Math.exp(-0.5 * studentZ * studentZ) / (sd * Math.sqrt(2 * Math.PI));
   var sX = sx(studentAcc), sY = sy(studentY);
 
-  // 영역 구분 색상
+  // 영역 구분 색상 (하위 → 상위)
   var zones = dark ? [
-    {from:0, to:29, color:'rgba(239,68,68,.15)'},
-    {from:30, to:49, color:'rgba(251,191,36,.1)'},
-    {from:50, to:69, color:'rgba(34,197,94,.08)'},
-    {from:70, to:89, color:'rgba(59,130,246,.12)'},
-    {from:90, to:100, color:'rgba(99,102,241,.15)'}
+    {from:0, to:20, color:'rgba(239,68,68,.12)'},
+    {from:20, to:40, color:'rgba(251,191,36,.08)'},
+    {from:40, to:60, color:'rgba(148,163,184,.06)'},
+    {from:60, to:80, color:'rgba(59,130,246,.1)'},
+    {from:80, to:100, color:'rgba(99,102,241,.15)'}
   ] : [
-    {from:0, to:29, color:'#FEE2E2'},
-    {from:30, to:49, color:'#FEF3C7'},
-    {from:50, to:69, color:'#F0FDF4'},
-    {from:70, to:89, color:'#DBEAFE'},
-    {from:90, to:100, color:'#E0E7FF'}
+    {from:0, to:20, color:'#FEE2E2'},
+    {from:20, to:40, color:'#FEF3C7'},
+    {from:40, to:60, color:'#F8FAFC'},
+    {from:60, to:80, color:'#DBEAFE'},
+    {from:80, to:100, color:'#E0E7FF'}
   ];
 
   var zoneRects = zones.map(function(z) {
@@ -6067,18 +6072,13 @@ function buildNormalCurve(studentAcc, dark) {
   var hlColor = dark ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.25)';
   var dotColor = dark ? '#60A5FA' : '#EF4444';
 
-  // X축 라벨
-  var xLabels = [0,10,20,30,40,50,60,70,80,90,100].map(function(v) {
-    return '<text x="'+sx(v)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="'+txtColor+'" font-family="Arial">'+v+'</text>';
+  // X축 라벨 (하위 → 상위)
+  var xLabels = [0,20,40,60,80,100].map(function(v) {
+    var label = v === 0 ? '하위' : v === 100 ? '상위' : v + '%';
+    return '<text x="'+sx(v)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="'+txtColor+'" font-family="Arial">'+label+'</text>';
   }).join('');
 
-  // X축 구분 라벨
-  var zc = dark ? {r:'#F87171',o:'#FBBF24',g:'#34D399',b:'#60A5FA',p:'#A78BFA'} : {r:'#DC2626',o:'#D97706',g:'#059669',b:'#2563EB',p:'#4338CA'};
-  var zoneLabels = '<text x="'+sx(15)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="'+zc.r+'" font-weight="600">최하위</text>'
-    +'<text x="'+sx(40)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="'+zc.o+'" font-weight="600">하위</text>'
-    +'<text x="'+sx(60)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="'+zc.g+'" font-weight="600">중위</text>'
-    +'<text x="'+sx(80)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="'+zc.b+'" font-weight="600">상위</text>'
-    +'<text x="'+sx(95)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="'+zc.p+'" font-weight="600">최상위</text>';
+  var zoneLabels = '';
 
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px;margin:0 auto;display:block">'
     +zoneRects
@@ -6087,7 +6087,7 @@ function buildNormalCurve(studentAcc, dark) {
     +'<path d="'+curvePath+'" fill="none" stroke="'+curveColor+'" stroke-width="2"/>'
     +'<line x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sy(0)+'" stroke="'+dotColor+'" stroke-width="2" stroke-dasharray="5,3"/>'
     +'<circle cx="'+sX+'" cy="'+sY+'" r="5" fill="'+dotColor+'" stroke="'+(dark?'#0F172A':'#fff')+'" stroke-width="2"/>'
-    +'<text x="'+sX+'" y="'+(sY-12)+'" text-anchor="middle" font-size="12" font-weight="700" fill="'+dotColor+'" font-family="Arial">'+studentAcc+'점</text>'
+    +'<text x="'+sX+'" y="'+(sY-12)+'" text-anchor="middle" font-size="12" font-weight="700" fill="'+dotColor+'" font-family="Arial">상위 '+(100-studentAcc).toFixed(0)+'%</text>'
     +'<text x="'+sX+'" y="'+(sy(0)+12)+'" text-anchor="middle" font-size="9" fill="'+dotColor+'" font-weight="600">이 학생</text>'
     +xLabels
     +zoneLabels
