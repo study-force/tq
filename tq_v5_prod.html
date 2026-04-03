@@ -6033,13 +6033,13 @@ function buildNormalCurve(studentScore, dark) {
     + points.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
     + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
 
-  // 학생 위치 하이라이트 영역 (학생 점수 왼쪽 채우기)
-  var hlPoints = points.filter(function(p) { return p.x <= studentAcc; });
+  // 학생 위치 하이라이트 영역 (학생 점수 우측 채우기 = 상위 X%)
+  var hlPoints = points.filter(function(p) { return p.x >= studentAcc; });
   var hlPath = '';
   if (hlPoints.length > 0) {
-    hlPath = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+    hlPath = 'M' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
       + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
-      + ' L' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+      + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
   }
 
   // 학생 위치 수직선 — 실데이터 분포에서 Y값 보간
