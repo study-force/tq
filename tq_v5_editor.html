@@ -7367,7 +7367,7 @@ function renderEditor(k) {
 
     var newBadge = msg.isNew ? '<span style="display:inline-block;background:#7C3AED;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;letter-spacing:.3px;">NEW</span>' : '';
     return '<tr id="row_'+msg.id+'"'+(isEd?' class="editing"':isCh?' class="changed"':msg.isNew?' style="background:rgba(124,58,237,.06);"':'')+'>'
-      +'<td style="color:#8E9BB0;font-size:10px;text-align:center;width:28px">'+(i+1)+newBadge+'</td>'
+      +'<td style="color:#8E9BB0;font-size:10px;text-align:center;width:80px;line-height:1.4">'+(i+1)+newBadge+'<br><span style="font-size:8px;color:#6366F1;font-family:monospace">'+msg.id+'</span></td>'
       +condCells+tagCell+textCell+actionCell+'</tr>';
   }).join('');
 
@@ -7378,7 +7378,7 @@ function renderEditor(k) {
     +'</div></div>'
     +'<div class="dt-wrap"><table class="dt">'
     +'<thead><tr>'
-    +'<th width="28" rowspan="2">#</th>'
+    +'<th width="80" rowspan="2"># / ID</th>'
     +'<th colspan="'+cols.length+'" class="grp-cond">조건 (중요도 순 →)</th>'
     +'<th rowspan="2" width="60">태그</th>'
     +'<th rowspan="2" style="min-width:200px">메시지 텍스트</th>'
