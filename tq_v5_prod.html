@@ -5977,18 +5977,19 @@ function getMetricTop(metric, val) {
   return (100 - pct).toFixed(1);
 }
 
-function getCompositeScore(acc, spd, voc, inf, wm) {
-  var spdNorm = Math.min((spd || 0) / 15, 100);
-  var spdAdj = spdNorm * (acc / 100); // 정확도 낮으면 속도 기여 감소
-  return Math.round(acc * 0.4 + spdAdj * 0.15 + (voc || 0) * 0.15 + (inf || 0) * 0.15 + (wm || 0) * 0.15);
+function getCompositeTop(acc, spd, voc, inf, wm) {
+  var accTop = parseFloat(getMetricTop("acc", acc));
+  var spdTop = parseFloat(getMetricTop("spd", spd));
+  var vocTop = parseFloat(getMetricTop("voc", voc));
+  var infTop = parseFloat(getMetricTop("inf", inf));
+  var wmTop = parseFloat(getMetricTop("wm", wm));
+  return ((accTop + spdTop + vocTop + infTop + wmTop) / 5).toFixed(1);
 }
 
-function getCompositeTop(acc, spd, voc, inf, wm) {
-  var score = getCompositeScore(acc, spd, voc, inf, wm);
-  // 종합점수 백분위 (실데이터 기반)
-  var compTable = {0:0,10:0.1,15:0.7,20:2.9,25:7.3,30:14.6,35:24.9,40:37.3,45:50.9,50:64.8,55:77.3,60:87.3,65:94.2,70:97.9,75:99.4,80:99.9,85:100,90:100,100:100};
-  var pct = interpolatePct(compTable, score);
-  return (100 - pct).toFixed(1);
+function getCompositeScore(acc, spd, voc, inf, wm) {
+  // 그래프 표시용 — 종합 상위%를 0~100 점수로 변환
+  var top = parseFloat(getCompositeTop(acc, spd, voc, inf, wm));
+  return Math.round(100 - top);
 }
 
 // ── 정규분포 곡선 SVG ──
