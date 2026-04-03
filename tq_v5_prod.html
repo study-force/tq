@@ -5851,10 +5851,7 @@ function buildAnalysisPage(pageNum, total) {
   // 학생 정보 카드
   var infoRows = [
     ['유형', '<span style="color:'+btColor+';font-weight:700">'+btName+'</span>'],
-    ['진단일', D.date || ''],
     ['난이도', RPT_lvLabel],
-    ['독해정확도', avgAcc + '점'],
-    ['독해속도', (D.spd||'') + ' 자/분'],
   ];
   if (D.kor_score) infoRows.push(['국어 성적', D.kor_score]);
   if (D.eng_score) infoRows.push(['영어 성적', D.eng_score]);
