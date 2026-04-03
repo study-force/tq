@@ -5816,10 +5816,109 @@ function buildPage1() {
     +'</div></div>'
     +'</div>'
 
+    // 구분선
+    +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0"></div>'
+
+    // 정규분포 — 상대 위치
+    +'<div style="padding:20px 72px 10px">'
+    +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:16px;margin-left:20px">독해정확도 상대 위치</div>'
+    +'<div style="text-align:center;font-size:12px;color:#64748B;margin-bottom:8px">74,881명의 진단 데이터 기반 · 상위 <strong style="color:#1E293B;font-size:14px">'+getAccPercentileTop(avgAcc)+'%</strong></div>'
+    +buildNormalCurve(avgAcc)
+    +'</div>'
+
     // 푸터
     +buildFooter(1, TOTAL);
 
   return div;
+}
+
+// ── 정규분포 곡선 SVG ──
+function getAccPercentileTop(acc) {
+  var DIST = [0,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.2,1.2,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,5.0,12.4,12.4,12.4,12.4,12.4,12.4,12.4,12.4,12.4,12.4,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,37.9,37.9,37.9,37.9,37.9,37.9,37.9,37.9,37.9,37.9,53.9,53.9,53.9,53.9,53.9,53.9,53.9,53.9,53.9,53.9,69.5,69.5,69.5,69.5,69.5,69.5,69.5,69.5,69.5,69.5,83.0,83.0,83.0,83.0,83.0,83.0,83.0,83.0,83.0,83.0,92.9,92.9,92.9,92.9,92.9,92.9,92.9,92.9,92.9,92.9,98.3,98.3,98.3,98.3,98.3,98.3,98.3,98.3,98.3,98.3,100];
+  var idx = Math.max(0, Math.min(100, Math.round(acc)));
+  return (100 - DIST[idx]).toFixed(1);
+}
+
+function buildNormalCurve(studentAcc) {
+  var W = 700, H = 200, PAD = 40;
+  var chartW = W - PAD * 2, chartH = H - 60;
+
+  // 정규분포 곡선 포인트 생성 (평균 52.2, 표준편차 약 25)
+  var mean = 52.2, sd = 25;
+  var points = [];
+  var maxY = 0;
+  for (var x = 0; x <= 100; x += 1) {
+    var z = (x - mean) / sd;
+    var y = Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+    if (y > maxY) maxY = y;
+    points.push({x: x, y: y});
+  }
+
+  // SVG 좌표 변환
+  function sx(v) { return PAD + (v / 100) * chartW; }
+  function sy(v) { return 30 + chartH - (v / maxY) * chartH; }
+
+  // 곡선 경로
+  var curvePath = points.map(function(p, i) {
+    return (i === 0 ? 'M' : 'L') + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1);
+  }).join(' ');
+
+  // 채움 경로 (곡선 아래 영역)
+  var fillPath = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+    + points.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
+    + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+
+  // 학생 위치 하이라이트 영역 (학생 점수 왼쪽 채우기)
+  var hlPoints = points.filter(function(p) { return p.x <= studentAcc; });
+  var hlPath = '';
+  if (hlPoints.length > 0) {
+    hlPath = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+      + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
+      + ' L' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+  }
+
+  // 학생 위치 수직선
+  var studentZ = (studentAcc - mean) / sd;
+  var studentY = Math.exp(-0.5 * studentZ * studentZ) / (sd * Math.sqrt(2 * Math.PI));
+  var sX = sx(studentAcc), sY = sy(studentY);
+
+  // 영역 구분 색상
+  var zones = [
+    {from:0, to:29, color:'#FEE2E2', label:'하위'},
+    {from:30, to:49, color:'#FEF3C7', label:''},
+    {from:50, to:69, color:'#F0FDF4', label:''},
+    {from:70, to:89, color:'#DBEAFE', label:''},
+    {from:90, to:100, color:'#E0E7FF', label:'상위'}
+  ];
+
+  var zoneRects = zones.map(function(z) {
+    return '<rect x="'+sx(z.from)+'" y="30" width="'+(sx(z.to)-sx(z.from))+'" height="'+chartH+'" fill="'+z.color+'" opacity="0.4"/>';
+  }).join('');
+
+  // X축 라벨
+  var xLabels = [0,10,20,30,40,50,60,70,80,90,100].map(function(v) {
+    return '<text x="'+sx(v)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="#64748B" font-family="Arial">'+v+'</text>';
+  }).join('');
+
+  // X축 구분 라벨
+  var zoneLabels = '<text x="'+sx(15)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="#DC2626" font-weight="600">최하위</text>'
+    +'<text x="'+sx(40)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="#D97706" font-weight="600">하위</text>'
+    +'<text x="'+sx(60)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="#059669" font-weight="600">중위</text>'
+    +'<text x="'+sx(80)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="#2563EB" font-weight="600">상위</text>'
+    +'<text x="'+sx(95)+'" y="'+(H-22)+'" text-anchor="middle" font-size="10" fill="#4338CA" font-weight="600">최상위</text>';
+
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px;margin:0 auto;display:block">'
+    +zoneRects
+    +'<path d="'+fillPath+'" fill="#CBD5E1" opacity="0.3"/>'
+    +(hlPath ? '<path d="'+hlPath+'" fill="#3B82F6" opacity="0.25"/>' : '')
+    +'<path d="'+curvePath+'" fill="none" stroke="#475569" stroke-width="2.5"/>'
+    +'<line x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sy(0)+'" stroke="#EF4444" stroke-width="2.5" stroke-dasharray="6,3"/>'
+    +'<circle cx="'+sX+'" cy="'+sY+'" r="6" fill="#EF4444" stroke="#fff" stroke-width="2"/>'
+    +'<text x="'+sX+'" y="'+(sY-14)+'" text-anchor="middle" font-size="13" font-weight="700" fill="#EF4444" font-family="Arial">'+studentAcc+'점</text>'
+    +'<text x="'+sX+'" y="'+(sy(0)+13)+'" text-anchor="middle" font-size="10" fill="#EF4444" font-weight="600">이 학생</text>'
+    +xLabels
+    +zoneLabels
+    +'</svg>';
 }
 
 // ══════════════════════════
