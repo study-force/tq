@@ -1473,8 +1473,8 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
     // acc 높음 + 습관/효율성 높음 + 어휘/추론/WM 낮음
     // → 읽는 기술은 있으나 독서 영역이 편협한 상태
     if (acc >= 70 && hab >= 70 && eff >= 70 && voc < 60 && inf < 60) {
-      mpush(bullets,"eng_extra_19","주의","독해정확도와 독해습관은 양호하나 어휘·추론이 낮음 — 독서량 부족보다 독서 영역의 편중이 원인으로 추정됨. 익숙한 장르·주제 위주로만 읽어온 것으로 보임");
-      mpush(bullets,"eng_extra_20","주의","비문학·논설·다양한 분야의 독서 경험을 넓히는 것이 어휘와 추론능력 향상의 핵심 과제");
+      mpush(bullets,"eng_3_19","주의","독해정확도와 독해습관은 양호하나 어휘·추론이 낮음 — 독서량 부족보다 독서 영역의 편중이 원인으로 추정됨. 익숙한 장르·주제 위주로만 읽어온 것으로 보임");
+      mpush(bullets,"eng_3_20","주의","비문학·논설·다양한 분야의 독서 경험을 넓히는 것이 어휘와 추론능력 향상의 핵심 과제");
     }
 
     ev.push({ id: "독서의양", title: "3) 독서의 양 여부", bullets });
@@ -1549,7 +1549,7 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
         if (spdGrade === "빠름") {
           mpush(bullets,"2_3","위험","빠른 속도로 글자를 넘기고 있어 내용이 실제로 처리되지 않는 상태 — 정확하게 이해하며 읽는 훈련이 필요함");
         } else {
-          mpush(bullets,"eng_extra_21","주의","속도에 비해 정확도가 낮음 — 내용을 충분히 처리하지 않고 넘기는 패턴으로, 정확하게 이해하며 읽는 습관 형성이 필요함");
+          mpush(bullets,"eng_5_21b","주의","속도에 비해 정확도가 낮음 — 내용을 충분히 처리하지 않고 넘기는 패턴으로, 정확하게 이해하며 읽는 습관 형성이 필요함");
         }
       }
 
@@ -1565,7 +1565,7 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
           mpush(bullets,"eng_5_20","주의","역량 대비 속도 개선 여지가 충분함 — 음독 교정 훈련을 통해 속도 향상 가능");
         } else if (!highAcc && highSpd) {
           // 저정확 + 고속 + 음독 → 훑어읽기+음독 충돌
-          mpush(bullets,"eng_extra_22","위험","빠르게 훑어 읽으면서 음독을 시도하는 상태 — 정확하게 이해하며 읽으려면 현재 속도에서는 시간이 절대적으로 부족함");
+          mpush(bullets,"eng_5_22b","위험","빠르게 훑어 읽으면서 음독을 시도하는 상태 — 정확하게 이해하며 읽으려면 현재 속도에서는 시간이 절대적으로 부족함");
         } else {
           bullets.push({ t: sev==="심함"?"위험":"주의",
             s: "음독습관이 " + (sev==="심함"?"심각한 수준":"확인됨") + " — 눈이 글자를 인식하는 속도보다 발음 속도가 느려 독해속도 제한, 시험 시간 부족으로 직결" });
@@ -1759,16 +1759,16 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
     if (자기인식부족) {
       if (괴리정도 >= 4) {
         // 심각한 괴리 (acc 매우 낮은데 체크 거의 없음)
-        mpush(bullets,"eng_extra_23","위험","역량 수준에 비해 체크 항목이 현저히 적음 — 자신의 학습 상태를 심각하게 과대평가하고 있거나 문제를 전혀 인지하지 못하는 상태");
-        mpush(bullets,"eng_extra_24","위험","자기 인식이 부족한 학습자의 전형적 패턴 — 객관적 역량과 자기 평가 간의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
+        mpush(bullets,"eng_8_23","위험","역량 수준에 비해 체크 항목이 현저히 적음 — 자신의 학습 상태를 심각하게 과대평가하고 있거나 문제를 전혀 인지하지 못하는 상태");
+        mpush(bullets,"eng_8_24","위험","자기 인식이 부족한 학습자의 전형적 패턴 — 객관적 역량과 자기 평가 간의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
       } else if (괴리정도 >= 3) {
-        mpush(bullets,"eng_extra_25","위험","자신의 공부 문제를 충분히 인지하지 못하고 있거나 스스로에게 관대한 편");
-        mpush(bullets,"eng_extra_26","주의","자기 인식과 실제역량의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
+        mpush(bullets,"eng_8_25","위험","자신의 공부 문제를 충분히 인지하지 못하고 있거나 스스로에게 관대한 편");
+        mpush(bullets,"eng_8_26","주의","자기 인식과 실제역량의 괴리가 클수록 개선 의지를 이끌어내기 어려움");
       } else {
-        mpush(bullets,"eng_extra_27","주의","자신에 대한 평가가 관대한 편 — 스스로 문제없다고 여기지만 실제 역량과 괴리가 있는 상태");
+        mpush(bullets,"eng_8_27","주의","자신에 대한 평가가 관대한 편 — 스스로 문제없다고 여기지만 실제 역량과 괴리가 있는 상태");
       }
     } else if (acc >= 70 && acc < 80 && 총체크수 === 0 && !isHS) {
-      mpush(bullets,"eng_extra_28","보통","현재는 학습에 큰 어려움을 느끼지 않는 상태");
+      mpush(bullets,"eng_8_28","보통","현재는 학습에 큰 어려움을 느끼지 않는 상태");
     }
 
     // 밤새워/두꺼운 항목 — 독서 성향 정보
@@ -1805,10 +1805,10 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
           // 국어 최상위
           if (acc < 50) {
             // 역량 낮음 → 암기·스킬 의존 + 성적 유지 한계
-            mpush(bullets,"eng_extra_43","위험","국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음");
+            mpush(bullets,"eng_9_43","위험","국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음");
           } else if (acc < 70) {
             // 역량 보통 → 과도한 노력으로 유지
-            mpush(bullets,"eng_extra_44","주의","국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음");
+            mpush(bullets,"eng_9_44","주의","국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음");
           } else {
             // 역량도 높음 → 강점
             mpush(bullets,"8_6_강점","강점","국어 성적 최상위 — 독해역량과 성적이 일치하는 안정적 상태");
@@ -1817,9 +1817,9 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
         } else if (kv > korHigh) {
           // 국어 상위권
           if (acc < 50) {
-            mpush(bullets,"eng_extra_45","주의","국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책");
+            mpush(bullets,"eng_9_45","주의","국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책");
           } else if (acc < 70) {
-            mpush(bullets,"eng_extra_46","보통","국어 성적 상위권 — 역량 대비 성적이 다소 높은 편으로, 역량을 더 키우면 성적도 안정적으로 따라옴");
+            mpush(bullets,"eng_9_46","보통","국어 성적 상위권 — 역량 대비 성적이 다소 높은 편으로, 역량을 더 키우면 성적도 안정적으로 따라옴");
           } else {
             mpush(bullets,"8_7_강점","강점","국어 성적 상위권 — 독해역량이 성적을 뒷받침하는 균형 잡힌 상태");
           }
@@ -1875,7 +1875,7 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
         } else {
           // 최하위
           mpush(bullets,"eng_8_14","위험","영어 성적 최하위 — 어휘·독해 역량 결손이 직접 영향");
-          if (voc < 50) mpush(bullets,"eng_extra_15","위험","어휘능력 결손이 국어·영어 동시 부진의 공통 원인으로 추정");
+          if (voc < 50) mpush(bullets,"eng_9_15","위험","어휘능력 결손이 국어·영어 동시 부진의 공통 원인으로 추정");
         }
       }
 
@@ -1919,7 +1919,7 @@ function collectEvidence(inp, kv, flagC, flagO, habClass) {
         } else {
           // 최하위
           mpush(bullets,"eng_8_28","위험","수학 성적 최하위");
-          if (inf < 50) mpush(bullets,"eng_extra_16","위험","추론능력 결손이 수학 부진의 주요 원인 — 개념이해 훈련 필요");
+          if (inf < 50) mpush(bullets,"eng_9_16","위험","추론능력 결손이 수학 부진의 주요 원인 — 개념이해 훈련 필요");
         }
       }
 
@@ -5163,42 +5163,42 @@ gv("btnR").addEventListener("click",openReport);
             <th style="padding:4px 8px;text-align:left;border:1px solid #E2E8F0">줄</th>
           </tr>
           <tr>
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_23</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_23</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 ≥ 4</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">역량 수준에 비해 체크 항목이 현저히 적음 — 자신의 학습 상태를 심각하게 과대평가하고 있거나 문제를 전혀 인지하지 못하는 상태</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">1766</td>
           </tr>
           <tr style="background:#FAFAFA">
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_24</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_24</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 ≥ 4</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기 인식이 부족한 학습자의 전형적 패턴 — 괴리가 클수록 개선 의지를 이끌어내기 어려움</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">1767</td>
           </tr>
           <tr>
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_25</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_25</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px">위험</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 3~4</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자신의 공부 문제를 충분히 인지하지 못하고 있거나 스스로에게 관대한 편</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">1769</td>
           </tr>
           <tr style="background:#FAFAFA">
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_26</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_26</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px">주의</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 3~4</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기 인식과 실제역량의 괴리가 클수록 개선 의지를 이끌어내기 어려움</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">1770</td>
           </tr>
           <tr>
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_27</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_27</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px">주의</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자기인식부족 AND 괴리정도 1~2</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">자신에 대한 평가가 관대한 편 — 스스로 문제없다고 여기지만 실제 역량과 괴리가 있는 상태</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">1772</td>
           </tr>
           <tr style="background:#FAFAFA">
-            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_extra_28</td>
+            <td style="padding:4px 8px;border:1px solid #E2E8F0">eng_8_28</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0"><span style="background:#DBEAFE;color:#1E40AF;padding:1px 5px;border-radius:3px">보통</span></td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">acc 70~80 AND 총체크수=0 AND 초·중등</td>
             <td style="padding:4px 8px;border:1px solid #E2E8F0">현재는 학습에 큰 어려움을 느끼지 않는 상태</td>
@@ -6121,7 +6121,7 @@ var MESSAGES = {
       "text": "독서량에 비해 독해 처리 능력이 부족 — 읽기 방식의 문제"
     },
     {
-      "id": "eng_extra_19",
+      "id": "eng_3_19",
       "tag": "주의",
       "conds": {
         "모순패턴": "-",
@@ -6135,7 +6135,7 @@ var MESSAGES = {
       "text": "독해정확도와 독해습관은 양호하나 어휘·추론이 낮음 — 독서량 부족보다 독서 영역의 편중이 원인으로 추정됨. 익숙한 장르·주제 위주로만 읽어온 것으로 보임"
     },
     {
-      "id": "eng_extra_20",
+      "id": "eng_3_20",
       "tag": "주의",
       "conds": {
         "모순패턴": "-",
@@ -7369,7 +7369,7 @@ var MESSAGES = {
       "text": "수학 성적은 최상위이나 독해정확도 낮아 서술형·지문형 문제에서 어려움 예상"
     },
     {
-      "id": "eng_extra_43",
+      "id": "eng_9_43",
       "tag": "위험",
       "conds": {
         "모순패턴": "-",
@@ -7384,7 +7384,7 @@ var MESSAGES = {
       "text": "국어 성적 최상위이나 독해역량이 낮음 — 암기와 스킬에 의존해 성적을 유지하고 있을 가능성이 높으며, 고등 진학 후 한계에 부딪힐 수 있음"
     },
     {
-      "id": "eng_extra_44",
+      "id": "eng_9_44",
       "tag": "주의",
       "conds": {
         "모순패턴": "-",
@@ -7399,7 +7399,7 @@ var MESSAGES = {
       "text": "국어 성적 최상위이나 독해역량은 이에 미치지 못함 — 현재 성적은 상당한 노력 투입의 결과로 추정되며, 역량 강화 없이는 유지에 한계가 있음"
     },
     {
-      "id": "eng_extra_45",
+      "id": "eng_9_45",
       "tag": "주의",
       "conds": {
         "모순패턴": "-",
@@ -7414,7 +7414,7 @@ var MESSAGES = {
       "text": "국어 성적 상위권이나 독해역량이 낮음 — 성적 유지를 위해 과도한 노력이 투입되고 있을 가능성, 역량 개선이 근본 해결책"
     },
     {
-      "id": "eng_extra_46",
+      "id": "eng_9_46",
       "tag": "보통",
       "conds": {
         "모순패턴": "-",
