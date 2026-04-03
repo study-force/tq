@@ -6042,9 +6042,16 @@ function buildNormalCurve(studentScore, dark) {
       + ' L' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
   }
 
-  // 학생 위치 수직선
-  var studentZ = (studentAcc - mean) / sd;
-  var studentY = Math.exp(-0.5 * studentZ * studentZ) / (sd * Math.sqrt(2 * Math.PI));
+  // 학생 위치 수직선 — 실데이터 분포에서 Y값 보간
+  var studentY = 0;
+  for (var pi = 0; pi < points.length - 1; pi++) {
+    if (studentAcc >= points[pi].x && studentAcc <= points[pi+1].x) {
+      var ratio = (studentAcc - points[pi].x) / (points[pi+1].x - points[pi].x || 1);
+      studentY = points[pi].y + ratio * (points[pi+1].y - points[pi].y);
+      break;
+    }
+  }
+  if (studentY === 0 && points.length > 0) studentY = points[points.length-1].y;
   var sX = sx(studentAcc), sY = sy(studentY);
 
   // 영역 구분 색상 (하위 → 상위)
