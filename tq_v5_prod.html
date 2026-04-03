@@ -5816,18 +5816,112 @@ function buildPage1() {
     +'</div></div>'
     +'</div>'
 
-    // 구분선
-    +'<div style="border-top:1px dashed #CBD5E1;margin:12px 0"></div>'
+    // 푸터
+    +buildFooter(1, TOTAL);
 
-    // 정규분포 — 상대 위치
-    +'<div style="padding:20px 72px 10px">'
-    +'<div style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;margin-bottom:16px;margin-left:20px">독해정확도 상대 위치</div>'
-    +'<div style="text-align:center;font-size:12px;color:#64748B;margin-bottom:8px">74,881명의 진단 데이터 기반 · 상위 <strong style="color:#1E293B;font-size:14px">'+getAccPercentileTop(avgAcc)+'%</strong></div>'
+  return div;
+}
+
+// ══════════════════════════
+// 페이지 2 — 분석 상세 (학생정보 + 근거수집 + 정규분포)
+// ══════════════════════════
+function buildAnalysisPage(pageNum, total) {
+  var M = '72px';
+  var div = document.createElement('div');
+  div.className = 'rpt-page';
+
+  var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
+  var avgAcc = Math.round(((D.fct>0?D.fct:D.acc)+(D.str_>0?D.str_:D.acc))/2);
+  var btName = BT_NAMES[D.bt] || D.bt || "";
+  var btColor = TC[D.bt] || "#475569";
+
+  // 도장 배지
+  var stamps = [];
+  if (D.flagTeukmok) stamps.push({icon:'🎯', text:'특목자사고 권장', color:'#7C3AED'});
+  if (D.flagScience) stamps.push({icon:'💎', text:'이과적 소양 잠재', color:'#2563EB'});
+  if (D.flagEmergency) stamps.push({icon:'🚨', text:'학습 역량 부재', color:'#DC2626'});
+  if (D.flagCollapse) stamps.push({icon:'⚠️', text:'성적 붕괴 위기', color:'#EA580C'});
+  var stampHtml = stamps.map(function(s){
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+s.color+'12;border:1.5px solid '+s.color+'40;color:'+s.color+';font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px">'+s.icon+' '+s.text+'</span>';
+  }).join(' ');
+
+  // 학생 정보 카드
+  var infoRows = [
+    ['유형', '<span style="color:'+btColor+';font-weight:700">'+btName+'</span>'],
+    ['진단일', D.date || ''],
+    ['난이도', RPT_lvLabel],
+    ['독해정확도', avgAcc + '점'],
+    ['독해속도', (D.spd||'') + ' 자/분'],
+  ];
+  if (D.kor_score) infoRows.push(['국어 성적', D.kor_score]);
+  if (D.eng_score) infoRows.push(['영어 성적', D.eng_score]);
+  if (D.math_score) infoRows.push(['수학 성적', D.math_score]);
+
+  var infoHtml = infoRows.map(function(r){
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#64748B;font-size:13px">'+r[0]+'</span><span style="color:#1E293B;font-size:13px;font-weight:600">'+r[1]+'</span></div>';
+  }).join('');
+
+  // 근거수집 메시지 — D.evidence에서 추출
+  var evidenceHtml = '';
+  var SECTION_NAMES = ['① 성적선행지수','② 독해속도','③ 독서의 양','④ 독해의 질','⑤ 정보처리습관','⑥ 워킹메모리','⑦ 추론능력','⑧ 독해효율성','⑨ 학교학업'];
+  var SECTION_COLORS = ['#0BA98E','#2563EB','#8B5CF6','#D97706','#DC2626','#0891B2','#7C3AED','#059669','#475569'];
+
+  if (D.evidence && Array.isArray(D.evidence)) {
+    evidenceHtml = D.evidence.map(function(item, idx) {
+      if (!item || !item.bullets || item.bullets.length === 0) return '';
+      var sName = SECTION_NAMES[idx] || item.title || ('영역 '+(idx+1));
+      var sColor = SECTION_COLORS[idx] || '#475569';
+      var bullets = item.bullets.map(function(b) {
+        var tagColor = b.t==='강점'?'#059669':b.t==='주의'?'#D97706':b.t==='위험'?'#DC2626':'#64748B';
+        var tagBg = b.t==='강점'?'#F0FDF4':b.t==='주의'?'#FFFBEB':b.t==='위험'?'#FEF2F2':'#F8FAFC';
+        return '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">'
+          +'<span style="flex-shrink:0;font-size:10px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:1px">'+b.t+'</span>'
+          +'<span style="font-size:12px;color:#334155;line-height:1.5">'+b.s+'</span></div>';
+      }).join('');
+      return '<div style="margin-bottom:12px">'
+        +'<div style="font-size:13px;font-weight:700;color:'+sColor+';margin-bottom:5px;padding-bottom:3px;border-bottom:2px solid '+sColor+'20">'+sName+'</div>'
+        +bullets+'</div>';
+    }).join('');
+  }
+
+  div.innerHTML = ''
+    // 헤더
+    +miniHeader()
+    +'<div style="padding:30px '+M+' 0">'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">'
+    +'<span style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:2px">DIAGNOSTIC ANALYSIS DETAIL</span>'
+    +'</div>'
+    +'<div style="font-size:32px;font-weight:800;color:#0F172A;letter-spacing:-1px;margin-bottom:8px">진단 분석 상세</div>'
+    +'</div>'
+
+    // 상단: 학생정보 + 정규분포
+    +'<div style="display:grid;grid-template-columns:280px 1fr;gap:24px;padding:0 '+M+';margin-bottom:20px">'
+
+    // 좌: 학생 정보
+    +'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px">'
+    +'<div style="font-size:22px;font-weight:800;color:#0F172A;margin-bottom:4px">'+D.name+'</div>'
+    +(stampHtml ? '<div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px">'+stampHtml+'</div>' : '')
+    +infoHtml
+    +'</div>'
+
+    // 우: 정규분포
+    +'<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px">'
+    +'<div style="font-size:16px;font-weight:700;color:#1E293B;margin-bottom:4px">독해정확도 상대 위치</div>'
+    +'<div style="font-size:12px;color:#64748B;margin-bottom:12px">74,881명 진단 데이터 기반 · 상위 <strong style="color:#1E293B">'+getAccPercentileTop(avgAcc)+'%</strong></div>'
     +buildNormalCurve(avgAcc)
     +'</div>'
 
-    // 푸터
-    +buildFooter(1, TOTAL);
+    +'</div>'
+
+    // 하단: 근거수집 메시지
+    +'<div style="padding:0 '+M+'">'
+    +'<div style="font-size:16px;font-weight:700;color:#1E293B;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #1E293B">판독 근거 수집 결과</div>'
+    +'<div style="columns:2;column-gap:24px;column-rule:1px solid #E2E8F0">'
+    +evidenceHtml
+    +'</div>'
+    +'</div>'
+
+    +buildFooter(pageNum, total);
 
   return div;
 }
@@ -6762,8 +6856,12 @@ function renderReportTab() {
     eff:  eng.eff  || 0,
     habChecked: eng.habChecked || [],
     effChecked: eng.effChecked || [],
+    evidence: eng.evidence || [],
     presc:  (window.__RPT_D && window.__RPT_D.presc && window.__RPT_D.presc.length ? window.__RPT_D.presc : eng.presc) || [],
     roadmapReasons: (window.__RPT_D && window.__RPT_D.roadmapReasons) || (eng.roadmapReasons) || null,
+    kor_score: inp.kor_score || eng.kor_score || '',
+    eng_score: inp.eng_score || eng.eng_score || '',
+    math_score: inp.math_score || eng.math_score || '',
     date:   eng.date || (window.__inp && window.__inp.reg_date ? window.__inp.reg_date.slice(0,10) : null),
     slots:  slots,
     imgSrc: imgSrc
@@ -6783,10 +6881,11 @@ function renderReportTab() {
   if (placeholder) placeholder.style.display = 'none';
 
   // 페이지 빌드
-  var TOTAL = 4;
+  var TOTAL = 5;
   try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
-  try { wrap.appendChild(buildDualSlotPage(1, 2, 2, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
-  try { wrap.appendChild(buildDualSlotPage(3, 4, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
+  try { wrap.appendChild(buildAnalysisPage(2, TOTAL)); } catch(e){ console.error('[buildAnalysisPage]', e); }
+  try { wrap.appendChild(buildDualSlotPage(1, 2, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
+  try { wrap.appendChild(buildDualSlotPage(3, 4, 4, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
   try { wrap.appendChild(buildLastPage(TOTAL, currentActiveKeys.length ? currentActiveKeys.slice() : null)); } catch(e){ console.error('[buildLastPage]', e); }
 
   // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
