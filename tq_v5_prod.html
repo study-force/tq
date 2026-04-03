@@ -5829,6 +5829,9 @@ function buildAnalysisPage(pageNum, total) {
   var M = '72px';
   var div = document.createElement('div');
   div.className = 'page';
+  div.style.height = 'auto';
+  div.style.minHeight = '1123px';
+  div.style.overflow = 'visible';
 
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
   var avgAcc = Math.round(((D.fct>0?D.fct:D.acc)+(D.str_>0?D.str_:D.acc))/2);
