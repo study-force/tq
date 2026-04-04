@@ -5877,12 +5877,12 @@ function buildAnalysisPage(pageNum, total) {
       var bullets = item.bullets.map(function(b) {
         var tagColor = b.t==='강점'?'#059669':b.t==='주의'?'#D97706':b.t==='위험'?'#DC2626':'#64748B';
         var tagBg = b.t==='강점'?'#F0FDF4':b.t==='주의'?'#FFFBEB':b.t==='위험'?'#FEF2F2':'#F8FAFC';
-        return '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">'
-          +'<span style="flex-shrink:0;font-size:10px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:1px">'+b.t+'</span>'
-          +'<span style="font-size:12px;color:#334155;line-height:1.5">'+b.s+'</span></div>';
+        return '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:4px">'
+          +'<span style="flex-shrink:0;font-size:9.5px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:2px">'+b.t+'</span>'
+          +'<span style="font-size:11px;color:#334155;line-height:1.55">'+b.s+'</span></div>';
       }).join('');
-      return '<div style="margin-bottom:12px;break-inside:avoid">'
-        +'<div style="font-size:13px;font-weight:700;color:'+sColor+';margin-bottom:5px;padding-bottom:3px;border-bottom:2px solid '+sColor+'20">'+sName+'</div>'
+      return '<div style="margin-bottom:10px;break-inside:avoid;background:#F8FAFC;border-radius:6px;border-left:3px solid '+sColor+';padding:8px 10px">'
+        +'<div style="font-size:12px;font-weight:700;color:'+sColor+';margin-bottom:5px">'+sName+'</div>'
         +bullets+'</div>';
     }).join('');
   }
@@ -5896,7 +5896,7 @@ function buildAnalysisPage(pageNum, total) {
 
     // 상단: 공부역량 상대위치 (좌우 확장)
     +'<div style="padding:0 '+M+';margin-bottom:20px">'
-    +'<div style="background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;position:relative;overflow:hidden;display:grid;grid-template-columns:140px 1fr;gap:20px">'
+    +'<div style="background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;position:relative;overflow:hidden;display:grid;grid-template-columns:140px 1fr;gap:20px;align-items:center">'
     +'<div style="position:absolute;top:0;right:0;width:160px;height:160px;background:radial-gradient(circle,rgba(59,130,246,.12),transparent);pointer-events:none"></div>'
 
     // 좌: 개별 지표 세로 배치 (색상 분기: ~30% 파랑, 30~70% 회색, 70%~ 주황)
@@ -5908,7 +5908,6 @@ function buildAnalysisPage(pageNum, total) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:'+bg+';border-radius:6px"><span style="font-size:10px;color:#94A3B8">'+label+'</span><span style="font-size:12px;font-weight:700;color:'+color+'">상위 '+top.toFixed(1)+'%</span></div>';
       }
       return '<div style="display:flex;flex-direction:column;justify-content:center;gap:8px">'
-        +'<div style="font-size:11px;font-weight:700;color:#475569;letter-spacing:1px;margin-bottom:4px">개별 역량</div>'
         +metricRow('정확도','acc',avgAcc)
         +metricRow('속도','spd',D.spd)
         +metricRow('어휘','voc',D.voc)
@@ -5918,12 +5917,26 @@ function buildAnalysisPage(pageNum, total) {
     }()
 
     // 우: 종합 + 그래프
-    +'<div>'
-    +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px">'
-    +'<span style="font-size:26px;font-weight:800;color:#3B82F6">학습역량 상위 '+getCompositeTop(avgAcc, D.spd, D.voc, D.inf, D.wm)+'%</span>'
-    +'</div>'
-    +buildNormalCurve(getCompositeScore(avgAcc, D.spd, D.voc, D.inf, D.wm), true)
-    +'</div>'
+    +function(){
+      var compTop = parseFloat(getCompositeTop(avgAcc, D.spd, D.voc, D.inf, D.wm));
+      var isWeak = compTop > 50;
+      var displayLabel = isWeak ? '학습역량 하위 '+(100-compTop).toFixed(1)+'%' : '학습역량 상위 '+compTop.toFixed(1)+'%';
+      var labelColor = isWeak ? '#F97316' : '#3B82F6';
+      // 플래그: 상위 30% 이하 특목자사 권장, 상위 10% 이하 최상위권
+      var flag = '';
+      if (compTop <= 10) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#7C3AED;padding:2px 8px;border-radius:4px;margin-left:8px">최상위권</span>';
+      else if (compTop <= 30) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#2563EB;padding:2px 8px;border-radius:4px;margin-left:8px">특목자사 권장</span>';
+      else if (compTop <= 50) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#0BA98E;padding:2px 8px;border-radius:4px;margin-left:8px">평균 이상</span>';
+      else if (compTop <= 70) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#D97706;padding:2px 8px;border-radius:4px;margin-left:8px">개선 필요</span>';
+      else flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#DC2626;padding:2px 8px;border-radius:4px;margin-left:8px">시급 개선</span>';
+      return '<div>'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">'
+        +'<span style="font-size:26px;font-weight:800;color:'+labelColor+'">'+displayLabel+'</span>'
+        +flag
+        +'</div>'
+        +buildNormalCurve(getCompositeScore(avgAcc, D.spd, D.voc, D.inf, D.wm), true, isWeak)
+        +'</div>';
+    }()
 
     +'</div>'
     +'</div>'
@@ -5989,7 +6002,7 @@ function getAccPercentileTop(acc) {
   return (100 - DIST[idx]).toFixed(1);
 }
 
-function buildNormalCurve(studentScore, dark) {
+function buildNormalCurve(studentScore, dark, isWeak) {
   var W = 700, H = 200, PAD = 40;
   var chartW = W - PAD * 2, chartH = H - 60;
 
@@ -6021,13 +6034,22 @@ function buildNormalCurve(studentScore, dark) {
     + points.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
     + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
 
-  // 학생 위치 하이라이트 영역 (학생 점수 우측 채우기 = 상위 X%)
-  var hlPoints = points.filter(function(p) { return p.x >= studentAcc; });
-  var hlPath = '';
-  if (hlPoints.length > 0) {
-    hlPath = 'M' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
-      + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
-      + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+  // 학생 위치 하이라이트 영역 (isWeak: 좌측=하위, 아니면: 우측=상위)
+  var hlPoints, hlPath = '';
+  if (isWeak) {
+    hlPoints = points.filter(function(p) { return p.x <= studentAcc; });
+    if (hlPoints.length > 0) {
+      hlPath = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+        + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
+        + ' L' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+    }
+  } else {
+    hlPoints = points.filter(function(p) { return p.x >= studentAcc; });
+    if (hlPoints.length > 0) {
+      hlPath = 'M' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+        + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
+        + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+    }
   }
 
   // 학생 위치 수직선 — 실데이터 분포에서 Y값 보간
@@ -6064,8 +6086,8 @@ function buildNormalCurve(studentScore, dark) {
   var txtColor = dark ? '#94A3B8' : '#64748B';
   var curveColor = dark ? '#64748B' : '#475569';
   var fillColor = dark ? 'rgba(148,163,184,.15)' : 'rgba(203,213,225,.3)';
-  var hlColor = dark ? 'rgba(59,130,246,.55)' : 'rgba(59,130,246,.35)';
-  var dotColor = dark ? '#60A5FA' : '#EF4444';
+  var hlColor = isWeak ? (dark ? 'rgba(249,115,22,.55)' : 'rgba(249,115,22,.35)') : (dark ? 'rgba(59,130,246,.55)' : 'rgba(59,130,246,.35)');
+  var dotColor = isWeak ? '#F97316' : (dark ? '#60A5FA' : '#EF4444');
 
   // X축 라벨 (종합점수)
   var xLabels = [0,10,20,30,40,50,60,70,80,90,100].map(function(v) {
