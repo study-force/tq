@@ -668,7 +668,7 @@ details summary:hover{color:var(--tx2)}
   <!-- 버전 배너 -->
   <div id="versionBanner" style="background:rgba(99,102,241,.08);border-bottom:1px solid rgba(99,102,241,.15);padding:4px 16px;font-size:10px;color:#94A3B8;display:flex;align-items:center;gap:8px">
     <span style="font-weight:700;color:#8B5CF6">v6.2</span>
-    <span>2페이지 그래프 색상 변경 · 플래그 배지 4종 적용 · 고등 모의고사 필드 추가 · 하위% 빨강 표시</span>
+    <span>그래프 학생위치까지만 채움 · 점수 표시 제거 · 플래그 배지 4종 · 고등 모의고사 필드 · 하위% 빨강</span>
   </div>
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
@@ -6104,12 +6104,18 @@ function buildNormalCurve(studentScore, dark, isWeak) {
 
   var zoneLabels = '';
 
+  // 학생 위치까지만 채우는 경로
+  var partialPoints = points.filter(function(p) { return p.x <= studentAcc; });
+  var partialFill = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
+    + partialPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
+    + ' L' + sX.toFixed(1) + ',' + sY.toFixed(1)
+    + ' L' + sX.toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
+
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px;margin:0 auto;display:block">'
-    +'<path d="'+fillPath+'" fill="'+fillColor+'"/>'
+    +'<path d="'+partialFill+'" fill="'+fillColor+'"/>'
     +'<path d="'+curvePath+'" fill="none" stroke="'+curveColor+'" stroke-width="2"/>'
     +'<line x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sy(0)+'" stroke="'+dotColor+'" stroke-width="2" stroke-dasharray="5,3"/>'
     +'<circle cx="'+sX+'" cy="'+sY+'" r="5" fill="'+dotColor+'" stroke="'+(dark?'#0F172A':'#fff')+'" stroke-width="2"/>'
-    +'<text x="'+sX+'" y="'+(sY-12)+'" text-anchor="middle" font-size="12" font-weight="700" fill="'+dotColor+'" font-family="Arial">'+studentAcc+'점</text>'
     +'<text x="'+sX+'" y="'+(sy(0)+12)+'" text-anchor="middle" font-size="9" fill="'+dotColor+'" font-weight="600">이 학생</text>'
     +xLabels
     +zoneLabels
