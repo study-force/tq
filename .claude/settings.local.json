@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node test-engine.js)",
+      "Bash(wc -l \"C:/Users/이영재/Desktop/CLAUDE/tq-consult/tq_v5_editor \\(7\\).html\")",
+      "Bash(npx supabase:*)",
+      "Bash(node -e \":*)",
+      "Bash(curl -sI \"https://study-force.github.io/tq/tq_v5_main.js\")",
+      "WebFetch(domain:study-force.github.io)",
+      "Bash(curl -s \"https://study-force.github.io/tq/tq_v5_main.js\")",
+      "Bash(pandoc \"F:\\\\download\\\\TQ_9유형_분류체계_속도기반.docx\" -o /tmp/tq_types.md)",
+      "Read(//tmp/**)",
+      "Bash(python \"C:/Users/이영재/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/d04c8cc0-156c-4323-88a8-8690a365dce4/7309059c-fdc5-42b6-9a2e-3229e1989932/skills/docx/scripts/office/unpack.py\" \"F:/download/TQ_9유형_분류체계_속도기반.docx\" /tmp/tq_unpacked/)",
+      "Bash(pip install:*)",
+      "Read(//c/Users/이영재/AppData/Local/Temp/tq_unpacked/**)",
+      "Bash(dir /s /b C:tmptq_unpacked)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(node -c supabase/functions/tq-engine/index.ts)",
+      "Bash(npx -y esbuild supabase/functions/tq-engine/index.ts --bundle --platform=neutral --outfile=/dev/null)"
+    ]
+  }
+}
