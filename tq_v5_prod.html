@@ -5146,6 +5146,10 @@ function injectTqDataAndRun(d) {
                 window.__eng = saved.eng;
               }
               _doRender(saved.eng);
+              // evidence 보충 후 리포트도 재렌더
+              if (window.__reportRendered && typeof renderReportTab === 'function') {
+                try { renderReportTab(); } catch(e){}
+              }
             }).catch(function(){ _doRender(saved.eng); });
           } else {
             _doRender(saved.eng);
