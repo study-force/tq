@@ -6067,23 +6067,7 @@ function buildNormalCurve(studentScore, dark, isWeak) {
     + points.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
     + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
 
-  // 학생 위치 하이라이트 영역 (isWeak: 좌측=하위, 아니면: 우측=상위)
-  var hlPoints, hlPath = '';
-  if (isWeak) {
-    hlPoints = points.filter(function(p) { return p.x <= studentAcc; });
-    if (hlPoints.length > 0) {
-      hlPath = 'M' + sx(0).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
-        + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
-        + ' L' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
-    }
-  } else {
-    hlPoints = points.filter(function(p) { return p.x >= studentAcc; });
-    if (hlPoints.length > 0) {
-      hlPath = 'M' + sx(studentAcc).toFixed(1) + ',' + sy(0).toFixed(1) + ' '
-        + hlPoints.map(function(p) { return 'L' + sx(p.x).toFixed(1) + ',' + sy(p.y).toFixed(1); }).join(' ')
-        + ' L' + sx(100).toFixed(1) + ',' + sy(0).toFixed(1) + ' Z';
-    }
-  }
+  // 하이라이트 제거 — 그라데이션 채움으로 대체
 
   // 학생 위치 수직선 — 실데이터 분포에서 Y값 보간
   var studentY = 0;
@@ -6097,30 +6081,13 @@ function buildNormalCurve(studentScore, dark, isWeak) {
   if (studentY === 0 && points.length > 0) studentY = points[points.length-1].y;
   var sX = sx(studentAcc), sY = sy(studentY);
 
-  // 영역 구분 색상 (하위 → 상위)
-  var zones = dark ? [
-    {from:0, to:20, color:'rgba(239,68,68,.12)'},
-    {from:20, to:40, color:'rgba(251,191,36,.08)'},
-    {from:40, to:60, color:'rgba(148,163,184,.06)'},
-    {from:60, to:80, color:'rgba(59,130,246,.1)'},
-    {from:80, to:100, color:'rgba(99,102,241,.15)'}
-  ] : [
-    {from:0, to:20, color:'#FEE2E2'},
-    {from:20, to:40, color:'#FEF3C7'},
-    {from:40, to:60, color:'#F8FAFC'},
-    {from:60, to:80, color:'#DBEAFE'},
-    {from:80, to:100, color:'#E0E7FF'}
-  ];
-
-  var zoneRects = zones.map(function(z) {
-    return '<rect x="'+sx(z.from)+'" y="30" width="'+(sx(z.to)-sx(z.from))+'" height="'+chartH+'" fill="'+z.color+'" opacity="0.4"/>';
-  }).join('');
+  // 그라데이션 ID (유니크)
+  var gradId = 'gradCurve_' + Math.random().toString(36).slice(2,8);
+  var gradOpacity = dark ? '0.55' : '0.4';
 
   var txtColor = dark ? '#94A3B8' : '#64748B';
   var curveColor = dark ? '#64748B' : '#475569';
-  var fillColor = dark ? 'rgba(148,163,184,.15)' : 'rgba(203,213,225,.3)';
-  var hlColor = isWeak ? (dark ? 'rgba(239,68,68,.55)' : 'rgba(239,68,68,.35)') : (dark ? 'rgba(59,130,246,.55)' : 'rgba(59,130,246,.35)');
-  var dotColor = isWeak ? '#EF4444' : (dark ? '#60A5FA' : '#EF4444');
+  var dotColor = isWeak ? '#EF4444' : (dark ? '#60A5FA' : '#3B82F6');
 
   // X축 라벨 (종합점수)
   var xLabels = [0,10,20,30,40,50,60,70,80,90,100].map(function(v) {
@@ -6129,10 +6096,18 @@ function buildNormalCurve(studentScore, dark, isWeak) {
 
   var zoneLabels = '';
 
+  // 그라데이션 정의 (빨-주-노-초-파)
+  var gradDef = '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="1" y2="0">'
+    +'<stop offset="0%" stop-color="#EF4444" stop-opacity="'+gradOpacity+'"/>'
+    +'<stop offset="25%" stop-color="#F97316" stop-opacity="'+gradOpacity+'"/>'
+    +'<stop offset="45%" stop-color="#EAB308" stop-opacity="'+gradOpacity+'"/>'
+    +'<stop offset="65%" stop-color="#22C55E" stop-opacity="'+gradOpacity+'"/>'
+    +'<stop offset="100%" stop-color="#3B82F6" stop-opacity="'+gradOpacity+'"/>'
+    +'</linearGradient></defs>';
+
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px;margin:0 auto;display:block">'
-    +zoneRects
-    +'<path d="'+fillPath+'" fill="'+fillColor+'"/>'
-    +(hlPath ? '<path d="'+hlPath+'" fill="'+hlColor+'"/>' : '')
+    +gradDef
+    +'<path d="'+fillPath+'" fill="url(#'+gradId+')"/>'
     +'<path d="'+curvePath+'" fill="none" stroke="'+curveColor+'" stroke-width="2"/>'
     +'<line x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sy(0)+'" stroke="'+dotColor+'" stroke-width="2" stroke-dasharray="5,3"/>'
     +'<circle cx="'+sX+'" cy="'+sY+'" r="5" fill="'+dotColor+'" stroke="'+(dark?'#0F172A':'#fff')+'" stroke-width="2"/>'
