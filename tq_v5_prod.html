@@ -667,8 +667,8 @@ details summary:hover{color:var(--tx2)}
 <div id="page-result" style="display:none;background:var(--bg);overflow-y:auto;position:relative;padding-bottom:80px">
   <!-- 버전 배너 -->
   <div id="versionBanner" style="background:rgba(99,102,241,.08);border-bottom:1px solid rgba(99,102,241,.15);padding:4px 16px;font-size:10px;color:#94A3B8;display:flex;align-items:center;gap:8px">
-    <span style="font-weight:700;color:#8B5CF6">v6.2</span>
-    <span>그래프 학생위치까지만 채움 · 점수 표시 제거 · 플래그 배지 4종 · 고등 모의고사 필드 · 하위% 빨강</span>
+    <span style="font-weight:700;color:#8B5CF6">v6.3</span>
+    <span>영어 성적 표시 수정 · 그래프 학생위치까지 채움 · 플래그 배지 4종 · 고등 모의고사 필드</span>
   </div>
   <!-- 탭/이름/인쇄 버튼은 최상단 고정 헤더로 이동 -->
   <!-- 판독 탭 컨텐츠 -->
@@ -1560,7 +1560,7 @@ function renderResult(e,nm){
       ${e.kor?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">국어 성적</span><span style="font-size:12px;color:#34D399;font-weight:700">'+e.kor+'</span></div>':''}
 
       <!-- 영어 -->
-      ${e.eng?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+e.eng+'</span></div>':''}
+      ${(e.eng&&e.eng!=='-')||(e.eng_score&&e.eng_score!=='-')?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">영어 성적</span><span style="font-size:12px;color:#60A5FA;font-weight:700">'+(e.eng||e.eng_score)+'</span></div>':''}
 
       <!-- 수학 -->
       ${e.math?'<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.25)"><span style="font-size:11px;color:rgba(255,255,255,.4)">수학 성적</span><span style="font-size:12px;color:#FBBF24;font-weight:700">'+e.math+'</span></div>':''}
