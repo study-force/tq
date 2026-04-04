@@ -5957,16 +5957,15 @@ function buildAnalysisPage(pageNum, total) {
       var isWeak = compTop > 50;
       var displayLabel = isWeak ? '학습역량 하위 '+(100-compTop).toFixed(1)+'%' : '학습역량 상위 '+compTop.toFixed(1)+'%';
       var labelColor = isWeak ? '#EF4444' : '#3B82F6';
-      var flag = '';
-      if (compTop <= 10) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#7C3AED;padding:2px 8px;border-radius:4px;margin-left:8px">최상위권</span>';
-      else if (compTop <= 30) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#2563EB;padding:2px 8px;border-radius:4px;margin-left:8px">특목자사 권장</span>';
-      else if (compTop <= 50) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#0BA98E;padding:2px 8px;border-radius:4px;margin-left:8px">평균 이상</span>';
-      else if (compTop <= 70) flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#DC2626;padding:2px 8px;border-radius:4px;margin-left:8px">개선 필요</span>';
-      else flag = '<span style="font-size:11px;font-weight:700;color:#fff;background:#991B1B;padding:2px 8px;border-radius:4px;margin-left:8px">시급 개선</span>';
+      var flags = '';
+      if (D.flagTeukmok)  flags += '<span style="font-size:10px;font-weight:700;color:#A78BFA;background:rgba(109,40,217,.3);border:1px solid rgba(167,139,250,.5);padding:2px 8px;border-radius:4px">🎯 특목자사고 권장</span>';
+      if (D.flagScience)  flags += '<span style="font-size:10px;font-weight:700;color:#60A5FA;background:rgba(37,99,235,.3);border:1px solid rgba(96,165,250,.5);padding:2px 8px;border-radius:4px">💎 이과적 소양</span>';
+      if (D.flagEmergency) flags += '<span style="font-size:10px;font-weight:700;color:#FCA5A5;background:rgba(185,28,28,.3);border:1px solid rgba(252,165,165,.5);padding:2px 8px;border-radius:4px">🚨 학습역량 부재</span>';
+      if (D.flagCollapse) flags += '<span style="font-size:10px;font-weight:700;color:#FB923C;background:rgba(234,88,12,.3);border:1px solid rgba(251,146,60,.5);padding:2px 8px;border-radius:4px">⚠️ 성적붕괴 위기</span>';
       return '<div>'
-        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">'
         +'<span style="font-size:24px;font-weight:800;color:'+labelColor+'">'+displayLabel+'</span>'
-        +flag
+        +flags
         +'</div>'
         +buildNormalCurve(getCompositeScore(avgAcc, D.spd, D.voc, D.inf, D.wm), true, isWeak)
         +'</div>';
