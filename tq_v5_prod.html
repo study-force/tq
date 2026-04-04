@@ -5886,20 +5886,6 @@ function buildAnalysisPage(pageNum, total) {
   var RPT_dateStr2 = D.date ? D.date.replace(/-/g,'. ') : '';
 
   div.innerHTML = ''
-    // 헤더
-    +'<div style="background:#666666;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'
-    +'<span style="font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.5px;font-weight:600">STUDYFORCE · TQ 독해역량 판독 리포트</span>'
-    +'<div style="display:flex;align-items:center;gap:12px">'
-    +'<span style="font-size:12px;color:rgba(255,255,255,.8)">'+RPT_lvLabel+'</span>'
-    +'<span style="font-size:16px;color:#fff;font-weight:700">'+D.name+'</span>'
-    +'<span style="font-size:11px;color:rgba(255,255,255,.5)">'+RPT_dateStr2+'</span>'
-    +'</div></div>'
-    +'<div style="padding:30px '+M+' 0">'
-    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">'
-    +'<span style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:2px">DIAGNOSTIC ANALYSIS DETAIL</span>'
-    +'</div>'
-    +'<div style="font-size:32px;font-weight:800;color:#0F172A;letter-spacing:-1px;margin-bottom:8px">진단 분석 상세</div>'
-    +'</div>'
 
     // 상단: 공부역량 상대위치 (좌우 확장)
     +'<div style="padding:0 '+M+';margin-bottom:20px">'
@@ -5918,14 +5904,8 @@ function buildAnalysisPage(pageNum, total) {
 
     // 우: 종합 + 그래프
     +'<div>'
-    +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">'
-    +'<span style="font-size:15px;font-weight:700;color:#E2E8F0;letter-spacing:-.3px">공부역량 상대 위치</span>'
-    +'<span style="font-size:11px;color:#64748B">N = 73,032</span>'
-    +'</div>'
     +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px">'
-    +'<span style="font-size:11px;color:#94A3B8">5개 지표 종합</span>'
-    +'<span style="font-size:26px;font-weight:800;color:#3B82F6">상위 '+getCompositeTop(avgAcc, D.spd, D.voc, D.inf, D.wm)+'%</span>'
-    +'<span style="font-size:11px;color:#64748B">(종합 '+getCompositeScore(avgAcc, D.spd, D.voc, D.inf, D.wm)+'점)</span>'
+    +'<span style="font-size:26px;font-weight:800;color:#3B82F6">학습역량 상위 '+getCompositeTop(avgAcc, D.spd, D.voc, D.inf, D.wm)+'%</span>'
     +'</div>'
     +buildNormalCurve(getCompositeScore(avgAcc, D.spd, D.voc, D.inf, D.wm), true)
     +'</div>'
