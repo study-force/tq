@@ -5877,7 +5877,7 @@ function buildAnalysisPage(pageNum, total) {
           +'<span style="flex-shrink:0;font-size:10px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:1px">'+b.t+'</span>'
           +'<span style="font-size:12px;color:#334155;line-height:1.5">'+b.s+'</span></div>';
       }).join('');
-      return '<div style="margin-bottom:12px">'
+      return '<div style="margin-bottom:12px;break-inside:avoid">'
         +'<div style="font-size:13px;font-weight:700;color:'+sColor+';margin-bottom:5px;padding-bottom:3px;border-bottom:2px solid '+sColor+'20">'+sName+'</div>'
         +bullets+'</div>';
     }).join('');
@@ -5887,7 +5887,7 @@ function buildAnalysisPage(pageNum, total) {
 
   div.innerHTML = ''
     +'<div style="padding:30px '+M+' 0">'
-    +'<div style="font-size:32px;font-weight:800;color:#0F172A;letter-spacing:-1px;margin-bottom:8px">진단 분석 상세</div>'
+    +'<div style="font-size:32px;font-weight:800;color:#0F172A;letter-spacing:-1px;margin-bottom:16px">진단 분석 상세</div>'
     +'</div>'
 
     // 상단: 공부역량 상대위치 (좌우 확장)
@@ -5895,15 +5895,23 @@ function buildAnalysisPage(pageNum, total) {
     +'<div style="background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;position:relative;overflow:hidden;display:grid;grid-template-columns:140px 1fr;gap:20px">'
     +'<div style="position:absolute;top:0;right:0;width:160px;height:160px;background:radial-gradient(circle,rgba(59,130,246,.12),transparent);pointer-events:none"></div>'
 
-    // 좌: 개별 지표 세로 배치
-    +'<div style="display:flex;flex-direction:column;justify-content:center;gap:8px">'
-    +'<div style="font-size:11px;font-weight:700;color:#475569;letter-spacing:1px;margin-bottom:4px">개별 역량</div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(59,130,246,.08);border-radius:6px"><span style="font-size:10px;color:#94A3B8">정확도</span><span style="font-size:12px;font-weight:700;color:#60A5FA">상위 '+getMetricTop("acc",avgAcc)+'%</span></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(59,130,246,.08);border-radius:6px"><span style="font-size:10px;color:#94A3B8">속도</span><span style="font-size:12px;font-weight:700;color:#60A5FA">상위 '+getMetricTop("spd",D.spd)+'%</span></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(59,130,246,.08);border-radius:6px"><span style="font-size:10px;color:#94A3B8">어휘</span><span style="font-size:12px;font-weight:700;color:#60A5FA">상위 '+getMetricTop("voc",D.voc)+'%</span></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(59,130,246,.08);border-radius:6px"><span style="font-size:10px;color:#94A3B8">추론</span><span style="font-size:12px;font-weight:700;color:#60A5FA">상위 '+getMetricTop("inf",D.inf)+'%</span></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(59,130,246,.08);border-radius:6px"><span style="font-size:10px;color:#94A3B8">워킹메모리</span><span style="font-size:12px;font-weight:700;color:#60A5FA">상위 '+getMetricTop("wm",D.wm)+'%</span></div>'
-    +'</div>'
+    // 좌: 개별 지표 세로 배치 (색상 분기: ~30% 파랑, 30~70% 회색, 70%~ 주황)
+    +function(){
+      function metricRow(label, metric, val) {
+        var top = parseFloat(getMetricTop(metric, val));
+        var color = top <= 30 ? '#60A5FA' : top <= 70 ? '#94A3B8' : '#FB923C';
+        var bg = top <= 30 ? 'rgba(59,130,246,.08)' : top <= 70 ? 'rgba(148,163,184,.06)' : 'rgba(251,146,60,.08)';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:'+bg+';border-radius:6px"><span style="font-size:10px;color:#94A3B8">'+label+'</span><span style="font-size:12px;font-weight:700;color:'+color+'">상위 '+top.toFixed(1)+'%</span></div>';
+      }
+      return '<div style="display:flex;flex-direction:column;justify-content:center;gap:8px">'
+        +'<div style="font-size:11px;font-weight:700;color:#475569;letter-spacing:1px;margin-bottom:4px">개별 역량</div>'
+        +metricRow('정확도','acc',avgAcc)
+        +metricRow('속도','spd',D.spd)
+        +metricRow('어휘','voc',D.voc)
+        +metricRow('추론','inf',D.inf)
+        +metricRow('워킹메모리','wm',D.wm)
+        +'</div>';
+    }()
 
     // 우: 종합 + 그래프
     +'<div>'
