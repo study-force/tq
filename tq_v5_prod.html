@@ -1762,6 +1762,10 @@ gv("btnA").addEventListener("click",async function(){
     eng.eng     = eng.eng    || inp.eng_score  || null;
     eng.math    = eng.math   || inp.math_score || null;
     eng.kor     = eng.kor    || inp.kor_score  || null;
+    // 모의고사 성적 (없으면 내신으로 대체)
+    eng.mock_kor  = inp.mock_kor  || eng.mock_kor  || eng.kor  || null;
+    eng.mock_eng  = inp.mock_eng  || eng.mock_eng  || eng.eng  || null;
+    eng.mock_math = inp.mock_math || eng.mock_math || eng.math || null;
     rv.innerHTML=renderResult(eng,inp.name);
 
     // 결과 페이지로 전환
@@ -5923,16 +5927,25 @@ function buildAnalysisPage(pageNum, total) {
         +'</div>';
     }()
 
-    // 중: 학교 성적
+    // 중: 학교 성적 (고등은 내신+모의고사)
     +function(){
       function scoreRow(label, val) {
         if (!val || val === '-') return '';
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:rgba(148,163,184,.06);border-radius:6px"><span style="font-size:10px;color:#94A3B8">'+label+'</span><span style="font-size:11px;font-weight:700;color:#CBD5E1">'+val+'</span></div>';
       }
-      var rows = scoreRow('국어', D.kor_score) + scoreRow('영어', D.eng_score) + scoreRow('수학', D.math_score);
-      if (!rows) return '';
-      return '<div style="display:flex;flex-direction:column;justify-content:center;gap:6px;border-left:1px solid rgba(255,255,255,.08);padding-left:16px">'
-        +'<div style="font-size:9px;font-weight:600;color:#64748B;letter-spacing:1px;margin-bottom:2px">학교 성적</div>'
+      var isHigh = (D.level === '고등' || D.uiLevel === '고등');
+      var rows = '';
+      if (isHigh) {
+        rows += '<div style="font-size:9px;font-weight:600;color:#64748B;letter-spacing:1px;margin-bottom:2px">내신</div>'
+          +scoreRow('국어', D.kor_score)+scoreRow('영어', D.eng_score)+scoreRow('수학', D.math_score)
+          +'<div style="font-size:9px;font-weight:600;color:#64748B;letter-spacing:1px;margin:6px 0 2px">모의고사</div>'
+          +scoreRow('국어', D.mock_kor)+scoreRow('영어', D.mock_eng)+scoreRow('수학', D.mock_math);
+      } else {
+        rows = scoreRow('국어', D.kor_score)+scoreRow('영어', D.eng_score)+scoreRow('수학', D.math_score);
+      }
+      if (!rows.replace(/<div[^>]*>(?:내신|모의고사)<\/div>/g,'').trim()) return '';
+      return '<div style="display:flex;flex-direction:column;justify-content:center;gap:4px;border-left:1px solid rgba(255,255,255,.08);padding-left:16px">'
+        +(isHigh ? '' : '<div style="font-size:9px;font-weight:600;color:#64748B;letter-spacing:1px;margin-bottom:2px">학교 성적</div>')
         +rows
         +'</div>';
     }()
@@ -6977,6 +6990,9 @@ function renderReportTab() {
     kor_score: inp.kor_score || eng.kor_score || '',
     eng_score: inp.eng_score || eng.eng_score || '',
     math_score: inp.math_score || eng.math_score || '',
+    mock_kor: eng.mock_kor || inp.kor_score || '',
+    mock_eng: eng.mock_eng || inp.eng_score || '',
+    mock_math: eng.mock_math || inp.math_score || '',
     date:   eng.date || (window.__inp && window.__inp.reg_date ? window.__inp.reg_date.slice(0,10) : null),
     slots:  slots,
     imgSrc: imgSrc
