@@ -6081,9 +6081,12 @@ function buildNormalCurve(studentScore, dark, isWeak) {
   if (studentY === 0 && points.length > 0) studentY = points[points.length-1].y;
   var sX = sx(studentAcc), sY = sy(studentY);
 
-  // 그라데이션 ID (유니크)
-  var gradId = 'gradCurve_' + Math.random().toString(36).slice(2,8);
-  var gradOpacity = dark ? '0.55' : '0.4';
+  // 채움 색상: 상위 50% 이내 파랑, 초과 빨강
+  var compTop = interpolatePct(COMP_PCT, studentScore);
+  var isTop = (100 - compTop) <= 50;
+  var fillColor = isTop
+    ? (dark ? 'rgba(59,130,246,.45)' : 'rgba(59,130,246,.35)')
+    : (dark ? 'rgba(239,68,68,.45)' : 'rgba(239,68,68,.35)');
 
   var txtColor = dark ? '#94A3B8' : '#64748B';
   var curveColor = dark ? '#64748B' : '#475569';
@@ -6096,15 +6099,8 @@ function buildNormalCurve(studentScore, dark, isWeak) {
 
   var zoneLabels = '';
 
-  // 그라데이션 정의 (빨-주-노-초-파)
-  var gradDef = '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="1" y2="0">'
-    +'<stop offset="0%" stop-color="#EF4444" stop-opacity="'+gradOpacity+'"/>'
-    +'<stop offset="100%" stop-color="#3B82F6" stop-opacity="'+gradOpacity+'"/>'
-    +'</linearGradient></defs>';
-
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:700px;margin:0 auto;display:block">'
-    +gradDef
-    +'<path d="'+fillPath+'" fill="url(#'+gradId+')"/>'
+    +'<path d="'+fillPath+'" fill="'+fillColor+'"/>'
     +'<path d="'+curvePath+'" fill="none" stroke="'+curveColor+'" stroke-width="2"/>'
     +'<line x1="'+sX+'" y1="'+sY+'" x2="'+sX+'" y2="'+sy(0)+'" stroke="'+dotColor+'" stroke-width="2" stroke-dasharray="5,3"/>'
     +'<circle cx="'+sX+'" cy="'+sY+'" r="5" fill="'+dotColor+'" stroke="'+(dark?'#0F172A':'#fff')+'" stroke-width="2"/>'
