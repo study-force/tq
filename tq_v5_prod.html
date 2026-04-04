@@ -5913,9 +5913,10 @@ function buildAnalysisPage(pageNum, total) {
     +function(){
       function metricRow(label, metric, val) {
         var top = parseFloat(getMetricTop(metric, val));
-        var color = top <= 30 ? '#60A5FA' : top <= 70 ? '#94A3B8' : '#EF4444';
-        var bg = top <= 30 ? 'rgba(59,130,246,.08)' : top <= 70 ? 'rgba(148,163,184,.06)' : 'rgba(239,68,68,.08)';
-        var dispLabel = top > 50 ? '하위 '+(100-top).toFixed(1)+'%' : '상위 '+top.toFixed(1)+'%';
+        var isLow = top > 50;
+        var color = isLow ? '#EF4444' : top <= 30 ? '#60A5FA' : '#94A3B8';
+        var bg = isLow ? 'rgba(239,68,68,.08)' : top <= 30 ? 'rgba(59,130,246,.08)' : 'rgba(148,163,184,.06)';
+        var dispLabel = isLow ? '하위 '+(100-top).toFixed(1)+'%' : '상위 '+top.toFixed(1)+'%';
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:'+bg+';border-radius:6px"><span style="font-size:10px;color:#94A3B8">'+label+'</span><span style="font-size:11px;font-weight:700;color:'+color+'">'+dispLabel+'</span></div>';
       }
       return '<div style="display:flex;flex-direction:column;justify-content:center;gap:6px">'
