@@ -235,24 +235,24 @@ function buildPage1() {
 function buildSlotBlock(i) {
   var slotColor = RPT_SC[i-1];
   var txt = D.slots["slot"+i] || "";
-  var lightBg = ["#EFF3FF","#F0FDF9","#FFFBEB","#F5F3FF"][i-1] || "#F8FAFC";
+  var lightBg = ["#EFF6FF","#F0FDF4","#FFFBEB","#FAF5FF"][i-1] || "#F8FAFC";
+  var iconBg = ["#DBEAFE","#DCFCE7","#FEF3C7","#F3E8FF"][i-1] || "#E2E8F0";
 
-  var M = '72px'; // 페이지 좌우 여백 — 레이블·박스 모두 이 값으로 정렬
+  var M = '72px';
   return ''
-    +'<div style="padding:0 '+M+' 12px '+M+';flex-shrink:0;display:flex;align-items:stretch;gap:0;">'
-    +'<div style="width:3px;background:'+slotColor+';flex-shrink:0;margin-right:16px;border-radius:2px;"></div>'
-    +'<div style="display:flex;flex-direction:column;justify-content:center;">'
-    +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;">'
-    +'<span style="font-size:13px;font-weight:600;color:'+slotColor+';font-family:\'Noto Sans KR\',sans-serif;letter-spacing:.5px;">'+i+'</span>'
-    +'<span style="font-size:10.5px;color:#94A3B8;letter-spacing:1.5px;font-family:\'Noto Sans KR\',sans-serif;">'+RPT_SLOT_DESC[i-1]+'</span>'
+    +'<div style="padding:0 '+M+' 8px '+M+';flex-shrink:0;display:flex;align-items:center;gap:14px;">'
+    +'<div style="width:38px;height:38px;border-radius:50%;background:'+slotColor+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">'
+    +'<span style="font-size:16px;font-weight:700;color:#fff;font-family:\'Noto Sans KR\',sans-serif;">'+i+'</span>'
     +'</div>'
-    +'<div style="font-size:21px;font-weight:500;color:#1A2332;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">'+D.name+' 학생'+RPT_SLOT_JOSA[i-1]+' '+RPT_SLOT_T[i-1]+'</div>'
+    +'<div>'
+    +'<div style="font-size:10px;color:#94A3B8;letter-spacing:1.5px;font-family:\'Noto Sans KR\',sans-serif;margin-bottom:2px;">'+RPT_SLOT_DESC[i-1]+'</div>'
+    +'<div style="font-size:20px;font-weight:600;color:#1A2332;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">'+D.name+' 학생'+RPT_SLOT_JOSA[i-1]+' '+RPT_SLOT_T[i-1]+'</div>'
     +'</div>'
     +'</div>'
-    +'<div style="flex:1;min-height:0;margin:0 '+M+';border:1px solid '+slotColor+'80;background:#fff;padding:28px 34px;position:relative;overflow:hidden;">'
-    +'<div style="position:absolute;top:0;left:0;width:3px;height:100%;background:'+slotColor+';opacity:.5;"></div>'
-    +'<div style="position:absolute;bottom:12px;right:16px;font-size:56px;color:'+slotColor+';opacity:.04;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
-    +'<div style="font-size:15.5px;line-height:2.1;color:#1A2332;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
+    +'<div style="flex:1;min-height:0;margin:0 '+M+';background:'+lightBg+';border-radius:8px;padding:24px 30px 24px 34px;position:relative;overflow:hidden;">'
+    +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+slotColor+';border-radius:4px 0 0 4px;"></div>'
+    +'<div style="position:absolute;bottom:10px;right:14px;font-size:52px;color:'+slotColor+';opacity:.05;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
+    +'<div style="font-size:15px;line-height:2.05;color:#1E293B;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
     +(txt||'<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>')
     +'</div>'
     +'</div>';
