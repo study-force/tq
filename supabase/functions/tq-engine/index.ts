@@ -4,6 +4,7 @@
 // 엔진 로직, MESSAGES 데이터, Anthropic API 키 모두 여기에만 존재.
 // ══════════════════════════════════════════════════════════════
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -63,8 +64,8 @@ function classifyHabits(checked: string[]) {
   };
 }
 
-// ── collectEvidence ──
-function collectEvidence(inp: Record<string,any>, kv: number|null, flagC: boolean, flagO: boolean, habClass: Record<string,any>) {
+// ── collectEvidenceLegacy (기존 하드코딩 규칙) ──
+function collectEvidenceLegacy(inp: Record<string,any>, kv: number|null, flagC: boolean, flagO: boolean, habClass: Record<string,any>) {
   const acc=inp.acc, fct=inp.fact_score, str_=inp.structure_score, voc=inp.voca_score, wm=inp.wm_score, inf=inp.inference_score, eff=inp.eff_score;
   const gap = fct - str_;
   const spdGrade = grSpd(inp.reading_score, inp.user_section);
@@ -281,8 +282,106 @@ function collectEvidence(inp: Record<string,any>, kv: number|null, flagC: boolea
   return ev;
 }
 
+// ── DB에서 규칙 조회하여 evidence 생성 ──
+async function collectEvidenceFromDB(supabaseClient: any, vars: Record<string,any>): Promise<any[]|null> {
+  const { data: rules, error } = await supabaseClient
+    .from('tq_rules')
+    .select('*')
+    .eq('enabled', true)
+    .order('area')
+    .order('sort_order');
+
+  if (error || !rules || rules.length === 0) return null;
+
+  const areaMap: Record<number, {id:string, title:string, bullets:any[]}> = {};
+  const AREA_IDS = ['성적선행지수','독해속도','독서의양','독해의질','정보처리습관','워킹메모리','추론능력','독해효율성','학교학업'];
+
+  for (let i = 0; i < 9; i++) {
+    areaMap[i+1] = { id: AREA_IDS[i], title: `${i+1}) ${AREA_IDS[i]}`, bullets: [] };
+  }
+
+  for (const rule of rules) {
+    if (evaluateConditions(rule.conditions, vars)) {
+      areaMap[rule.area].bullets.push({ id: rule.rule_id, t: rule.tag, s: rule.message });
+    }
+  }
+
+  return Object.values(areaMap);
+}
+
+function evaluateConditions(conditions: Record<string,string>, vars: Record<string,any>): boolean {
+  for (const [key, cond] of Object.entries(conditions)) {
+    // _not 접미사: 해당 값이 아닌 경우 (예: habClass.심각도_not: "없음")
+    if (key.endsWith('_not')) {
+      const realKey = key.slice(0, -4);
+      const val = vars[realKey];
+      if (val === null || val === undefined) return false;
+      if (typeof cond === "string" && cond.includes("|")) {
+        if (cond.split("|").includes(String(val))) return false;
+      } else {
+        if (String(val) === cond) return false;
+      }
+      continue;
+    }
+
+    // _null 접미사: null 체크 (예: kv_null: "true")
+    if (key.endsWith('_null')) {
+      const realKey = key.slice(0, -5);
+      const val = vars[realKey];
+      if (cond === "true") { if (val !== null && val !== undefined) return false; }
+      else { if (val === null || val === undefined) return false; }
+      continue;
+    }
+
+    // _max 접미사: 상한 비교 (예: acc_max: "<=89")
+    if (key.endsWith('_max')) {
+      const realKey = key.slice(0, -4);
+      const val = vars[realKey];
+      if (val === null || val === undefined) return false;
+      const numVal = Number(val);
+      if (cond.startsWith("<=")) { if (numVal > Number(cond.slice(2))) return false; }
+      else if (cond.startsWith("<")) { if (numVal >= Number(cond.slice(1))) return false; }
+      continue;
+    }
+
+    const val = vars[key];
+
+    // null 체크: 조건이 있으면 값이 null이 아니어야 함
+    if (val === null || val === undefined) {
+      if (cond === "false") continue; // !변수 체크인 경우
+      return false;
+    }
+
+    // 불리언
+    if (cond === "true") { if (!val) return false; continue; }
+    if (cond === "false") { if (val) return false; continue; }
+
+    // 문자열 OR (보통|빠름)
+    if (typeof val === "string" && cond.includes("|")) {
+      if (!cond.split("|").includes(val)) return false;
+      continue;
+    }
+
+    // 문자열 매칭
+    if (typeof val === "string" || (typeof cond === "string" && !cond.match(/^[><=!]/))) {
+      if (String(val) !== cond) return false;
+      continue;
+    }
+
+    // 숫자 비교
+    const numVal = Number(val);
+    if (cond.startsWith(">=")) { if (numVal < Number(cond.slice(2))) return false; }
+    else if (cond.startsWith("<=")) { if (numVal > Number(cond.slice(2))) return false; }
+    else if (cond.startsWith(">")) { if (numVal <= Number(cond.slice(1))) return false; }
+    else if (cond.startsWith("<")) { if (numVal >= Number(cond.slice(1))) return false; }
+    else if (cond.startsWith("==")) { if (numVal !== Number(cond.slice(2))) return false; }
+    else { if (String(val) !== cond) return false; }
+  }
+  return true;
+}
+
 // ── runEngine ──
-function runEngine(inp: Record<string,any>) {
+async function runEngine(inp: Record<string,any>, supabaseClient?: any) {
   const kv: number|null = SMAP[inp.kor_score]??null;
   const invSpd = inp.reading_score>(SPDLIM[inp.user_section]||5000)||inp.reading_score<50;
   const flagC = kv!==null&&inp.acc<=30&&kv>=80;
@@ -373,7 +472,32 @@ function runEngine(inp: Record<string,any>) {
   presc.sort((a,b)=>a.p-b.p);
   const NX:Record<string,string>={"초저":"초고","초고":"중등","중등":"고등","고등":"수능"};
   const tr=urg!=="중장기"&&NX[inp.user_section]?NX[inp.user_section]+"진입시 역량갭확대":"";
-  const evidence=collectEvidence(inp,kv,flagC,flagO,habClass);
+  // DB 규칙 기반 evidence 생성 (실패 시 레거시 폴백)
+  const spdGradeNow2=grSpd(inp.reading_score,inp.user_section);
+  const effChecked2: string[] = inp.reading_effect_checks||[];
+  const engVal2: number|null = SMAP[inp.eng_score]??null;
+  const mathVal2: number|null = SMAP[inp.math_score]??SMAP[inp.math]??null;
+  const allHigh2 = kv!==null && kv>=90 && engVal2!==null && engVal2>=90 && mathVal2!==null && mathVal2>=90;
+  const examRelated2 = effChecked2.filter((c:string)=>["시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다","국어 시험 점수가 유난히 낮다"].includes(c)).length;
+  const 두꺼운체크2 = effChecked2.some((c:string)=>c.includes("두꺼운"));
+  const 독서량체크2 = effChecked2.some((c:string)=>c.includes("독서량"));
+  const 밤새워체크2 = effChecked2.some((c:string)=>c.includes("밤새워"));
+  const vars = {
+    acc, fct: inp.fact_score, str_: inp.structure_score, voc, wm, inf, eff: inp.eff_score,
+    gap, spdGrade: spdGradeNow2, invSpd: inp.reading_score>(SPDLIM[inp.user_section]||5000)||inp.reading_score<50,
+    spd: inp.reading_score,
+    kv, engVal: engVal2, mathVal: mathVal2,
+    flagC, flagO, allHigh: allHigh2, examRelated: examRelated2,
+    '두꺼운체크': 두꺼운체크2, '독서량체크': 독서량체크2, '밤새워체크': 밤새워체크2,
+    'habClass.심각도': habClass.심각도, 'habClass.표면음독': habClass.표면음독,
+    'habClass.내재음독이해': habClass.내재음독이해,
+    absGap: Math.abs(gap), voc_lt_acc_minus_20: voc < acc - 20
+  };
+  let evidence: any[] | null = null;
+  if (supabaseClient) {
+    evidence = await collectEvidenceFromDB(supabaseClient, vars);
+  }
+  if (!evidence) evidence = collectEvidenceLegacy(inp, kv, flagC, flagO, habClass);
   return {bt,btName,st,urg,tone,inten,flagC,flagO,flagMolip,flagMolipRequired,flagTeukmok,
     flagScience,flagEmergency,flagCollapse,wmTag,vocFlag,spdGrade5,
     invSpd,retest:inp.acc>=90||inp.acc<=10,
@@ -555,7 +679,9 @@ JSON만 출력: {fact_understand,struct_understand,speed,vocabulary,working_memo
     // ── 엔진 실행 ──
     if (action === "engine") {
       if (!inp) return new Response(JSON.stringify({error:"입력 데이터 없음"}),{status:400,headers:CORS});
-      const result = runEngine(inp);
+      const sb = getSupabase();
+      const supabaseClient = sb.ok ? createClient(sb.url, sb.key) : null;
+      const result = await runEngine(inp, supabaseClient);
       return new Response(JSON.stringify({ ok: true, engine: result }), { headers: CORS });
     }
 

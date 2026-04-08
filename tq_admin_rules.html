@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TQ Rules Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:#0F172A; color:#E2E8F0; min-height:100vh; }
+.header { background:#1E293B; border-bottom:1px solid #334155; padding:20px 32px; display:flex; align-items:center; justify-content:space-between; }
+.header h1 { font-size:20px; font-weight:700; color:#F8FAFC; }
+.header h1 span { color:#3B82F6; }
+.stats { display:flex; gap:16px; }
+.stat-badge { background:#0F172A; border:1px solid #334155; border-radius:8px; padding:6px 14px; font-size:13px; color:#94A3B8; }
+.stat-badge strong { color:#F8FAFC; margin-left:4px; }
+.tabs { display:flex; gap:4px; padding:16px 32px 0; background:#1E293B; overflow-x:auto; }
+.tab { padding:10px 20px; border-radius:8px 8px 0 0; font-size:14px; font-weight:500; cursor:pointer; border:1px solid transparent; border-bottom:none; color:#94A3B8; background:transparent; transition:all .2s; white-space:nowrap; }
+.tab:hover { color:#E2E8F0; background:#334155; }
+.tab.active { background:#0F172A; color:#F8FAFC; border-color:#334155; }
+.tab .tab-count { font-size:11px; margin-left:6px; background:#334155; padding:2px 7px; border-radius:10px; }
+.tab.active .tab-count { background:#3B82F6; color:#fff; }
+.main { padding:24px 32px; }
+.toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.btn { padding:8px 18px; border-radius:8px; border:none; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; }
+.btn-primary { background:#3B82F6; color:#fff; }
+.btn-primary:hover { background:#2563EB; }
+.btn-danger { background:#DC2626; color:#fff; }
+.btn-danger:hover { background:#B91C1C; }
+.btn-ghost { background:transparent; color:#94A3B8; border:1px solid #334155; }
+.btn-ghost:hover { color:#E2E8F0; border-color:#64748B; }
+table { width:100%; border-collapse:collapse; background:#1E293B; border-radius:12px; overflow:hidden; }
+thead th { background:#0F172A; padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid #334155; }
+tbody tr { border-bottom:1px solid #1E293B; transition:background .15s; }
+tbody tr:hover { background:#263348; }
+td { padding:12px 16px; font-size:13px; vertical-align:middle; }
+.tag-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; cursor:pointer; position:relative; }
+.tag-badge[data-tag="강점"] { background:rgba(5,150,105,.15); color:#059669; border:1px solid rgba(5,150,105,.3); }
+.tag-badge[data-tag="보통"] { background:rgba(100,116,139,.15); color:#64748B; border:1px solid rgba(100,116,139,.3); }
+.tag-badge[data-tag="주의"] { background:rgba(217,119,6,.15); color:#D97706; border:1px solid rgba(217,119,6,.3); }
+.tag-badge[data-tag="위험"] { background:rgba(220,38,38,.15); color:#DC2626; border:1px solid rgba(220,38,38,.3); }
+.tag-badge[data-tag="_meta"] { background:rgba(139,92,246,.15); color:#8B5CF6; border:1px solid rgba(139,92,246,.3); }
+.tag-dropdown { position:absolute; top:100%; left:0; background:#1E293B; border:1px solid #334155; border-radius:8px; padding:4px; z-index:100; display:none; min-width:80px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+.tag-dropdown.show { display:block; }
+.tag-option { padding:6px 12px; cursor:pointer; border-radius:4px; font-size:12px; white-space:nowrap; }
+.tag-option:hover { background:#334155; }
+.msg-cell { max-width:400px; cursor:pointer; line-height:1.5; }
+.msg-cell:hover { color:#93C5FD; }
+.msg-textarea { width:100%; min-height:60px; background:#0F172A; border:1px solid #3B82F6; border-radius:6px; color:#E2E8F0; padding:8px; font-size:13px; font-family:inherit; resize:vertical; }
+.cond-btn { background:#334155; border:1px solid #475569; color:#94A3B8; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:inherit; }
+.cond-btn:hover { background:#475569; color:#E2E8F0; }
+.toggle { position:relative; width:40px; height:22px; cursor:pointer; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle .slider { position:absolute; inset:0; background:#475569; border-radius:11px; transition:.3s; }
+.toggle .slider:before { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; left:3px; top:3px; transition:.3s; }
+.toggle input:checked+.slider { background:#3B82F6; }
+.toggle input:checked+.slider:before { transform:translateX(18px); }
+.rule-id { color:#64748B; font-family:monospace; font-size:12px; }
+.del-btn { color:#64748B; cursor:pointer; font-size:16px; padding:4px 8px; border-radius:4px; background:transparent; border:none; }
+.del-btn:hover { color:#DC2626; background:rgba(220,38,38,.1); }
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:1000; }
+.modal-overlay.show { display:flex; }
+.modal { background:#1E293B; border:1px solid #334155; border-radius:16px; padding:24px; width:560px; max-width:90vw; max-height:80vh; overflow-y:auto; }
+.modal h3 { font-size:16px; margin-bottom:16px; color:#F8FAFC; }
+.modal textarea { width:100%; min-height:200px; background:#0F172A; border:1px solid #334155; border-radius:8px; color:#E2E8F0; padding:12px; font-family:'Courier New',monospace; font-size:13px; resize:vertical; }
+.modal .btn-row { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+.modal label { display:block; font-size:13px; color:#94A3B8; margin-bottom:6px; }
+.modal input, .modal select { width:100%; padding:8px 12px; background:#0F172A; border:1px solid #334155; border-radius:6px; color:#E2E8F0; font-size:13px; font-family:inherit; margin-bottom:12px; }
+.toast { position:fixed; bottom:24px; right:24px; background:#059669; color:#fff; padding:12px 20px; border-radius:8px; font-size:13px; font-weight:500; transform:translateY(80px); opacity:0; transition:all .3s; z-index:2000; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.error { background:#DC2626; }
+.empty { text-align:center; padding:60px 20px; color:#64748B; }
+.empty p { font-size:15px; margin-bottom:12px; }
+.loading { text-align:center; padding:40px; color:#64748B; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>TQ</span> Rules Admin</h1>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="main">
+  <div class="toolbar">
+    <div style="font-size:14px;color:#94A3B8" id="areaTitle"></div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button>
+  </div>
+  <div id="tableWrap"><div class="loading">로딩 중...</div></div>
+</div>
+
+<!-- 조건 편집 모달 -->
+<div class="modal-overlay" id="condModal">
+  <div class="modal">
+    <h3>조건 편집 (JSON)</h3>
+    <textarea id="condEditor"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeCondModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveConditions()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 규칙 추가 모달 -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h3 id="addModalTitle">규칙 추가</h3>
+    <label>Rule ID</label>
+    <input id="addRuleId" placeholder="예: 1_new_xxx">
+    <label>태그</label>
+    <select id="addTag">
+      <option value="강점">강점</option>
+      <option value="보통">보통</option>
+      <option value="주의">주의</option>
+      <option value="위험">위험</option>
+      <option value="_meta">_meta</option>
+    </select>
+    <label>메시지</label>
+    <textarea id="addMsg" style="min-height:80px"></textarea>
+    <label>조건 (JSON)</label>
+    <textarea id="addCond" style="min-height:100px">{}</textarea>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeAddModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveNewRule()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://dtktaemqssvglwgvttqq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0a3RhZW1xc3N2Z2x3Z3Z0dHFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyODM2NTYsImV4cCI6MjA4OTg1OTY1Nn0.58A9OkM7A4XrBvzF8EFUYhTobKzZ8yRdmysxZOL1P8E";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AREAS = [
+  {id:1,name:'성적선행지수'},{id:2,name:'독해속도'},{id:3,name:'독서의양'},
+  {id:4,name:'독해의질'},{id:5,name:'정보처리습관'},{id:6,name:'워킹메모리'},
+  {id:7,name:'추론능력'},{id:8,name:'독해효율성'},{id:9,name:'학교학업'}
+];
+const TAG_COLORS = {'강점':'#059669','보통':'#64748B','주의':'#D97706','위험':'#DC2626','_meta':'#8B5CF6'};
+
+let allRules = [];
+let currentArea = 1;
+let editingCondId = null;
+
+async function loadRules() {
+  const {data, error} = await sb.from('tq_rules').select('*').order('area').order('sort_order');
+  if (error) { showToast('규칙 로드 실패: '+error.message, true); return; }
+  allRules = data || [];
+  renderStats();
+  renderTabs();
+  renderTable();
+}
+
+function renderStats() {
+  const total = allRules.length;
+  const enabled = allRules.filter(r=>r.enabled).length;
+  let html = `<div class="stat-badge">전체<strong>${total}</strong></div>`;
+  html += `<div class="stat-badge">활성<strong>${enabled}</strong></div>`;
+  AREAS.forEach(a => {
+    const cnt = allRules.filter(r=>r.area===a.id).length;
+    html += `<div class="stat-badge">${a.name}<strong>${cnt}</strong></div>`;
+  });
+  document.getElementById('stats').innerHTML = html;
+}
+
+function renderTabs() {
+  let html = '';
+  AREAS.forEach(a => {
+    const cnt = allRules.filter(r=>r.area===a.id).length;
+    html += `<div class="tab ${a.id===currentArea?'active':''}" onclick="switchArea(${a.id})">${a.id}) ${a.name}<span class="tab-count">${cnt}</span></div>`;
+  });
+  document.getElementById('tabs').innerHTML = html;
+}
+
+function switchArea(areaId) {
+  currentArea = areaId;
+  renderTabs();
+  renderTable();
+}
+
+function renderTable() {
+  const rules = allRules.filter(r=>r.area===currentArea).sort((a,b)=>a.sort_order-b.sort_order);
+  const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
+  document.getElementById('areaTitle').textContent = `${currentArea}) ${areaName} (${rules.length}개 규칙)`;
+
+  if (rules.length === 0) {
+    document.getElementById('tableWrap').innerHTML = '<div class="empty"><p>이 영역에 등록된 규칙이 없습니다.</p><button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button></div>';
+    return;
+  }
+
+  let html = `<table><thead><tr>
+    <th style="width:50px">#</th>
+    <th style="width:140px">Rule ID</th>
+    <th style="width:70px">태그</th>
+    <th>메시지</th>
+    <th style="width:100px">조건</th>
+    <th style="width:60px">활성</th>
+    <th style="width:50px"></th>
+  </tr></thead><tbody>`;
+
+  rules.forEach((r, i) => {
+    const condKeys = Object.keys(r.conditions || {});
+    const condSummary = condKeys.length > 0 ? condKeys.slice(0,3).join(', ') + (condKeys.length>3?'...':'') : '-';
+    html += `<tr data-id="${r.id}">
+      <td style="color:#475569">${i+1}</td>
+      <td><span class="rule-id">${esc(r.rule_id)}</span></td>
+      <td><div style="position:relative"><span class="tag-badge" data-tag="${esc(r.tag)}" onclick="toggleTagDropdown(this,${r.id})">${esc(r.tag)}</span>
+        <div class="tag-dropdown" id="tagdd_${r.id}">${['강점','보통','주의','위험','_meta'].map(t=>`<div class="tag-option" onclick="changeTag(${r.id},'${t}')">${t}</div>`).join('')}</div>
+      </div></td>
+      <td class="msg-cell" ondblclick="startEditMsg(this,${r.id})">${esc(r.message)}</td>
+      <td><button class="cond-btn" onclick="openCondModal(${r.id})" title="${esc(JSON.stringify(r.conditions))}">${condSummary}</button></td>
+      <td><label class="toggle"><input type="checkbox" ${r.enabled?'checked':''} onchange="toggleEnabled(${r.id},this.checked)"><span class="slider"></span></label></td>
+      <td><button class="del-btn" onclick="deleteRule(${r.id})">&#x2715;</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Tag dropdown
+function toggleTagDropdown(el, id) {
+  document.querySelectorAll('.tag-dropdown.show').forEach(d=>d.classList.remove('show'));
+  const dd = document.getElementById('tagdd_'+id);
+  dd.classList.toggle('show');
+  setTimeout(()=>{ document.addEventListener('click', function h(e){ if(!dd.contains(e.target)){dd.classList.remove('show');document.removeEventListener('click',h);} }); },0);
+}
+
+async function changeTag(id, tag) {
+  const {error} = await sb.from('tq_rules').update({tag}).eq('id',id);
+  if (error) { showToast('태그 변경 실패',true); return; }
+  const r = allRules.find(x=>x.id===id); if(r) r.tag = tag;
+  renderTable();
+  showToast('태그 변경됨');
+}
+
+// Inline message edit
+function startEditMsg(td, id) {
+  const r = allRules.find(x=>x.id===id); if(!r) return;
+  const old = r.message;
+  td.innerHTML = `<textarea class="msg-textarea" onblur="saveMsg(this,${id})">${esc(old)}</textarea>`;
+  const ta = td.querySelector('textarea');
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+async function saveMsg(ta, id) {
+  const msg = ta.value.trim();
+  if (!msg) { renderTable(); return; }
+  const {error} = await sb.from('tq_rules').update({message:msg}).eq('id',id);
+  if (error) { showToast('메시지 저장 실패',true); renderTable(); return; }
+  const r = allRules.find(x=>x.id===id); if(r) r.message = msg;
+  renderTable();
+  showToast('메시지 저장됨');
+}
+
+// Toggle enabled
+async function toggleEnabled(id, enabled) {
+  const {error} = await sb.from('tq_rules').update({enabled}).eq('id',id);
+  if (error) { showToast('토글 실패',true); return; }
+  const r = allRules.find(x=>x.id===id); if(r) r.enabled = enabled;
+  renderStats();
+  showToast(enabled?'활성화됨':'비활성화됨');
+}
+
+// Condition modal
+function openCondModal(id) {
+  editingCondId = id;
+  const r = allRules.find(x=>x.id===id);
+  document.getElementById('condEditor').value = JSON.stringify(r?.conditions||{}, null, 2);
+  document.getElementById('condModal').classList.add('show');
+}
+function closeCondModal() { document.getElementById('condModal').classList.remove('show'); editingCondId=null; }
+
+async function saveConditions() {
+  const raw = document.getElementById('condEditor').value;
+  let cond;
+  try { cond = JSON.parse(raw); } catch(e) { showToast('JSON 형식 오류',true); return; }
+  const {error} = await sb.from('tq_rules').update({conditions:cond}).eq('id',editingCondId);
+  if (error) { showToast('조건 저장 실패',true); return; }
+  const r = allRules.find(x=>x.id===editingCondId); if(r) r.conditions=cond;
+  closeCondModal();
+  renderTable();
+  showToast('조건 저장됨');
+}
+
+// Add rule modal
+function openAddModal() {
+  document.getElementById('addModalTitle').textContent = `규칙 추가 — ${currentArea}) ${AREAS.find(a=>a.id===currentArea)?.name}`;
+  document.getElementById('addRuleId').value='';
+  document.getElementById('addTag').value='보통';
+  document.getElementById('addMsg').value='';
+  document.getElementById('addCond').value='{}';
+  document.getElementById('addModal').classList.add('show');
+}
+function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
+
+async function saveNewRule() {
+  const ruleId = document.getElementById('addRuleId').value.trim();
+  const tag = document.getElementById('addTag').value;
+  const message = document.getElementById('addMsg').value.trim();
+  const condRaw = document.getElementById('addCond').value;
+  if (!ruleId || !message) { showToast('Rule ID와 메시지를 입력하세요',true); return; }
+  let conditions;
+  try { conditions = JSON.parse(condRaw); } catch(e) { showToast('JSON 형식 오류',true); return; }
+  const existing = allRules.filter(r=>r.area===currentArea);
+  const maxSort = existing.length > 0 ? Math.max(...existing.map(r=>r.sort_order||0)) : 0;
+  const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
+  const {data, error} = await sb.from('tq_rules').insert({
+    area:currentArea, area_name:areaName, rule_id:ruleId, tag, message, conditions, sort_order:maxSort+1, enabled:true
+  }).select();
+  if (error) { showToast('추가 실패: '+error.message,true); return; }
+  if (data && data[0]) allRules.push(data[0]);
+  closeAddModal();
+  renderStats();
+  renderTabs();
+  renderTable();
+  showToast('규칙 추가됨');
+}
+
+// Delete
+async function deleteRule(id) {
+  const r = allRules.find(x=>x.id===id);
+  if (!confirm(`규칙 "${r?.rule_id}"을(를) 삭제하시겠습니까?`)) return;
+  const {error} = await sb.from('tq_rules').delete().eq('id',id);
+  if (error) { showToast('삭제 실패',true); return; }
+  allRules = allRules.filter(x=>x.id!==id);
+  renderStats();
+  renderTabs();
+  renderTable();
+  showToast('규칙 삭제됨');
+}
+
+// Toast
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError?' error':'');
+  setTimeout(()=>{ t.className='toast'; },2500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
+});
+
+// Init
+loadRules();
+</script>
+</body>
+</html>
