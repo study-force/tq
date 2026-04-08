@@ -10,24 +10,27 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B; min-height:100vh; }
 
-/* ── Header ── */
-.header { background:#fff; border-bottom:1px solid #E2E8F0; padding:20px 32px; display:flex; align-items:center; justify-content:space-between; }
-.header h1 { font-size:20px; font-weight:700; color:#1E293B; }
-.header h1 span { color:#3B82F6; }
-.stats { display:flex; gap:12px; flex-wrap:wrap; }
-.stat-badge { background:#F1F5F9; border:1px solid #E2E8F0; border-radius:8px; padding:5px 12px; font-size:12px; color:#64748B; white-space:nowrap; }
-.stat-badge strong { color:#1E293B; margin-left:4px; }
+/* ── Layout ── */
+.layout { display:flex; min-height:100vh; }
 
-/* ── Tabs ── */
-.tabs { display:flex; gap:4px; padding:16px 32px 0; background:#fff; overflow-x:auto; border-bottom:1px solid #E2E8F0; }
-.tab { padding:10px 20px; border-radius:8px 8px 0 0; font-size:14px; font-weight:500; cursor:pointer; border:1px solid transparent; border-bottom:none; color:#64748B; background:transparent; transition:all .2s; white-space:nowrap; }
-.tab:hover { color:#1E293B; background:#F1F5F9; }
-.tab.active { background:#F8FAFC; color:#1E293B; border-color:#E2E8F0; font-weight:700; }
-.tab .tab-count { font-size:11px; margin-left:6px; background:#E2E8F0; padding:2px 7px; border-radius:10px; color:#64748B; }
-.tab.active .tab-count { background:#3B82F6; color:#fff; }
-.tab.contradiction { border:2px solid #F97316; color:#EA580C; }
-.tab.contradiction:hover { background:#FFF7ED; color:#C2410C; }
-.tab.contradiction.active { background:#FFF7ED; color:#C2410C; border-color:#F97316; font-weight:700; }
+/* ── Sidebar ── */
+.sidebar { width:200px; background:#fff; border-right:1px solid #E2E8F0; flex-shrink:0; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; }
+.sidebar-header { padding:20px 16px 12px; border-bottom:1px solid #E2E8F0; }
+.sidebar-header h1 { font-size:18px; font-weight:700; color:#1E293B; }
+.sidebar-header h1 span { color:#3B82F6; }
+.sidebar-nav { padding:8px; flex:1; }
+.nav-item { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer; color:#64748B; transition:all .15s; margin-bottom:2px; }
+.nav-item:hover { color:#1E293B; background:#F1F5F9; }
+.nav-item.active { background:#EFF6FF; color:#2563EB; font-weight:600; }
+.nav-item .nav-count { font-size:11px; background:#E2E8F0; padding:1px 7px; border-radius:10px; color:#64748B; }
+.nav-item.active .nav-count { background:#3B82F6; color:#fff; }
+.nav-divider { height:1px; background:#E2E8F0; margin:8px 12px; }
+.nav-item.contradiction { color:#EA580C; }
+.nav-item.contradiction:hover { background:#FFF7ED; color:#C2410C; }
+.nav-item.contradiction.active { background:#FFF7ED; color:#C2410C; font-weight:600; }
+
+/* ── Main Content ── */
+.content { flex:1; margin-left:200px; }
 .tab.contradiction .tab-count { background:#FDBA74; color:#7C2D12; }
 .tab.contradiction.active .tab-count { background:#F97316; color:#fff; }
 
@@ -126,19 +129,25 @@ table.dt td.text-cell { text-align:left; font-size:12px; line-height:1.5; white-
 </head>
 <body>
 
-<div class="header">
-  <h1><span>TQ</span> Rules Admin</h1>
-  <div class="stats" id="stats"></div>
+<div class="layout">
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1><span>TQ</span> Rules</h1>
+  </div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
 </div>
 
-<div class="tabs" id="tabs"></div>
-
-<div class="main">
-  <div class="toolbar">
-    <div style="font-size:14px;color:#94A3B8" id="areaTitle"></div>
-    <button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button>
+<div class="content">
+  <div class="main">
+    <div class="toolbar">
+      <div style="font-size:14px;color:#64748B;font-weight:600" id="areaTitle"></div>
+      <button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button>
+    </div>
+    <div id="tableWrap"><div class="loading">로딩 중...</div></div>
   </div>
-  <div id="tableWrap"><div class="loading">로딩 중...</div></div>
+</div>
+
 </div>
 
 <!-- 규칙 추가 모달 -->
@@ -214,25 +223,11 @@ async function loadRules() {
   const {data, error} = await sb.from('tq_rules').select('*').order('area').order('sort_order');
   if (error) { showToast('규칙 로드 실패: '+error.message, true); return; }
   allRules = data || [];
-  renderStats();
-  renderTabs();
+  renderSidebar();
   renderTable();
 }
 
-// ── 통계 ──
-function renderStats() {
-  const total = allRules.length;
-  const enabled = allRules.filter(r=>r.enabled).length;
-  let html = `<div class="stat-badge">전체<strong>${total}</strong></div>`;
-  html += `<div class="stat-badge">활성<strong>${enabled}</strong></div>`;
-  AREAS.forEach(a => {
-    const cnt = allRules.filter(r=>r.area===a.id).length;
-    html += `<div class="stat-badge">${a.name}<strong>${cnt}</strong></div>`;
-  });
-  document.getElementById('stats').innerHTML = html;
-}
-
-// ── 탭 ──
+// ── 사이드바 ──
 function getContradictionRules() {
   return allRules.filter(r => {
     const c = r.conditions || {};
@@ -240,22 +235,22 @@ function getContradictionRules() {
   });
 }
 
-function renderTabs() {
+function renderSidebar() {
   let html = '';
   AREAS.forEach(a => {
     const cnt = allRules.filter(r=>r.area===a.id).length;
-    html += `<div class="tab ${a.id===currentArea?'active':''}" onclick="switchArea(${a.id})">${a.id}) ${a.name}<span class="tab-count">${cnt}</span></div>`;
+    html += `<div class="nav-item ${a.id===currentArea?'active':''}" onclick="switchArea(${a.id})">${a.id}) ${a.name}<span class="nav-count">${cnt}</span></div>`;
   });
-  // 모순패턴 관리 탭
+  html += '<div class="nav-divider"></div>';
   const cCnt = getContradictionRules().length;
-  html += `<div class="tab contradiction ${currentArea===AREA_CONTRADICTION?'active':''}" onclick="switchArea('${AREA_CONTRADICTION}')">모순패턴 관리<span class="tab-count">${cCnt}</span></div>`;
-  document.getElementById('tabs').innerHTML = html;
+  html += `<div class="nav-item contradiction ${currentArea===AREA_CONTRADICTION?'active':''}" onclick="switchArea('${AREA_CONTRADICTION}')">모순패턴 관리<span class="nav-count">${cCnt}</span></div>`;
+  document.getElementById('sidebarNav').innerHTML = html;
 }
 
 function switchArea(areaId) {
   if (editingId) { if (!confirm('편집 중인 내용이 있습니다. 취소하시겠습니까?')) return; editingId=null; }
   currentArea = areaId;
-  renderTabs();
+  renderSidebar();
   renderTable();
 }
 
@@ -549,8 +544,7 @@ async function deleteRule(id) {
   if (error) { showToast('삭제 실패',true); return; }
   allRules = allRules.filter(x=>x.id!==id);
   if (editingId === id) { editingId=null; editBuf={}; }
-  renderStats();
-  renderTabs();
+  renderSidebar();
   renderTable();
   showToast('규칙 삭제됨');
 }
@@ -610,8 +604,7 @@ async function saveNewRule() {
   if (error) { showToast('추가 실패: '+error.message,true); return; }
   if (data && data[0]) allRules.push(data[0]);
   closeAddModal();
-  renderStats();
-  renderTabs();
+  renderSidebar();
   renderTable();
   showToast('규칙 추가됨');
 }
