@@ -29,6 +29,32 @@ body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B;
 .nav-item.contradiction:hover { background:#FFF7ED; color:#C2410C; }
 .nav-item.contradiction.active { background:#FFF7ED; color:#C2410C; font-weight:600; }
 
+/* ── Reference nav ── */
+.nav-item.reference { color:#94A3B8; font-size:12px; }
+.nav-item.reference:hover { color:#64748B; background:#F1F5F9; }
+.nav-item.reference.active { background:#F1F5F9; color:#475569; font-weight:600; }
+
+/* ── Reference content ── */
+.ref-content { padding:24px 32px; }
+.ref-content h2 { font-size:18px; font-weight:700; color:#1E293B; margin-bottom:6px; }
+.ref-content .ref-desc { font-size:12px; color:#94A3B8; margin-bottom:20px; }
+.bv-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.bv-table th { background:#F8FAFC; padding:10px 14px; text-align:left; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid #E2E8F0; }
+.bv-table td { padding:10px 14px; font-size:12px; color:#334155; border-bottom:1px solid #F1F5F9; vertical-align:top; }
+.bv-table .bv-var { font-family:monospace; font-weight:700; color:#2563EB; font-size:12px; }
+.bv-table .bv-vals { color:#059669; font-weight:600; font-size:11px; }
+.bv-note { margin-top:16px; padding:12px 16px; background:#FFF7ED; border:1px solid #FDBA74; border-radius:8px; font-size:11px; color:#9A3412; line-height:1.7; }
+.logic-box { background:#fff; border:1px solid #E2E8F0; border-radius:10px; padding:16px 20px; margin-bottom:16px; }
+.logic-box .logic-title { font-size:13px; font-weight:700; color:#1E293B; margin-bottom:8px; }
+.logic-layer { border-radius:8px; padding:14px 18px; margin-bottom:8px; }
+.logic-layer-1 { background:#F5F3FF; border:1px solid #C4B5FD; }
+.logic-layer-2 { background:#F0FDF4; border:1px solid #86EFAC; }
+.logic-layer-3 { background:#FFF7ED; border:1px solid #FDBA74; }
+.logic-layer .layer-title { font-size:12px; font-weight:700; margin-bottom:6px; }
+.logic-layer .layer-desc { font-size:11px; color:#64748B; line-height:1.7; }
+.logic-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.logic-tag { background:#fff; border:1px solid currentColor; border-radius:4px; padding:2px 8px; font-size:10px; font-weight:600; }
+
 /* ── Main Content ── */
 .content { flex:1; margin-left:200px; }
 .tab.contradiction .tab-count { background:#FDBA74; color:#7C2D12; }
@@ -244,6 +270,9 @@ function renderSidebar() {
   html += '<div class="nav-divider"></div>';
   const cCnt = getContradictionRules().length;
   html += `<div class="nav-item contradiction ${currentArea===AREA_CONTRADICTION?'active':''}" onclick="switchArea('${AREA_CONTRADICTION}')">모순패턴 관리<span class="nav-count">${cCnt}</span></div>`;
+  html += '<div class="nav-divider"></div>';
+  html += `<div class="nav-item reference ${currentArea==='boundary'?'active':''}" onclick="switchArea('boundary')">경계값 기준표</div>`;
+  html += `<div class="nav-item reference ${currentArea==='logic'?'active':''}" onclick="switchArea('logic')">판독 로직 구조</div>`;
   document.getElementById('sidebarNav').innerHTML = html;
 }
 
@@ -329,6 +358,11 @@ function condBadge(val, key) {
 
 // ── 테이블 렌더링 ──
 function renderTable() {
+  // 참고 페이지 분기
+  if (currentArea === 'boundary') { renderBoundary(); return; }
+  if (currentArea === 'logic') { renderLogic(); return; }
+
+  document.querySelector('.toolbar .btn-primary').style.display = '';
   let rules, titleText;
   if (isContradictionMode()) {
     rules = getContradictionRules().sort((a,b) => a.area - b.area || a.sort_order - b.sort_order);
@@ -621,6 +655,111 @@ function showToast(msg, isError) {
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
 });
+
+// ── 경계값 기준표 ──
+function renderBoundary() {
+  document.getElementById('areaTitle').textContent = '경계값 기준표';
+  document.querySelector('.toolbar .btn-primary').style.display = 'none';
+  document.getElementById('tableWrap').innerHTML = `<div class="ref-content">
+<h2>경계값 기준표</h2>
+<p class="ref-desc">각 변수가 엔진 내에서 분기 기준으로 사용되는 경계값. 단일 변수 기준이며 교차조합 전체를 나타내지는 않음.</p>
+<table class="bv-table">
+<thead><tr><th style="width:90px">변수</th><th style="width:140px">의미</th><th>경계값</th><th>구간 설명</th></tr></thead>
+<tbody>
+<tr><td class="bv-var">acc</td><td>독해정확도</td><td class="bv-vals">10, 20, 30, 40, 50, 60, 65, 70, 85, 90</td><td>&lt;10 재검사 / 10~29 심각 / 30~49 부족 / 50~64 보통 / 65~69 보통상 / 70~84 우수 / 85~89 상위 / ≥90 최상위</td></tr>
+<tr><td class="bv-var">spd<br><span style="font-size:10px;color:#94A3B8">(자/분)</span></td><td>독해속도<br><span style="font-size:10px;color:#94A3B8">학제별 기준</span></td><td class="bv-vals" style="line-height:1.8">초저: 300, 500, 700<br>초고: 400, 650, 900<br>중등: 450, 700, 1000<br>고등: 450, 700, 1000</td>
+<td style="line-height:1.8"><b>초저:</b> &lt;300 느림 / 300~499 보통이하 / 500~699 보통이상 / ≥700 빠름<br><b>초고:</b> &lt;400 느림 / 400~649 보통이하 / 650~899 보통이상 / ≥900 빠름<br><b>중등:</b> &lt;450 느림 / 450~699 보통이하 / 700~999 보통이상 / ≥1000 빠름<br><b>고등:</b> 중등과 동일</td></tr>
+<tr><td class="bv-var">voc</td><td>어휘능력</td><td class="bv-vals">35, 40, 50, 60, 75</td><td>&lt;35 심각 / 35~49 부족 / 50~59 보통하 / 60~74 보통 / ≥75 우수</td></tr>
+<tr><td class="bv-var">wm</td><td>워킹메모리</td><td class="bv-vals">20, 30, 40, 50, 60, 80</td><td>&lt;20 심각 / 20~29 부족 / 30~39 주의 / 40~49 보통하 / 50~59 보통 / 60~79 양호 / ≥80 우수</td></tr>
+<tr><td class="bv-var">inf</td><td>추론능력</td><td class="bv-vals">35, 40, 50, 60, 70</td><td>&lt;35 결손 / 35~49 부족 / 50~59 보통 / 60~69 양호 / ≥70 우수</td></tr>
+<tr><td class="bv-var">eff</td><td>독해효율성</td><td class="bv-vals">40, 60, 70, 90</td><td>&lt;40 심각 / 40~59 회의감 / 60~69 보통 / 70~89 양호 / ≥90 긍정</td></tr>
+<tr><td class="bv-var">kv<br><span style="font-size:10px;color:#94A3B8">(정규화)</span></td><td>국어성적</td><td class="bv-vals" style="line-height:1.8"><b>초등:</b> 노력요함→50 / 보통→70 / 잘함→80 / 매우잘함→90<br><b>중등:</b> 60미만→50 / 60~69→60 / 70~79→70 / 80~89→80 / 90↑→90<br><b>고등:</b> 5등급↓→50 / 4등급→60 / 3등급→70 / 2등급→80 / 1등급→90</td>
+<td>최상위: kv≥90 / 상위: kv≥80 / 중위: kv≥70 / 하위: kv≥60 / 최하위: kv&lt;60</td></tr>
+<tr><td class="bv-var" style="color:#DC2626">flagC</td><td>모순패턴</td><td class="bv-vals" style="color:#DC2626">kv ≥ 80 AND acc ≤ 30</td><td>두 변수 교차. 경계: acc=30/31, kv=79/80</td></tr>
+<tr><td class="bv-var" style="color:#D97706">flagO</td><td>선행과부하</td><td class="bv-vals" style="color:#D97706">acc ≥ 60 AND eff ≤ 40</td><td>두 변수 교차. 경계: acc=59/60, eff=40/41</td></tr>
+<tr><td class="bv-var">habClass</td><td>음독분류</td><td class="bv-vals">없음 / 경미 / 보통 / 심함</td><td>체크박스 10개 → classifyHabits() → 4단계</td></tr>
+</tbody>
+</table>
+<div class="bv-note">⚠ 이 표는 단일 변수 기준입니다. 실제 메시지는 여러 변수가 동시에 교차할 때 결정되므로, 교차 검증은 실제 학생 데이터로 진행하는 것이 현실적입니다.</div>
+</div>`;
+}
+
+// ── 판독 로직 구조 ──
+function renderLogic() {
+  document.getElementById('areaTitle').textContent = '판독 로직 구조';
+  document.querySelector('.toolbar .btn-primary').style.display = 'none';
+  document.getElementById('tableWrap').innerHTML = `<div class="ref-content">
+<h2>TQ 판독 엔진 — 로직 구조</h2>
+<p class="ref-desc">엔진 수정 전 반드시 읽어야 할 구조 참고 문서입니다.</p>
+
+<div class="logic-box">
+<div class="logic-title">엔진 전체 흐름 — 입력 → 처리 → 출력</div>
+<p style="font-size:11px;color:#94A3B8;margin-bottom:14px">구조: <b style="color:#1E293B">"3층 수직 트리 × 각 층에서 다변수 매트릭스 교차"</b></p>
+
+<div class="logic-layer logic-layer-1">
+<div class="layer-title" style="color:#4C1D95">1층 — 구조 분류 (runEngine)</div>
+<div class="layer-desc">
+acc × inf → <b>9유형</b> (S1/S2/A1/A2/A3/M1/M2/L/C)<br>
+성적(kv) × acc → <b>flagC</b> (모순패턴) | eff체크 → <b>flagO</b> (선행과부하)<br>
+복합 조건 → <b>긴급도</b> (즉각/조기/중장기)
+</div>
+</div>
+
+<div style="text-align:center;color:#94A3B8;font-size:14px;margin:4px 0">↓ 유형·플래그·긴급도 결정 후</div>
+
+<div class="logic-layer logic-layer-2">
+<div class="layer-title" style="color:#065F46">2층 — 9개 항목 병렬 실행 (collectEvidence)</div>
+<div class="logic-tags">
+<span class="logic-tag" style="color:#065F46">1)성적</span>
+<span class="logic-tag" style="color:#065F46">2)속도</span>
+<span class="logic-tag" style="color:#065F46">3)독서</span>
+<span class="logic-tag" style="color:#065F46">4)독해질</span>
+<span class="logic-tag" style="color:#065F46">5)음독</span>
+<span class="logic-tag" style="color:#065F46">6)WM</span>
+<span class="logic-tag" style="color:#065F46">7)추론</span>
+<span class="logic-tag" style="color:#065F46">8)효율</span>
+<span class="logic-tag" style="color:#065F46">9)학업</span>
+</div>
+<div class="layer-desc" style="margin-top:8px">각 항목 내부: 미니 매트릭스 교차<br>예) 5번 정보처리습관: acc(3단계) × spd(3단계) × 음독심각도 → 다변수 조합</div>
+</div>
+
+<div style="text-align:center;color:#94A3B8;font-size:14px;margin:4px 0">↓</div>
+
+<div class="logic-layer logic-layer-3">
+<div class="layer-title" style="color:#9A3412">3층 — 출력 조합</div>
+<div class="layer-desc">9개 항목 bullets 합산 → 결과화면 표시 + LLM 판독문 생성 전달 + 프로그램 추천</div>
+</div>
+</div>
+
+<div class="logic-box">
+<div class="logic-title">핵심 교차 변수 — 수정 시 주의</div>
+<div style="font-size:12px;color:#64748B;line-height:1.8">
+• <b style="color:#DC2626">flagC/flagO</b> 변경 → 1·5·8·9번 동시 영향<br>
+• <b style="color:#2563EB">habClass</b> 변경 → 5번 전체 재검토 필요<br>
+• <b style="color:#059669">acc 경계값</b> 변경 → 거의 모든 영역에 영향 (가장 많이 사용되는 변수)<br>
+• <b style="color:#7C3AED">spdGrade</b> 변경 → 2·5번 동시 영향
+</div>
+</div>
+
+<div class="logic-box">
+<div class="logic-title">유형 분류 매트릭스</div>
+<table class="bv-table" style="margin-top:8px">
+<thead><tr><th>코드</th><th>유형명</th><th>조건</th></tr></thead>
+<tbody>
+<tr><td class="bv-var">S1</td><td>최상위권 공부 역량</td><td>acc≥90 AND (inf+voc)&gt;130</td></tr>
+<tr><td class="bv-var">S2</td><td>고정확 부분결함형</td><td>acc≥90 (그 외)</td></tr>
+<tr><td class="bv-var">A1</td><td>이해 중심 공부 성향</td><td>acc≥70 AND inf≥70</td></tr>
+<tr><td class="bv-var">A2</td><td>노력형 상위권</td><td>acc≥70 AND inf≥50</td></tr>
+<tr><td class="bv-var">A3</td><td>암기 의존적 공부 주의</td><td>acc≥70 AND inf&lt;50</td></tr>
+<tr><td class="bv-var">M1</td><td>잠재된 논리적 사고 성향</td><td>acc≥50 AND inf≥70</td></tr>
+<tr><td class="bv-var">M2</td><td>역량 미완성형</td><td>acc≥50 AND inf&lt;70</td></tr>
+<tr><td class="bv-var">L</td><td>기초 역량 부족형</td><td>acc≥30</td></tr>
+<tr><td class="bv-var">C</td><td>학습 기능 발달 시급</td><td>acc&lt;30</td></tr>
+</tbody>
+</table>
+</div>
+</div>`;
+}
 
 // Init
 loadRules();
