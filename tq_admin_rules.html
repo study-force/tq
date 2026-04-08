@@ -273,6 +273,7 @@ function renderSidebar() {
   html += '<div class="nav-divider"></div>';
   html += `<div class="nav-item reference ${currentArea==='boundary'?'active':''}" onclick="switchArea('boundary')">경계값 기준표</div>`;
   html += `<div class="nav-item reference ${currentArea==='logic'?'active':''}" onclick="switchArea('logic')">판독 로직 구조</div>`;
+  html += `<div class="nav-item reference ${currentArea==='variables'?'active':''}" onclick="switchArea('variables')">변수 약어 목록</div>`;
   document.getElementById('sidebarNav').innerHTML = html;
 }
 
@@ -361,6 +362,7 @@ function renderTable() {
   // 참고 페이지 분기
   if (currentArea === 'boundary') { renderBoundary(); return; }
   if (currentArea === 'logic') { renderLogic(); return; }
+  if (currentArea === 'variables') { renderVariables(); return; }
 
   document.querySelector('.toolbar .btn-primary').style.display = '';
   let rules, titleText;
@@ -867,32 +869,74 @@ acc × inf → <b>9유형</b> (S1/S2/A1/A2/A3/M1/M2/L/C)<br>
 </div>
 </div>
 
+</div>
+</div>`;
+}
+
+// ── 변수 약어 목록 ──
+function renderVariables() {
+  document.getElementById('areaTitle').textContent = '변수 약어 전체 목록';
+  document.querySelector('.toolbar .btn-primary').style.display = 'none';
+  document.getElementById('tableWrap').innerHTML = `<div class="ref-content">
+<h2>변수 약어 전체 목록</h2>
+<p class="ref-desc">엔진에서 사용하는 모든 변수명과 의미. 의사결정 테이블의 조건 컬럼과 매칭됩니다.</p>
+
 <div class="logic-box">
-<div class="logic-title">⑥ 변수 약어 전체 목록</div>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 24px;margin-top:10px">
-<div><span style="font-family:monospace;font-weight:700;color:#2563EB;font-size:13px">acc</span> <span style="font-size:12px;color:#64748B">독해정확도 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">fct</span> <span style="font-size:12px;color:#64748B">사실적 이해 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">str</span> <span style="font-size:12px;color:#64748B">구조적 이해 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">spd</span> <span style="font-size:12px;color:#64748B">독해속도 (자/분)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">voc</span> <span style="font-size:12px;color:#64748B">어휘능력 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">wm</span> <span style="font-size:12px;color:#64748B">워킹메모리 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">inf</span> <span style="font-size:12px;color:#64748B">추론능력 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">hab</span> <span style="font-size:12px;color:#64748B">독해습관 점수 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">eff</span> <span style="font-size:12px;color:#64748B">독해효율성 점수 (0~100)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#2563EB;font-size:13px">kv</span> <span style="font-size:12px;color:#64748B">국어성적 정규화값</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">engVal</span> <span style="font-size:12px;color:#64748B">영어성적 정규화값 (kv와 동일 기준)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">mathVal</span> <span style="font-size:12px;color:#64748B">수학성적 정규화값 (kv와 동일 기준)</span></div>
+<div class="logic-title">기본 입력 변수</div>
+<table class="bv-table" style="margin-top:8px">
+<thead><tr><th style="width:100px">변수</th><th style="width:160px">의미</th><th>범위 / 설명</th></tr></thead>
+<tbody>
+<tr><td class="bv-var">acc</td><td>독해정확도</td><td>0~100. (fct + str) / 2. 가장 핵심 변수</td></tr>
+<tr><td class="bv-var">fct</td><td>사실적 이해</td><td>0~100. 세부 정보 파악 능력</td></tr>
+<tr><td class="bv-var">str</td><td>구조적 이해</td><td>0~100. 글 구조·흐름·의도 파악</td></tr>
+<tr><td class="bv-var">spd</td><td>독해속도</td><td>자/분 단위. 학제별 기준 상이</td></tr>
+<tr><td class="bv-var">voc</td><td>어휘능력</td><td>0~100. 독서량의 프록시</td></tr>
+<tr><td class="bv-var">wm</td><td>워킹메모리</td><td>0~100. 작업기억 용량</td></tr>
+<tr><td class="bv-var">inf</td><td>추론능력</td><td>0~100. 논리적 사고력</td></tr>
+<tr><td class="bv-var">hab</td><td>독해습관 점수</td><td>0~100. 체크 수 반비례</td></tr>
+<tr><td class="bv-var">eff</td><td>독해효율성 점수</td><td>0~100. 체크 수 반비례</td></tr>
+</tbody></table>
 </div>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 24px;margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0">
-<div><span style="font-family:monospace;font-weight:700;color:#DC2626;font-size:13px">flagC</span> <span style="font-size:12px;color:#64748B">모순패턴</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#D97706;font-size:13px">flagO</span> <span style="font-size:12px;color:#64748B">선행과부하</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">habClass</span> <span style="font-size:12px;color:#64748B">음독 분류 결과</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">spdGrade</span> <span style="font-size:12px;color:#64748B">독해속도 등급</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">gap</span> <span style="font-size:12px;color:#64748B">사실-구조 갭 (fct - str)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#7C3AED;font-size:13px">_meta</span> <span style="font-size:12px;color:#64748B">LLM 전달용 힌트 (화면 미표시)</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">level</span> <span style="font-size:12px;color:#64748B">엔진 내부 학제</span></div>
-<div><span style="font-family:monospace;font-weight:700;color:#1E293B;font-size:13px">uiLevel</span> <span style="font-size:12px;color:#64748B">UI 표시 학제</span></div>
+
+<div class="logic-box">
+<div class="logic-title">성적 관련 변수</div>
+<table class="bv-table" style="margin-top:8px">
+<thead><tr><th style="width:100px">변수</th><th style="width:160px">의미</th><th>범위 / 설명</th></tr></thead>
+<tbody>
+<tr><td class="bv-var" style="color:#2563EB">kv</td><td>국어성적 정규화값</td><td>50/60/70/80/90 (null 가능). 학제별 입력 형태 다름</td></tr>
+<tr><td class="bv-var">engVal</td><td>영어성적 정규화값</td><td>kv와 동일 기준 (null 가능)</td></tr>
+<tr><td class="bv-var">mathVal</td><td>수학성적 정규화값</td><td>kv와 동일 기준 (null 가능)</td></tr>
+</tbody></table>
 </div>
+
+<div class="logic-box">
+<div class="logic-title">파생 / 플래그 변수</div>
+<table class="bv-table" style="margin-top:8px">
+<thead><tr><th style="width:100px">변수</th><th style="width:160px">의미</th><th>범위 / 설명</th></tr></thead>
+<tbody>
+<tr><td class="bv-var" style="color:#DC2626">flagC</td><td>모순패턴</td><td>boolean. kv ≥ 80 AND acc ≤ 30일 때 true</td></tr>
+<tr><td class="bv-var" style="color:#D97706">flagO</td><td>선행과부하</td><td>boolean. acc ≥ 60 AND eff ≤ 40일 때 true</td></tr>
+<tr><td class="bv-var">habClass</td><td>음독 분류 결과</td><td>객체. 심각도: 없음/경미/보통/심함. 표면음독, 내재음독이해 등</td></tr>
+<tr><td class="bv-var">spdGrade</td><td>독해속도 등급</td><td>느림 / 보통이하 / 보통이상 / 빠름 (학제별 기준)</td></tr>
+<tr><td class="bv-var">gap</td><td>사실-구조 갭</td><td>fct - str. 양수=사실우세, 음수=구조우세</td></tr>
+<tr><td class="bv-var">invSpd</td><td>속도 이상값</td><td>boolean. 학제별 상한 초과 또는 50 미만</td></tr>
+<tr><td class="bv-var">allHigh</td><td>전 과목 최상위</td><td>boolean. 국영수 모두 90 이상</td></tr>
+<tr><td class="bv-var">examRelated</td><td>시험 관련 체크 수</td><td>0~4. 효율성 체크 중 시험 관련 항목 수</td></tr>
+</tbody></table>
+</div>
+
+<div class="logic-box">
+<div class="logic-title">특수 변수</div>
+<table class="bv-table" style="margin-top:8px">
+<thead><tr><th style="width:100px">변수</th><th style="width:160px">의미</th><th>범위 / 설명</th></tr></thead>
+<tbody>
+<tr><td class="bv-var" style="color:#7C3AED">_meta</td><td>LLM 전달용 힌트</td><td>화면 미표시. AI 판독문 생성 시 참고 지침</td></tr>
+<tr><td class="bv-var">level</td><td>엔진 내부 학제</td><td>초저/초고/중등/고등/일반</td></tr>
+<tr><td class="bv-var">uiLevel</td><td>UI 표시 학제</td><td>초등/중등/고등/일반</td></tr>
+<tr><td class="bv-var">두꺼운체크</td><td>두꺼운 책 체크</td><td>boolean. 효율성 체크 "두꺼운 책" 항목</td></tr>
+<tr><td class="bv-var">독서량체크</td><td>독서량 체크</td><td>boolean. 효율성 체크 "독서량" 항목</td></tr>
+<tr><td class="bv-var">밤새워체크</td><td>밤새워 책 체크</td><td>boolean. 효율성 체크 "밤새워" 항목</td></tr>
+</tbody></table>
 </div>
 </div>`;
 }
