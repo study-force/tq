@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STUDYFORCE Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; min-height:100vh; }
+
+/* 로그인 */
+.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#F8FAFC; }
+.login-card { background:#fff; border:1px solid #E2E8F0; border-radius:16px; padding:48px 40px; width:360px; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.06); }
+.login-card h1 { font-size:22px; font-weight:700; color:#1E293B; margin-bottom:8px; }
+.login-card h1 span { color:#3B82F6; }
+.login-card p { font-size:13px; color:#94A3B8; margin-bottom:32px; }
+.login-card input { width:100%; padding:12px 16px; border:1px solid #E2E8F0; border-radius:8px; font-size:14px; font-family:inherit; margin-bottom:16px; text-align:center; }
+.login-card input:focus { outline:none; border-color:#3B82F6; }
+.login-card button { width:100%; padding:12px; background:#1E293B; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+.login-card button:hover { background:#334155; }
+.login-error { color:#DC2626; font-size:12px; margin-top:8px; display:none; }
+
+/* 어드민 레이아웃 */
+.admin-layout { display:none; height:100vh; }
+.sidebar { width:200px; background:#fff; border-right:1px solid #E2E8F0; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; }
+.sidebar-header { padding:20px 16px 16px; border-bottom:1px solid #E2E8F0; }
+.sidebar-header h1 { font-size:16px; font-weight:700; color:#1E293B; }
+.sidebar-header h1 span { color:#3B82F6; }
+.sidebar-header p { font-size:10px; color:#94A3B8; margin-top:4px; }
+.sidebar-nav { padding:12px 8px; flex:1; }
+.nav-group { font-size:10px; font-weight:600; color:#94A3B8; letter-spacing:.5px; padding:12px 12px 6px; }
+.nav-group:first-child { padding-top:4px; }
+.nav-item { display:block; padding:9px 12px; border-radius:6px; font-size:13px; font-weight:500; cursor:pointer; color:#64748B; transition:all .15s; margin-bottom:2px; text-decoration:none; }
+.nav-item:hover { color:#1E293B; background:#F1F5F9; }
+.nav-item.active { background:#EFF6FF; color:#2563EB; font-weight:600; }
+.sidebar-footer { padding:12px 16px; border-top:1px solid #E2E8F0; }
+.logout-btn { width:100%; padding:8px; background:transparent; border:1px solid #E2E8F0; border-radius:6px; font-size:12px; color:#64748B; cursor:pointer; font-family:inherit; }
+.logout-btn:hover { background:#FEF2F2; color:#DC2626; border-color:#FECACA; }
+
+.main-content { margin-left:200px; height:100vh; }
+.main-content iframe { width:100%; height:100%; border:none; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1><span>STUDYFORCE</span> Admin</h1>
+    <p>관리자 비밀번호를 입력하세요</p>
+    <input type="password" id="pwInput" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">로그인</button>
+    <div class="login-error" id="loginError">비밀번호가 틀렸습니다.</div>
+  </div>
+</div>
+
+<!-- 어드민 레이아웃 -->
+<div class="admin-layout" id="adminLayout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1><span>SF</span> Admin</h1>
+      <p>스터디포스 통합 관리</p>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-group">TQ 규칙 관리</div>
+      <div class="nav-item active" onclick="navigate(this,'tq_admin_rules.html')">의사결정 테이블</div>
+
+      <div class="nav-group">엘리먼트 관리</div>
+      <div class="nav-item" onclick="navigate(this,'https://element.sfcenter.co.kr/admin/dashboard')">문항/유형 관리</div>
+
+      <div class="nav-group">학원 관리</div>
+      <div class="nav-item" onclick="navigate(this,'https://element.sfcenter.co.kr/setup')">학원 계정 생성</div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+  <div class="main-content">
+    <iframe id="mainFrame" src="tq_admin_rules.html"></iframe>
+  </div>
+</div>
+
+<script>
+const PW = 'asdf1234';
+
+function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === PW) {
+    sessionStorage.setItem('sf_admin', '1');
+    showAdmin();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('sf_admin');
+  location.reload();
+}
+
+function showAdmin() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminLayout').style.display = 'flex';
+}
+
+function navigate(el, url) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('mainFrame').src = url;
+}
+
+// 세션 체크
+if (sessionStorage.getItem('sf_admin') === '1') {
+  showAdmin();
+}
+</script>
+</body>
+</html>
