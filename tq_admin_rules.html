@@ -25,6 +25,11 @@ body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B;
 .tab.active { background:#F8FAFC; color:#1E293B; border-color:#E2E8F0; font-weight:700; }
 .tab .tab-count { font-size:11px; margin-left:6px; background:#E2E8F0; padding:2px 7px; border-radius:10px; color:#64748B; }
 .tab.active .tab-count { background:#3B82F6; color:#fff; }
+.tab.contradiction { border:2px solid #F97316; color:#EA580C; }
+.tab.contradiction:hover { background:#FFF7ED; color:#C2410C; }
+.tab.contradiction.active { background:#FFF7ED; color:#C2410C; border-color:#F97316; font-weight:700; }
+.tab.contradiction .tab-count { background:#FDBA74; color:#7C2D12; }
+.tab.contradiction.active .tab-count { background:#F97316; color:#fff; }
 
 /* ── Main ── */
 .main { padding:24px 32px; }
@@ -183,6 +188,7 @@ const TAG_LIST = ['강점','보통','주의','위험','_meta'];
 // ── 조건 컬럼 정의 ──
 const COND_COLS = [
   {key:'flagC',            label:'모순패턴',   width:70},
+  {key:'flagO',            label:'과부하',    width:60},
   {key:'acc',              label:'독해정확도', width:80},
   {key:'acc_max',          label:'정확도≤',   width:70},
   {key:'kv',               label:'국어성적',   width:70},
@@ -199,6 +205,7 @@ const COND_KEY_SET = new Set(COND_COLS.map(c=>c.key));
 
 let allRules = [];
 let currentArea = 1;
+const AREA_CONTRADICTION = 'contradiction'; // 모순패턴 특수 탭
 let editingId = null;   // 현재 편집 중인 행 id (null이면 없음)
 let editBuf = {};       // 편집 중 임시 버퍼 {conds:{}, tag:'', message:''}
 
@@ -226,12 +233,22 @@ function renderStats() {
 }
 
 // ── 탭 ──
+function getContradictionRules() {
+  return allRules.filter(r => {
+    const c = r.conditions || {};
+    return c.flagC === 'true' || c.flagC === true || c.flagO === 'true' || c.flagO === true;
+  });
+}
+
 function renderTabs() {
   let html = '';
   AREAS.forEach(a => {
     const cnt = allRules.filter(r=>r.area===a.id).length;
     html += `<div class="tab ${a.id===currentArea?'active':''}" onclick="switchArea(${a.id})">${a.id}) ${a.name}<span class="tab-count">${cnt}</span></div>`;
   });
+  // 모순패턴 관리 탭
+  const cCnt = getContradictionRules().length;
+  html += `<div class="tab contradiction ${currentArea===AREA_CONTRADICTION?'active':''}" onclick="switchArea('${AREA_CONTRADICTION}')">모순패턴 관리<span class="tab-count">${cCnt}</span></div>`;
   document.getElementById('tabs').innerHTML = html;
 }
 
@@ -241,6 +258,8 @@ function switchArea(areaId) {
   renderTabs();
   renderTable();
 }
+
+function isContradictionMode() { return currentArea === AREA_CONTRADICTION; }
 
 // ── 조건값에서 nested key 읽기 (예: 'habClass.심각도') ──
 function getCondVal(conditions, key) {
@@ -294,8 +313,8 @@ function condBadge(val, key) {
   const v = String(val);
   if (v === '-') return '<span class="cond-val empty">-</span>';
 
-  // 모순패턴
-  if (key === 'flagC') {
+  // 모순패턴 / 과부하
+  if (key === 'flagC' || key === 'flagO') {
     if (v === 'true') return `<span class="cond-val bool-true">${v}</span>`;
     if (v.includes('선행')) return `<span class="cond-val bool-special">${v}</span>`;
     return `<span class="cond-val has">${v}</span>`;
@@ -315,9 +334,16 @@ function condBadge(val, key) {
 
 // ── 테이블 렌더링 ──
 function renderTable() {
-  const rules = allRules.filter(r=>r.area===currentArea).sort((a,b)=>a.sort_order-b.sort_order);
-  const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
-  document.getElementById('areaTitle').textContent = `${currentArea}) ${areaName} (${rules.length}개 규칙)`;
+  let rules, titleText;
+  if (isContradictionMode()) {
+    rules = getContradictionRules().sort((a,b) => a.area - b.area || a.sort_order - b.sort_order);
+    titleText = `모순패턴 관리 (${rules.length}개 규칙 — flagC 또는 flagO 포함)`;
+  } else {
+    rules = allRules.filter(r=>r.area===currentArea).sort((a,b)=>a.sort_order-b.sort_order);
+    const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
+    titleText = `${currentArea}) ${areaName} (${rules.length}개 규칙)`;
+  }
+  document.getElementById('areaTitle').textContent = titleText;
 
   if (rules.length === 0) {
     document.getElementById('tableWrap').innerHTML = '<div class="empty"><p>이 영역에 등록된 규칙이 없습니다.</p><button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button></div>';
@@ -340,11 +366,11 @@ function renderTable() {
       if (isEd) {
         const bufVal = editBuf.conds?.[c.key];
         const inputVal = bufVal !== undefined ? bufVal : (v !== undefined ? String(v) : '');
-        if (c.key === 'flagC') {
+        if (c.key === 'flagC' || c.key === 'flagO') {
           return `<td><select class="tag-select" data-col="${c.key}" onchange="updateEditCond(this)">
             <option value=""${!inputVal?' selected':''}>-</option>
             <option value="true"${inputVal==='true'?' selected':''}>true</option>
-            <option value="true(선행과부하)"${inputVal.includes('선행')?' selected':''}>true(선행과부하)</option>
+            ${c.key==='flagC'?`<option value="true(선행과부하)"${inputVal.includes('선행')?' selected':''}>true(선행과부하)</option>`:''}
           </select></td>`;
         }
         return `<td><input class="cond-input" value="${esc(inputVal)}" data-col="${c.key}" oninput="updateEditCond(this)" placeholder="-"></td>`;
@@ -395,7 +421,7 @@ function renderTable() {
 
     return `<tr id="row_${r.id}"${isEd?' class="editing"':''}>
       <td style="color:#475569;font-size:11px">${i+1}</td>
-      <td><span class="rule-id">${esc(r.rule_id)}</span></td>
+      <td><span class="rule-id">${esc(r.rule_id)}</span>${isContradictionMode()?`<br><span style="font-size:10px;color:#94A3B8">${r.area}) ${esc(r.area_name)}</span>`:''}</td>
       ${condCells}${etcCell}${tagCell}${textCell}${actionCell}
     </tr>`;
   }).join('');
@@ -531,6 +557,10 @@ async function deleteRule(id) {
 
 // ── 규칙 추가 모달 ──
 function openAddModal() {
+  if (isContradictionMode()) {
+    showToast('모순패턴 탭에서는 규칙을 추가할 수 없습니다. 해당 영역 탭에서 추가하세요.', true);
+    return;
+  }
   document.getElementById('addModalTitle').textContent = `규칙 추가 — ${currentArea}) ${AREAS.find(a=>a.id===currentArea)?.name}`;
   document.getElementById('addRuleId').value = '';
   document.getElementById('addTag').value = '보통';
