@@ -9,72 +9,114 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B; min-height:100vh; }
+
+/* ── Header ── */
 .header { background:#fff; border-bottom:1px solid #E2E8F0; padding:20px 32px; display:flex; align-items:center; justify-content:space-between; }
 .header h1 { font-size:20px; font-weight:700; color:#1E293B; }
 .header h1 span { color:#3B82F6; }
-.stats { display:flex; gap:16px; }
-.stat-badge { background:#F1F5F9; border:1px solid #E2E8F0; border-radius:8px; padding:6px 14px; font-size:13px; color:#64748B; }
+.stats { display:flex; gap:12px; flex-wrap:wrap; }
+.stat-badge { background:#F1F5F9; border:1px solid #E2E8F0; border-radius:8px; padding:5px 12px; font-size:12px; color:#64748B; white-space:nowrap; }
 .stat-badge strong { color:#1E293B; margin-left:4px; }
+
+/* ── Tabs ── */
 .tabs { display:flex; gap:4px; padding:16px 32px 0; background:#fff; overflow-x:auto; border-bottom:1px solid #E2E8F0; }
 .tab { padding:10px 20px; border-radius:8px 8px 0 0; font-size:14px; font-weight:500; cursor:pointer; border:1px solid transparent; border-bottom:none; color:#64748B; background:transparent; transition:all .2s; white-space:nowrap; }
 .tab:hover { color:#1E293B; background:#F1F5F9; }
 .tab.active { background:#F8FAFC; color:#1E293B; border-color:#E2E8F0; font-weight:700; }
 .tab .tab-count { font-size:11px; margin-left:6px; background:#E2E8F0; padding:2px 7px; border-radius:10px; color:#64748B; }
 .tab.active .tab-count { background:#3B82F6; color:#fff; }
+
+/* ── Main ── */
 .main { padding:24px 32px; }
 .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
 .btn { padding:8px 18px; border-radius:8px; border:none; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; }
 .btn-primary { background:#3B82F6; color:#fff; }
 .btn-primary:hover { background:#2563EB; }
-.btn-danger { background:#DC2626; color:#fff; }
-.btn-danger:hover { background:#B91C1C; }
+.btn-sm { padding:5px 12px; font-size:12px; border-radius:6px; }
+.btn-save { background:#059669; color:#fff; }
+.btn-save:hover { background:#047857; }
+.btn-cancel { background:transparent; color:#64748B; border:1px solid #E2E8F0; }
+.btn-cancel:hover { color:#1E293B; border-color:#94A3B8; }
+.btn-edit { background:#F1F5F9; color:#475569; border:1px solid #E2E8F0; }
+.btn-edit:hover { background:#E2E8F0; color:#1E293B; }
 .btn-ghost { background:transparent; color:#64748B; border:1px solid #E2E8F0; }
 .btn-ghost:hover { color:#1E293B; border-color:#94A3B8; }
-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
-thead th { background:#F8FAFC; padding:12px 16px; text-align:left; font-size:12px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid #E2E8F0; }
-tbody tr { border-bottom:1px solid #F1F5F9; transition:background .15s; }
-tbody tr:hover { background:#F8FAFC; }
-td { padding:12px 16px; font-size:13px; vertical-align:middle; }
-.tag-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; cursor:pointer; position:relative; }
-.tag-badge[data-tag="강점"] { background:rgba(5,150,105,.15); color:#059669; border:1px solid rgba(5,150,105,.3); }
-.tag-badge[data-tag="보통"] { background:rgba(100,116,139,.15); color:#64748B; border:1px solid rgba(100,116,139,.3); }
-.tag-badge[data-tag="주의"] { background:rgba(217,119,6,.15); color:#D97706; border:1px solid rgba(217,119,6,.3); }
-.tag-badge[data-tag="위험"] { background:rgba(220,38,38,.15); color:#DC2626; border:1px solid rgba(220,38,38,.3); }
+
+/* ── Table ── */
+.dt-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+table.dt { width:100%; border-collapse:collapse; background:#fff; min-width:1200px; }
+table.dt thead th { background:#F8FAFC; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid #E2E8F0; border-right:1px solid #F1F5F9; white-space:nowrap; }
+table.dt thead th.grp-cond { background:#EFF6FF; color:#3B82F6; font-size:12px; letter-spacing:.03em; border-bottom:1px solid #BFDBFE; }
+table.dt thead th.grp-etc { background:#F8FAFC; }
+table.dt tbody tr { border-bottom:1px solid #F1F5F9; transition:background .15s; }
+table.dt tbody tr:hover { background:#F8FAFC; }
+table.dt tbody tr.editing { background:#FFFBEB; }
+table.dt td { padding:6px 6px; font-size:12px; vertical-align:middle; text-align:center; border-right:1px solid #F8FAFC; }
+table.dt td.text-cell { text-align:left; font-size:12px; line-height:1.5; white-space:normal; color:#334155; max-width:350px; min-width:200px; }
+
+/* ── Condition badge ── */
+.cond-val { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; }
+.cond-val.has { background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE; }
+.cond-val.empty { color:#CBD5E1; font-weight:400; }
+.cond-val.bool-true { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+.cond-val.bool-special { background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; }
+.cond-val.range-high { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
+.cond-val.range-mid { background:#E0F2FE; color:#0369A1; border:1px solid #7DD3FC; }
+.cond-val.range-warn { background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; }
+.cond-val.range-low { background:#FFEDD5; color:#C2410C; border:1px solid #FDBA74; }
+.cond-val.range-danger { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+
+/* ── Tag badges ── */
+.tag-badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; white-space:nowrap; }
+.tag-badge[data-tag="\uAC15\uC810"] { background:rgba(5,150,105,.15); color:#059669; border:1px solid rgba(5,150,105,.3); }
+.tag-badge[data-tag="\uBCF4\uD1B5"] { background:rgba(100,116,139,.15); color:#64748B; border:1px solid rgba(100,116,139,.3); }
+.tag-badge[data-tag="\uC8FC\uC758"] { background:rgba(217,119,6,.15); color:#D97706; border:1px solid rgba(217,119,6,.3); }
+.tag-badge[data-tag="\uC704\uD5D8"] { background:rgba(220,38,38,.15); color:#DC2626; border:1px solid rgba(220,38,38,.3); }
 .tag-badge[data-tag="_meta"] { background:rgba(139,92,246,.15); color:#8B5CF6; border:1px solid rgba(139,92,246,.3); }
-.tag-dropdown { position:absolute; top:100%; left:0; background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:4px; z-index:100; display:none; min-width:80px; box-shadow:0 8px 24px rgba(0,0,0,.1); }
-.tag-dropdown.show { display:block; }
-.tag-option { padding:6px 12px; cursor:pointer; border-radius:4px; font-size:12px; white-space:nowrap; color:#1E293B; }
-.tag-option:hover { background:#F1F5F9; }
-.msg-cell { max-width:400px; cursor:pointer; line-height:1.5; color:#334155; }
-.msg-cell:hover { color:#3B82F6; }
-.msg-textarea { width:100%; min-height:60px; background:#fff; border:1px solid #3B82F6; border-radius:6px; color:#1E293B; padding:8px; font-size:13px; font-family:inherit; resize:vertical; }
-.cond-btn { background:#F1F5F9; border:1px solid #E2E8F0; color:#64748B; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:inherit; }
-.cond-btn:hover { background:#E2E8F0; color:#1E293B; }
-.toggle { position:relative; width:40px; height:22px; cursor:pointer; }
+
+/* ── etc badge (기타 조건 표시) ── */
+.etc-badge { display:inline-block; padding:1px 6px; border-radius:8px; font-size:10px; font-weight:500; background:#F1F5F9; color:#64748B; border:1px solid #E2E8F0; margin:1px 2px; white-space:nowrap; }
+
+/* ── Inline edit inputs ── */
+.cond-input { width:70px; padding:3px 6px; border:1px solid #3B82F6; border-radius:4px; font-size:11px; font-family:inherit; text-align:center; background:#fff; }
+.msg-textarea { width:100%; min-height:60px; background:#fff; border:1px solid #3B82F6; border-radius:6px; color:#1E293B; padding:8px; font-size:12px; font-family:inherit; resize:vertical; }
+.tag-select { padding:3px 6px; border:1px solid #3B82F6; border-radius:4px; font-size:11px; font-family:inherit; background:#fff; }
+
+/* ── Toggle ── */
+.toggle { position:relative; width:40px; height:22px; cursor:pointer; display:inline-block; }
 .toggle input { opacity:0; width:0; height:0; }
 .toggle .slider { position:absolute; inset:0; background:#CBD5E1; border-radius:11px; transition:.3s; }
 .toggle .slider:before { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; left:3px; top:3px; transition:.3s; }
 .toggle input:checked+.slider { background:#3B82F6; }
 .toggle input:checked+.slider:before { transform:translateX(18px); }
-.rule-id { color:#94A3B8; font-family:monospace; font-size:12px; }
-.del-btn { color:#94A3B8; cursor:pointer; font-size:16px; padding:4px 8px; border-radius:4px; background:transparent; border:none; }
+
+/* ── Action buttons in table ── */
+.action-cell { white-space:nowrap; }
+.action-cell .btn-grp { display:flex; gap:4px; justify-content:center; }
+.del-btn { color:#94A3B8; cursor:pointer; font-size:14px; padding:3px 6px; border-radius:4px; background:transparent; border:none; }
 .del-btn:hover { color:#DC2626; background:rgba(220,38,38,.06); }
-/* Modal */
+.rule-id { color:#94A3B8; font-family:monospace; font-size:11px; white-space:nowrap; }
+
+/* ── Modal ── */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.3); display:none; align-items:center; justify-content:center; z-index:1000; }
 .modal-overlay.show { display:flex; }
-.modal { background:#fff; border:1px solid #E2E8F0; border-radius:16px; padding:24px; width:560px; max-width:90vw; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.12); }
+.modal { background:#fff; border:1px solid #E2E8F0; border-radius:16px; padding:24px; width:640px; max-width:90vw; max-height:85vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.12); }
 .modal h3 { font-size:16px; margin-bottom:16px; color:#1E293B; }
-.modal textarea { width:100%; min-height:200px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; color:#1E293B; padding:12px; font-family:'Courier New',monospace; font-size:13px; resize:vertical; }
-.modal .btn-row { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
-.modal label { display:block; font-size:13px; color:#64748B; margin-bottom:6px; }
+.modal label { display:block; font-size:13px; color:#64748B; margin-bottom:6px; font-weight:500; }
 .modal input, .modal select { width:100%; padding:8px 12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; color:#1E293B; font-size:13px; font-family:inherit; margin-bottom:12px; }
+.modal textarea { width:100%; min-height:80px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; color:#1E293B; padding:12px; font-size:13px; font-family:inherit; resize:vertical; }
+.modal .btn-row { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+.modal .cond-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:12px; }
+.modal .cond-grid label { font-size:11px; color:#64748B; margin-bottom:2px; }
+.modal .cond-grid input { margin-bottom:0; padding:6px 8px; font-size:12px; }
+
+/* ── Toast ── */
 .toast { position:fixed; bottom:24px; right:24px; background:#059669; color:#fff; padding:12px 20px; border-radius:8px; font-size:13px; font-weight:500; transform:translateY(80px); opacity:0; transition:all .3s; z-index:2000; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.error { background:#DC2626; }
 .empty { text-align:center; padding:60px 20px; color:#94A3B8; }
 .empty p { font-size:15px; margin-bottom:12px; }
 .loading { text-align:center; padding:40px; color:#94A3B8; }
-.main { padding:24px 32px; }
 </style>
 </head>
 <body>
@@ -94,18 +136,6 @@ td { padding:12px 16px; font-size:13px; vertical-align:middle; }
   <div id="tableWrap"><div class="loading">로딩 중...</div></div>
 </div>
 
-<!-- 조건 편집 모달 -->
-<div class="modal-overlay" id="condModal">
-  <div class="modal">
-    <h3>조건 편집 (JSON)</h3>
-    <textarea id="condEditor"></textarea>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="closeCondModal()">취소</button>
-      <button class="btn btn-primary" onclick="saveConditions()">저장</button>
-    </div>
-  </div>
-</div>
-
 <!-- 규칙 추가 모달 -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
@@ -122,8 +152,13 @@ td { padding:12px 16px; font-size:13px; vertical-align:middle; }
     </select>
     <label>메시지</label>
     <textarea id="addMsg" style="min-height:80px"></textarea>
-    <label>조건 (JSON)</label>
-    <textarea id="addCond" style="min-height:100px">{}</textarea>
+
+    <label style="margin-top:12px">조건</label>
+    <div class="cond-grid" id="addCondGrid"></div>
+
+    <label>기타 조건 (JSON)</label>
+    <textarea id="addCondExtra" style="min-height:60px;font-family:'Courier New',monospace;font-size:12px">{}</textarea>
+
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeAddModal()">취소</button>
       <button class="btn btn-primary" onclick="saveNewRule()">저장</button>
@@ -143,12 +178,31 @@ const AREAS = [
   {id:4,name:'독해의질'},{id:5,name:'정보처리습관'},{id:6,name:'워킹메모리'},
   {id:7,name:'추론능력'},{id:8,name:'독해효율성'},{id:9,name:'학교학업'}
 ];
-const TAG_COLORS = {'강점':'#059669','보통':'#64748B','주의':'#D97706','위험':'#DC2626','_meta':'#8B5CF6'};
+const TAG_LIST = ['강점','보통','주의','위험','_meta'];
+
+// ── 조건 컬럼 정의 ──
+const COND_COLS = [
+  {key:'flagC',            label:'모순패턴',   width:70},
+  {key:'acc',              label:'독해정확도', width:80},
+  {key:'acc_max',          label:'정확도≤',   width:70},
+  {key:'kv',               label:'국어성적',   width:70},
+  {key:'spdGrade',         label:'속도등급',   width:70},
+  {key:'voc',              label:'어휘',       width:60},
+  {key:'wm',               label:'워킹메모리', width:70},
+  {key:'inf',              label:'추론',       width:60},
+  {key:'eff',              label:'효율성',     width:60},
+  {key:'gap',              label:'gap',       width:60},
+  {key:'habClass.심각도',   label:'음독심각도', width:70},
+  {key:'habClass.표면음독', label:'표면음독',   width:60},
+];
+const COND_KEY_SET = new Set(COND_COLS.map(c=>c.key));
 
 let allRules = [];
 let currentArea = 1;
-let editingCondId = null;
+let editingId = null;   // 현재 편집 중인 행 id (null이면 없음)
+let editBuf = {};       // 편집 중 임시 버퍼 {conds:{}, tag:'', message:''}
 
+// ── 데이터 로드 ──
 async function loadRules() {
   const {data, error} = await sb.from('tq_rules').select('*').order('area').order('sort_order');
   if (error) { showToast('규칙 로드 실패: '+error.message, true); return; }
@@ -158,6 +212,7 @@ async function loadRules() {
   renderTable();
 }
 
+// ── 통계 ──
 function renderStats() {
   const total = allRules.length;
   const enabled = allRules.filter(r=>r.enabled).length;
@@ -170,6 +225,7 @@ function renderStats() {
   document.getElementById('stats').innerHTML = html;
 }
 
+// ── 탭 ──
 function renderTabs() {
   let html = '';
   AREAS.forEach(a => {
@@ -180,11 +236,84 @@ function renderTabs() {
 }
 
 function switchArea(areaId) {
+  if (editingId) { if (!confirm('편집 중인 내용이 있습니다. 취소하시겠습니까?')) return; editingId=null; }
   currentArea = areaId;
   renderTabs();
   renderTable();
 }
 
+// ── 조건값에서 nested key 읽기 (예: 'habClass.심각도') ──
+function getCondVal(conditions, key) {
+  if (!conditions) return undefined;
+  const parts = key.split('.');
+  let v = conditions;
+  for (const p of parts) {
+    if (v == null) return undefined;
+    v = v[p];
+  }
+  return v;
+}
+
+// ── 조건값 설정 (nested) ──
+function setCondVal(conditions, key, value) {
+  const parts = key.split('.');
+  let obj = conditions;
+  for (let i=0; i<parts.length-1; i++) {
+    if (!obj[parts[i]] || typeof obj[parts[i]] !== 'object') obj[parts[i]] = {};
+    obj = obj[parts[i]];
+  }
+  if (value === '' || value === '-' || value === undefined) {
+    delete obj[parts[parts.length-1]];
+    // nested 객체가 비었으면 부모에서도 제거
+    if (parts.length > 1 && Object.keys(obj).length === 0) {
+      delete conditions[parts[0]];
+    }
+  } else {
+    // boolean 변환
+    if (value === 'true') obj[parts[parts.length-1]] = true;
+    else if (value === 'false') obj[parts[parts.length-1]] = false;
+    else obj[parts[parts.length-1]] = value;
+  }
+}
+
+// ── "기타" 조건 추출 ──
+function getEtcConditions(conditions) {
+  if (!conditions) return {};
+  const etc = {};
+  for (const k of Object.keys(conditions)) {
+    // COND_COLS에서 직접 key이거나 nested parent인 경우 제외
+    const isKnown = COND_COLS.some(c => c.key === k || c.key.startsWith(k+'.'));
+    if (!isKnown) etc[k] = conditions[k];
+  }
+  return etc;
+}
+
+// ── 조건 배지 렌더링 ──
+function condBadge(val, key) {
+  if (val === undefined || val === null || val === '') return '<span class="cond-val empty">-</span>';
+  const v = String(val);
+  if (v === '-') return '<span class="cond-val empty">-</span>';
+
+  // 모순패턴
+  if (key === 'flagC') {
+    if (v === 'true') return `<span class="cond-val bool-true">${v}</span>`;
+    if (v.includes('선행')) return `<span class="cond-val bool-special">${v}</span>`;
+    return `<span class="cond-val has">${v}</span>`;
+  }
+
+  // 범위 기반 색상 결정
+  let cls = 'has';
+  if (/^[>≥]=?\s*[89]\d/.test(v) || v==='≥90' || v==='≥80') cls = 'range-high';
+  else if (/^[7-8]\d[~-]/.test(v) || v==='≥70' || v==='70~89' || v==='빠름') cls = 'range-mid';
+  else if (/^[5-6]\d[~-]/.test(v) || v==='50~69' || v==='느림' || v==='보통' || v==='경미') cls = 'range-warn';
+  else if (/^[<≤]\s*[3-5]\d/.test(v) || v==='<50' || v==='30~49') cls = 'range-low';
+  else if (/^[<≤]\s*[12]\d/.test(v) || v==='<30' || v==='<10' || v==='≤10' || v==='심각' || v==='심함') cls = 'range-danger';
+  else if (v === 'true') cls = 'bool-true';
+
+  return `<span class="cond-val ${cls}">${esc(v)}</span>`;
+}
+
+// ── 테이블 렌더링 ──
 function renderTable() {
   const rules = allRules.filter(r=>r.area===currentArea).sort((a,b)=>a.sort_order-b.sort_order);
   const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
@@ -195,74 +324,189 @@ function renderTable() {
     return;
   }
 
-  let html = `<table><thead><tr>
-    <th style="width:50px">#</th>
-    <th style="width:140px">Rule ID</th>
-    <th style="width:70px">태그</th>
-    <th>메시지</th>
-    <th style="width:100px">조건</th>
-    <th style="width:60px">활성</th>
-    <th style="width:50px"></th>
-  </tr></thead><tbody>`;
+  // 조건 서브헤더
+  const colHeaders = COND_COLS.map(c =>
+    `<th style="min-width:${c.width}px">${c.label}</th>`
+  ).join('') + '<th style="min-width:60px">기타</th>';
 
-  rules.forEach((r, i) => {
-    const condKeys = Object.keys(r.conditions || {});
-    const condSummary = condKeys.length > 0 ? condKeys.slice(0,3).join(', ') + (condKeys.length>3?'...':'') : '-';
-    html += `<tr data-id="${r.id}">
-      <td style="color:#475569">${i+1}</td>
+  // 행 렌더링
+  const rows = rules.map((r, i) => {
+    const isEd = editingId === r.id;
+    const conds = r.conditions || {};
+
+    // 조건 셀
+    const condCells = COND_COLS.map(c => {
+      const v = getCondVal(conds, c.key);
+      if (isEd) {
+        const bufVal = editBuf.conds?.[c.key];
+        const inputVal = bufVal !== undefined ? bufVal : (v !== undefined ? String(v) : '');
+        if (c.key === 'flagC') {
+          return `<td><select class="tag-select" data-col="${c.key}" onchange="updateEditCond(this)">
+            <option value=""${!inputVal?' selected':''}>-</option>
+            <option value="true"${inputVal==='true'?' selected':''}>true</option>
+            <option value="true(선행과부하)"${inputVal.includes('선행')?' selected':''}>true(선행과부하)</option>
+          </select></td>`;
+        }
+        return `<td><input class="cond-input" value="${esc(inputVal)}" data-col="${c.key}" oninput="updateEditCond(this)" placeholder="-"></td>`;
+      }
+      return `<td>${condBadge(v, c.key)}</td>`;
+    }).join('');
+
+    // 기타 조건 셀
+    const etc = getEtcConditions(conds);
+    const etcKeys = Object.keys(etc);
+    let etcCell;
+    if (isEd) {
+      const etcJson = etcKeys.length > 0 ? JSON.stringify(etc) : '';
+      etcCell = `<td><input class="cond-input" style="width:80px" value="${esc(etcJson)}" id="etc_${r.id}" placeholder="{}"></td>`;
+    } else {
+      if (etcKeys.length === 0) {
+        etcCell = '<td><span class="cond-val empty">-</span></td>';
+      } else {
+        const badges = etcKeys.map(k => {
+          const v = typeof etc[k] === 'object' ? JSON.stringify(etc[k]) : String(etc[k]);
+          return `<span class="etc-badge" title="${esc(k)}:${esc(v)}">${esc(k)}</span>`;
+        }).join('');
+        etcCell = `<td>${badges}</td>`;
+      }
+    }
+
+    // 태그 셀
+    const tagCell = isEd
+      ? `<td><select class="tag-select" id="etag_${r.id}">${TAG_LIST.map(t=>`<option${(editBuf.tag||r.tag)===t?' selected':''}>${t}</option>`).join('')}</select></td>`
+      : `<td><span class="tag-badge" data-tag="${esc(r.tag)}">${esc(r.tag)}</span></td>`;
+
+    // 메시지 셀
+    const textCell = isEd
+      ? `<td class="text-cell"><textarea class="msg-textarea" id="etxt_${r.id}" oninput="autoH(this)">${esc(editBuf.message !== undefined ? editBuf.message : r.message)}</textarea></td>`
+      : `<td class="text-cell">${esc(r.message)}</td>`;
+
+    // 액션 셀
+    const actionCell = isEd
+      ? `<td class="action-cell"><div class="btn-grp">
+          <button class="btn btn-sm btn-save" onclick="saveRow(${r.id})">저장</button>
+          <button class="btn btn-sm btn-cancel" onclick="cancelEdit()">취소</button>
+        </div></td>`
+      : `<td class="action-cell"><div class="btn-grp">
+          <button class="btn btn-sm btn-edit" onclick="startEdit(${r.id})">수정</button>
+          <label class="toggle" style="margin:0 4px"><input type="checkbox" ${r.enabled?'checked':''} onchange="toggleEnabled(${r.id},this.checked)"><span class="slider"></span></label>
+          <button class="del-btn" onclick="deleteRule(${r.id})">&#x2715;</button>
+        </div></td>`;
+
+    return `<tr id="row_${r.id}"${isEd?' class="editing"':''}>
+      <td style="color:#475569;font-size:11px">${i+1}</td>
       <td><span class="rule-id">${esc(r.rule_id)}</span></td>
-      <td><div style="position:relative"><span class="tag-badge" data-tag="${esc(r.tag)}" onclick="toggleTagDropdown(this,${r.id})">${esc(r.tag)}</span>
-        <div class="tag-dropdown" id="tagdd_${r.id}">${['강점','보통','주의','위험','_meta'].map(t=>`<div class="tag-option" onclick="changeTag(${r.id},'${t}')">${t}</div>`).join('')}</div>
-      </div></td>
-      <td class="msg-cell" ondblclick="startEditMsg(this,${r.id})">${esc(r.message)}</td>
-      <td><button class="cond-btn" onclick="openCondModal(${r.id})" title="${esc(JSON.stringify(r.conditions))}">${condSummary}</button></td>
-      <td><label class="toggle"><input type="checkbox" ${r.enabled?'checked':''} onchange="toggleEnabled(${r.id},this.checked)"><span class="slider"></span></label></td>
-      <td><button class="del-btn" onclick="deleteRule(${r.id})">&#x2715;</button></td>
+      ${condCells}${etcCell}${tagCell}${textCell}${actionCell}
     </tr>`;
+  }).join('');
+
+  document.getElementById('tableWrap').innerHTML = `
+    <div class="dt-wrap"><table class="dt">
+      <thead>
+        <tr>
+          <th width="30" rowspan="2">#</th>
+          <th width="100" rowspan="2">Rule ID</th>
+          <th colspan="${COND_COLS.length+1}" class="grp-cond">조건</th>
+          <th rowspan="2" width="60">태그</th>
+          <th rowspan="2" style="min-width:200px">메시지 텍스트</th>
+          <th rowspan="2" width="130">액션</th>
+        </tr>
+        <tr>${colHeaders}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+
+  // 편집 중인 textarea 자동 높이
+  if (editingId) {
+    const ta = document.getElementById('etxt_'+editingId);
+    if (ta) { autoH(ta); ta.focus(); }
+  }
+}
+
+function esc(s) { if (s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function autoH(el) { el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+
+// ── 인라인 편집 ──
+function startEdit(id) {
+  if (editingId && editingId !== id) {
+    if (!confirm('다른 행 편집 중입니다. 취소하고 이 행을 편집할까요?')) return;
+  }
+  const r = allRules.find(x=>x.id===id);
+  if (!r) return;
+  editingId = id;
+  // 버퍼 초기화: 각 COND_COL의 현재값
+  editBuf = { conds:{}, tag:r.tag, message:r.message };
+  COND_COLS.forEach(c => {
+    const v = getCondVal(r.conditions||{}, c.key);
+    editBuf.conds[c.key] = v !== undefined ? String(v) : '';
   });
-  html += '</tbody></table>';
-  document.getElementById('tableWrap').innerHTML = html;
-}
-
-function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// Tag dropdown
-function toggleTagDropdown(el, id) {
-  document.querySelectorAll('.tag-dropdown.show').forEach(d=>d.classList.remove('show'));
-  const dd = document.getElementById('tagdd_'+id);
-  dd.classList.toggle('show');
-  setTimeout(()=>{ document.addEventListener('click', function h(e){ if(!dd.contains(e.target)){dd.classList.remove('show');document.removeEventListener('click',h);} }); },0);
-}
-
-async function changeTag(id, tag) {
-  const {error} = await sb.from('tq_rules').update({tag}).eq('id',id);
-  if (error) { showToast('태그 변경 실패',true); return; }
-  const r = allRules.find(x=>x.id===id); if(r) r.tag = tag;
   renderTable();
-  showToast('태그 변경됨');
 }
 
-// Inline message edit
-function startEditMsg(td, id) {
-  const r = allRules.find(x=>x.id===id); if(!r) return;
-  const old = r.message;
-  td.innerHTML = `<textarea class="msg-textarea" onblur="saveMsg(this,${id})">${esc(old)}</textarea>`;
-  const ta = td.querySelector('textarea');
-  ta.focus();
-  ta.setSelectionRange(ta.value.length, ta.value.length);
-}
-
-async function saveMsg(ta, id) {
-  const msg = ta.value.trim();
-  if (!msg) { renderTable(); return; }
-  const {error} = await sb.from('tq_rules').update({message:msg}).eq('id',id);
-  if (error) { showToast('메시지 저장 실패',true); renderTable(); return; }
-  const r = allRules.find(x=>x.id===id); if(r) r.message = msg;
+function cancelEdit() {
+  editingId = null;
+  editBuf = {};
   renderTable();
-  showToast('메시지 저장됨');
 }
 
-// Toggle enabled
+function updateEditCond(el) {
+  const col = el.dataset.col;
+  editBuf.conds[col] = el.value;
+}
+
+async function saveRow(id) {
+  const r = allRules.find(x=>x.id===id);
+  if (!r) return;
+
+  // 태그
+  const tagEl = document.getElementById('etag_'+id);
+  const newTag = tagEl ? tagEl.value : r.tag;
+
+  // 메시지
+  const txtEl = document.getElementById('etxt_'+id);
+  const newMsg = txtEl ? txtEl.value.trim() : r.message;
+  if (!newMsg) { showToast('메시지를 입력하세요', true); return; }
+
+  // 조건 빌드
+  const newConds = {};
+
+  // 먼저 기타 조건 복원
+  const etcEl = document.getElementById('etc_'+id);
+  if (etcEl && etcEl.value.trim()) {
+    try {
+      const etcObj = JSON.parse(etcEl.value.trim());
+      Object.assign(newConds, etcObj);
+    } catch(e) { showToast('기타 조건 JSON 오류', true); return; }
+  } else {
+    // 기존 기타 조건 유지
+    const oldEtc = getEtcConditions(r.conditions);
+    Object.assign(newConds, oldEtc);
+  }
+
+  // COND_COLS 값 설정
+  COND_COLS.forEach(c => {
+    const v = editBuf.conds[c.key];
+    if (v && v !== '' && v !== '-') {
+      setCondVal(newConds, c.key, v);
+    }
+  });
+
+  const {error} = await sb.from('tq_rules').update({
+    tag: newTag, message: newMsg, conditions: newConds
+  }).eq('id', id);
+
+  if (error) { showToast('저장 실패: '+error.message, true); return; }
+  r.tag = newTag;
+  r.message = newMsg;
+  r.conditions = newConds;
+  editingId = null;
+  editBuf = {};
+  renderTable();
+  renderStats();
+  showToast('규칙 저장됨');
+}
+
+// ── 활성/비활성 토글 ──
 async function toggleEnabled(id, enabled) {
   const {error} = await sb.from('tq_rules').update({enabled}).eq('id',id);
   if (error) { showToast('토글 실패',true); return; }
@@ -271,34 +515,34 @@ async function toggleEnabled(id, enabled) {
   showToast(enabled?'활성화됨':'비활성화됨');
 }
 
-// Condition modal
-function openCondModal(id) {
-  editingCondId = id;
+// ── 삭제 ──
+async function deleteRule(id) {
   const r = allRules.find(x=>x.id===id);
-  document.getElementById('condEditor').value = JSON.stringify(r?.conditions||{}, null, 2);
-  document.getElementById('condModal').classList.add('show');
-}
-function closeCondModal() { document.getElementById('condModal').classList.remove('show'); editingCondId=null; }
-
-async function saveConditions() {
-  const raw = document.getElementById('condEditor').value;
-  let cond;
-  try { cond = JSON.parse(raw); } catch(e) { showToast('JSON 형식 오류',true); return; }
-  const {error} = await sb.from('tq_rules').update({conditions:cond}).eq('id',editingCondId);
-  if (error) { showToast('조건 저장 실패',true); return; }
-  const r = allRules.find(x=>x.id===editingCondId); if(r) r.conditions=cond;
-  closeCondModal();
+  if (!confirm(`규칙 "${r?.rule_id}"을(를) 삭제하시겠습니까?`)) return;
+  const {error} = await sb.from('tq_rules').delete().eq('id',id);
+  if (error) { showToast('삭제 실패',true); return; }
+  allRules = allRules.filter(x=>x.id!==id);
+  if (editingId === id) { editingId=null; editBuf={}; }
+  renderStats();
+  renderTabs();
   renderTable();
-  showToast('조건 저장됨');
+  showToast('규칙 삭제됨');
 }
 
-// Add rule modal
+// ── 규칙 추가 모달 ──
 function openAddModal() {
   document.getElementById('addModalTitle').textContent = `규칙 추가 — ${currentArea}) ${AREAS.find(a=>a.id===currentArea)?.name}`;
-  document.getElementById('addRuleId').value='';
-  document.getElementById('addTag').value='보통';
-  document.getElementById('addMsg').value='';
-  document.getElementById('addCond').value='{}';
+  document.getElementById('addRuleId').value = '';
+  document.getElementById('addTag').value = '보통';
+  document.getElementById('addMsg').value = '';
+  document.getElementById('addCondExtra').value = '{}';
+
+  // 조건 입력 그리드 생성
+  const grid = document.getElementById('addCondGrid');
+  grid.innerHTML = COND_COLS.map(c =>
+    `<div><label>${c.label}</label><input id="addC_${c.key.replace(/\./g,'_')}" data-col="${c.key}" placeholder="-"></div>`
+  ).join('');
+
   document.getElementById('addModal').classList.add('show');
 }
 function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
@@ -307,16 +551,32 @@ async function saveNewRule() {
   const ruleId = document.getElementById('addRuleId').value.trim();
   const tag = document.getElementById('addTag').value;
   const message = document.getElementById('addMsg').value.trim();
-  const condRaw = document.getElementById('addCond').value;
   if (!ruleId || !message) { showToast('Rule ID와 메시지를 입력하세요',true); return; }
-  let conditions;
-  try { conditions = JSON.parse(condRaw); } catch(e) { showToast('JSON 형식 오류',true); return; }
+
+  // 조건 빌드
+  const conditions = {};
+
+  // 기타 조건
+  const extraRaw = document.getElementById('addCondExtra').value.trim();
+  if (extraRaw && extraRaw !== '{}') {
+    try { Object.assign(conditions, JSON.parse(extraRaw)); } catch(e) { showToast('기타 조건 JSON 오류',true); return; }
+  }
+
+  // COND_COLS
+  COND_COLS.forEach(c => {
+    const el = document.getElementById('addC_'+c.key.replace(/\./g,'_'));
+    const v = el ? el.value.trim() : '';
+    if (v && v !== '-') setCondVal(conditions, c.key, v);
+  });
+
   const existing = allRules.filter(r=>r.area===currentArea);
   const maxSort = existing.length > 0 ? Math.max(...existing.map(r=>r.sort_order||0)) : 0;
   const areaName = AREAS.find(a=>a.id===currentArea)?.name || '';
+
   const {data, error} = await sb.from('tq_rules').insert({
     area:currentArea, area_name:areaName, rule_id:ruleId, tag, message, conditions, sort_order:maxSort+1, enabled:true
   }).select();
+
   if (error) { showToast('추가 실패: '+error.message,true); return; }
   if (data && data[0]) allRules.push(data[0]);
   closeAddModal();
@@ -326,20 +586,7 @@ async function saveNewRule() {
   showToast('규칙 추가됨');
 }
 
-// Delete
-async function deleteRule(id) {
-  const r = allRules.find(x=>x.id===id);
-  if (!confirm(`규칙 "${r?.rule_id}"을(를) 삭제하시겠습니까?`)) return;
-  const {error} = await sb.from('tq_rules').delete().eq('id',id);
-  if (error) { showToast('삭제 실패',true); return; }
-  allRules = allRules.filter(x=>x.id!==id);
-  renderStats();
-  renderTabs();
-  renderTable();
-  showToast('규칙 삭제됨');
-}
-
-// Toast
+// ── Toast ──
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -347,7 +594,7 @@ function showToast(msg, isError) {
   setTimeout(()=>{ t.className='toast'; },2500);
 }
 
-// Close modals on overlay click
+// ── 모달 오버레이 클릭으로 닫기 ──
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
 });
