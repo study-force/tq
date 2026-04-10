@@ -230,8 +230,7 @@ const TAG_LIST = ['강점','보통','주의','위험','_meta'];
 const COND_COLS = [
   {key:'flagC',            label:'모순패턴',   width:70},
   {key:'flagO',            label:'과부하',    width:60},
-  {key:'acc',              label:'독해정확도', width:80},
-  {key:'acc_max',          label:'정확도≤',   width:70},
+  {key:'acc',              label:'독해정확도', width:90},
   {key:'kv',               label:'국어성적',   width:70},
   {key:'spdGrade',         label:'속도등급',   width:70},
   {key:'voc',              label:'어휘',       width:60},
@@ -331,8 +330,9 @@ function getEtcConditions(conditions) {
   if (!conditions) return {};
   const etc = {};
   for (const k of Object.keys(conditions)) {
-    // COND_COLS에서 직접 key이거나 nested parent인 경우 제외
-    const isKnown = COND_COLS.some(c => c.key === k || c.key.startsWith(k+'.'));
+    // COND_COLS에서 직접 key이거나 nested parent이거나 _max인 경우 제외
+    const baseK = k.replace(/_max$/, '');
+    const isKnown = COND_COLS.some(c => c.key === k || c.key === baseK || c.key.startsWith(k+'.'));
     if (!isKnown) etc[k] = conditions[k];
   }
   return etc;
@@ -400,6 +400,9 @@ function renderTable() {
     // 조건 셀
     const condCells = COND_COLS.map(c => {
       const v = getCondVal(conds, c.key);
+      // _max 값 합쳐서 범위 표시 (acc_max가 별도 컬럼이면 건너뜀)
+      const maxKey = c.key + '_max';
+      const maxV = c.key.endsWith('_max') ? null : getCondVal(conds, maxKey);
       if (isEd) {
         const bufVal = editBuf.conds?.[c.key];
         const inputVal = bufVal !== undefined ? bufVal : (v !== undefined ? String(v) : '');
@@ -411,6 +414,10 @@ function renderTable() {
           </select></td>`;
         }
         return `<td><input class="cond-input" value="${esc(inputVal)}" data-col="${c.key}" oninput="updateEditCond(this)" placeholder="-"></td>`;
+      }
+      // _max가 있으면 범위로 합쳐서 표시
+      if (maxV && v) {
+        return `<td>${condBadge(v + ' ~ ' + maxV, c.key)}</td>`;
       }
       return `<td>${condBadge(v, c.key)}</td>`;
     }).join('');
@@ -428,9 +435,9 @@ function renderTable() {
       } else {
         const badges = etcKeys.map(k => {
           const v = typeof etc[k] === 'object' ? JSON.stringify(etc[k]) : String(etc[k]);
-          return `<span class="etc-badge" title="${esc(k)}:${esc(v)}">${esc(k)}</span>`;
-        }).join('');
-        etcCell = `<td>${badges}</td>`;
+          return `<span class="etc-badge" title="${esc(k)}:${esc(v)}">${esc(k)}:${esc(v)}</span>`;
+        }).join(' ');
+        etcCell = `<td style="max-width:200px">${badges}</td>`;
       }
     }
 
