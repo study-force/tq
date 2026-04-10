@@ -20,7 +20,7 @@ body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B;
 .layout { display:flex; min-height:100vh; }
 
 /* ── Sidebar ── */
-.sidebar { width:200px; background:#fff; border-right:1px solid #E2E8F0; flex-shrink:0; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; }
+.sidebar { width:200px; background:#fff; border-right:1px solid #E2E8F0; flex-shrink:0; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; z-index:100; }
 .sidebar-header { padding:20px 16px 12px; border-bottom:1px solid #E2E8F0; }
 .sidebar-header h1 { font-size:18px; font-weight:700; color:#1E293B; }
 .sidebar-header h1 span { color:#3B82F6; }
@@ -85,9 +85,10 @@ body { font-family:'Noto Sans KR',sans-serif; background:#F8FAFC; color:#1E293B;
 /* ── Table ── */
 .dt-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 table.dt { width:100%; border-collapse:collapse; background:#fff; min-width:1200px; }
-table.dt thead th { background:#F8FAFC; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid #E2E8F0; border-right:1px solid #F1F5F9; white-space:nowrap; position:sticky; top:0; z-index:10; }
-table.dt thead th.grp-cond { background:#EFF6FF; color:#3B82F6; font-size:12px; letter-spacing:.03em; border-bottom:1px solid #BFDBFE; position:sticky; top:0; z-index:11; }
-table.dt thead tr:nth-child(2) th { top:28px; }
+table.dt thead th { background:#F8FAFC; padding:8px 6px; text-align:center; font-size:11px; font-weight:600; color:#64748B; border-bottom:1px solid #E2E8F0; border-right:1px solid #F1F5F9; white-space:nowrap; position:sticky; z-index:5; }
+table.dt thead tr:first-child th { top:0; }
+table.dt thead tr:nth-child(2) th { top:33px; }
+table.dt thead th.grp-cond { background:#EFF6FF; color:#3B82F6; font-size:12px; letter-spacing:.03em; border-bottom:1px solid #BFDBFE; }
 table.dt thead th.grp-etc { background:#F8FAFC; }
 table.dt tbody tr { border-bottom:1px solid #F1F5F9; transition:background .15s; }
 table.dt tbody tr:hover { background:#F8FAFC; }
