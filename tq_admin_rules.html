@@ -178,12 +178,33 @@ table.dt td.text-cell { text-align:left; font-size:12px; line-height:1.5; white-
   <div class="main">
     <div class="toolbar">
       <div style="font-size:14px;color:#64748B;font-weight:600" id="areaTitle"></div>
-      <button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="syncBtn" class="btn" style="display:none;background:#F59E0B;color:#fff;font-size:12px" onclick="openSyncModal()">🔄 Production 동기화</button>
+        <button class="btn btn-primary" onclick="openAddModal()">+ 규칙 추가</button>
+      </div>
     </div>
     <div id="tableWrap"><div class="loading">로딩 중...</div></div>
   </div>
 </div>
 
+</div>
+
+<!-- Production 동기화 모달 -->
+<div class="modal-overlay" id="syncModal">
+  <div class="modal" style="max-width:400px">
+    <h3 style="color:#D97706">🔄 Production 동기화</h3>
+    <p style="font-size:13px;color:#64748B;margin:12px 0;line-height:1.6">
+      dev DB의 <strong>전체 규칙</strong>을 production DB에 반영합니다.<br>
+      기존 production 규칙은 <strong style="color:#DC2626">덮어씌워집니다.</strong>
+    </p>
+    <label>확인 비밀번호</label>
+    <input type="password" id="syncPassword" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')confirmSync()">
+    <div id="syncError" style="color:#DC2626;font-size:12px;margin-top:6px;display:none">비밀번호가 틀렸습니다.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSyncModal()">취소</button>
+      <button class="btn" style="background:#F59E0B;color:#fff" onclick="confirmSync()">동기화 실행</button>
+    </div>
+  </div>
 </div>
 
 <!-- 규칙 추가 모달 -->
@@ -673,6 +694,54 @@ function showToast(msg, isError) {
   t.textContent = msg;
   t.className = 'toast show' + (isError?' error':'');
   setTimeout(()=>{ t.className='toast'; },2500);
+}
+
+// ── Production 동기화 ──
+const SYNC_PASSWORD = 'asdf1234';
+const PROD_URL = 'https://dtktaemqssvglwgvttqq.supabase.co';
+const PROD_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0a3RhZW1xc3N2Z2x3Z3Z0dHFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyODM2NTYsImV4cCI6MjA4OTg1OTY1Nn0.58A9OkM7A4XrBvzF8EFUYhTobKzZ8yRdmysxZOL1P8E';
+
+function openSyncModal() {
+  document.getElementById('syncPassword').value = '';
+  document.getElementById('syncError').style.display = 'none';
+  document.getElementById('syncModal').classList.add('show');
+  setTimeout(()=>document.getElementById('syncPassword').focus(), 100);
+}
+function closeSyncModal() {
+  document.getElementById('syncModal').classList.remove('show');
+}
+async function confirmSync() {
+  const pw = document.getElementById('syncPassword').value;
+  if (pw !== SYNC_PASSWORD) {
+    document.getElementById('syncError').style.display = 'block';
+    return;
+  }
+  closeSyncModal();
+  showToast('동기화 중...');
+  try {
+    // dev에서 전체 규칙 읽기
+    const { data: devRules, error: fetchErr } = await sb.from('tq_rules').select('*').order('id');
+    if (fetchErr) throw fetchErr;
+
+    // production Supabase 클라이언트
+    const sbProd = window.supabase.createClient(PROD_URL, PROD_KEY);
+
+    // production에 upsert
+    const { error: upsertErr } = await sbProd.from('tq_rules').upsert(devRules, { onConflict: 'rule_id' });
+    if (upsertErr) throw upsertErr;
+
+    showToast(`✅ ${devRules.length}개 규칙이 production에 반영됐습니다`);
+  } catch(e) {
+    showToast('동기화 실패: ' + e.message, true);
+  }
+}
+
+// dev 환경일 때만 동기화 버튼 노출
+if (_isDev) {
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const btn = document.getElementById('syncBtn');
+    if (btn) btn.style.display = '';
+  });
 }
 
 // ── 모달 오버레이 클릭으로 닫기 ──
