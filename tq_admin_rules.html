@@ -219,8 +219,13 @@ table.dt td.text-cell { text-align:left; font-size:12px; line-height:1.5; white-
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = "https://dtktaemqssvglwgvttqq.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0a3RhZW1xc3N2Z2x3Z3Z0dHFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyODM2NTYsImV4cCI6MjA4OTg1OTY1Nn0.58A9OkM7A4XrBvzF8EFUYhTobKzZ8yRdmysxZOL1P8E";
+const _isDev = /vercel\.app|localhost|dev\.tq\.sfcenter\.co\.kr/.test(location.hostname);
+const SUPABASE_URL = _isDev
+  ? "https://wkwtwlxlrgcozqtkleft.supabase.co"
+  : "https://dtktaemqssvglwgvttqq.supabase.co";
+const SUPABASE_KEY = _isDev
+  ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrd3R3bHhscmdjb3pxdGtsZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjEzOTksImV4cCI6MjA5MTkzNzM5OX0.sPsMyR0KzZkr-mzoPc8McrFcPMMlsiikZ79I3w8H6nc"
+  : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0a3RhZW1xc3N2Z2x3Z3Z0dHFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyODM2NTYsImV4cCI6MjA4OTg1OTY1Nn0.58A9OkM7A4XrBvzF8EFUYhTobKzZ8yRdmysxZOL1P8E";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AREAS = [

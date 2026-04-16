@@ -764,9 +764,12 @@ function printReport() {
 window.printReport = printReport;
 
 // ══════════════════════════════════════════════════════
-// ★ 배포 설정 — 이 두 줄만 수정하면 됩니다 ★
+// ★ 배포 설정 — 환경 자동 감지 (dev/production) ★
 // ══════════════════════════════════════════════════════
-var TQ_API_URL   = "https://dtktaemqssvglwgvttqq.supabase.co/functions/v1/tq-engine";
+var _isDev = /vercel\.app|localhost|dev\.tq\.sfcenter\.co\.kr/.test(location.hostname);
+var TQ_API_URL   = _isDev
+  ? "https://wkwtwlxlrgcozqtkleft.supabase.co/functions/v1/tq-engine"
+  : "https://dtktaemqssvglwgvttqq.supabase.co/functions/v1/tq-engine";
 var TQ_API_TOKEN = "sf_internal_2024";
 
 // ── 설정 검증 ──
