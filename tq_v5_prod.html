@@ -6523,15 +6523,29 @@ function buildLastPage(total, activeKeysOverride) {
   var showMolipTrack = !!(D.flagMolip || D.flagMolipRequired);
   var molipKeys = showMolipTrack ? buildMolipActiveKeys(activeKeys) : null;
   var gradeThresholdKey = (function(){
+    // D.grade는 학교 내 학년(초:1~6, 중:1~3, 고:1~3), D.level은 학제 분류
     var g = parseInt(D.grade,10); if (isNaN(g)) g = 0;
     var lv = D.uiLevel || D.level || '';
-    if (lv === '초저' || (g >= 1 && g <= 3)) return "초급기본과정";
-    if (lv === '초고' || (g >= 4 && g <= 6)) return "초급심화과정";
-    if (g === 7)              return "중급기본과정";
-    if (g === 8 || g === 9)   return "중급심화과정";
-    if (g === 10)             return "고급기본과정";
-    if (g >= 11)              return "고급심화과정";
-    return "고급심화과정"; // N수생·일반 등 학년 미상
+    // 학제 정규화 (초저/초고/초등 → 초등)
+    var lvNorm = (lv === '초저' || lv === '초고') ? '초등' : lv;
+    if (lv === '초저') return "초급기본과정";
+    if (lv === '초고') return "초급심화과정";
+    if (lvNorm === '초등') {
+      if (g >= 1 && g <= 3) return "초급기본과정";
+      if (g >= 4 && g <= 6) return "초급심화과정";
+      return "초급심화과정";
+    }
+    if (lvNorm === '중등') {
+      if (g === 1)            return "중급기본과정"; // 중1
+      if (g === 2 || g === 3) return "중급심화과정"; // 중2,3
+      return "중급심화과정";
+    }
+    if (lvNorm === '고등') {
+      if (g === 1)            return "고급기본과정"; // 고1
+      if (g === 2 || g === 3) return "고급심화과정"; // 고2,3
+      return "고급심화과정";
+    }
+    return "고급심화과정"; // N수생·일반 등 학년 미상 안전 기본값
   })();
   var gradeThresholdIdx = -1;
   for (var _gi=0; _gi<allSteps.length; _gi++) {
