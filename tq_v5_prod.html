@@ -3130,8 +3130,8 @@ function rpBuildResultHTML(eng, inp) {
     var d = new Date(); return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
   })();
 
-  var fct      = inp.fact_score  > 0 ? inp.fact_score  : eng.acc;
-  var str_     = inp.structure_score  > 0 ? inp.structure_score  : eng.acc;
+  var fct      = (inp.fact_score !== undefined && inp.fact_score !== null) ? inp.fact_score : eng.acc;
+  var str_     = (inp.structure_score !== undefined && inp.structure_score !== null) ? inp.structure_score : eng.acc;
   var avgAcc   = Math.round((fct + str_) / 2);
   var _spdRaw = (inp&&inp.reading_score)||(eng&&eng.spd)||0;
   var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
