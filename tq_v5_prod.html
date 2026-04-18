@@ -6502,8 +6502,14 @@ function buildLastPage(total, activeKeysOverride) {
       +'</div>';
   }).join('');
 
+  // 몰입/특목 안내 영역은 페이지가 잘리는 문제로 별도 페이지(다음 장)로 분리
+  var hasExtras = !!(D.flagMolip || D.flagTeukmok);
+  // total 입력은 외부에서 5(또는 hasExtras시 6)로 들어옴. 로드맵 페이지 자체 번호:
+  var roadmapPageNum = hasExtras ? (total - 1) : total;
+
   var div = document.createElement('div');
   div.className = 'page';
+  div.setAttribute('data-rpt-section', 'roadmap');
   div.innerHTML =
     '<div style="background:#666666;border-bottom:2px solid '+accentColor+';padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
     +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);letter-spacing:0.8px;margin-bottom:2px;font-family:\'Noto Sans KR\',sans-serif;">RECOMMENDED TRAINING ROADMAP</div>'
@@ -6525,28 +6531,45 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="font-size:11.5px;color:#94A3B8;line-height:2.0;text-align:center;font-family:\'Noto Sans KR\',sans-serif;word-break:keep-all;">'
     +''
     +'<span style="color:#64748B;font-weight:600;">★ 독해력은 공부가 심화되는 고등학교 진학 후에 더 큰 영향을 미치기 때문에<br>중학교 졸업 전에 고급과정을 마치는 것을 최종 목표로 삼아야 합니다.</span>'
+    +(hasExtras ? '<br><br><span style="color:#94A3B8;font-size:10.5px;font-weight:500;">▸ 몰입훈련 / 특목자사고 안내는 다음 페이지에 이어집니다.</span>' : '')
     +'</div>'
     +'</div>'
     +'</div>'
     +'</div>'
+    +'</div>'
+    +buildFooter(roadmapPageNum, total);
+
+  if (!hasExtras) return div;
+
+  // ── 별도 페이지: 몰입훈련 / 특목 안내 ──
+  var extras = document.createElement('div');
+  extras.className = 'page';
+  extras.setAttribute('data-rpt-section', 'roadmap');
+  extras.innerHTML =
+    '<div style="background:#666666;border-bottom:2px solid #F97316;padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
+    +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);letter-spacing:0.8px;margin-bottom:2px;font-family:\'Noto Sans KR\',sans-serif;">SUPPLEMENTARY TRAINING GUIDE</div>'
+    +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">추가 훈련 안내</div>'
+    +'</div>'
+    +'<div style="height:3px;background:linear-gradient(90deg,#F97316 0%,#7C3AED 100%);flex-shrink:0;"></div>'
+    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:18px;min-height:0;">'
     +(D.flagMolip ? (
-      '<div style="margin:16px 72px 0;border:1px solid #F97316;border-radius:10px;overflow:hidden;">'
-      +'<div style="background:#F97316;padding:10px 20px;display:flex;align-items:center;gap:8px;">'
-      +'<span style="font-size:14px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">⚡ 몰입훈련 안내'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
+      '<div style="border:1px solid #F97316;border-radius:10px;overflow:hidden;">'
+      +'<div style="background:#F97316;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
+      +'<span style="font-size:15px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">⚡ 몰입훈련 안내'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
       +'</div>'
-      +'<div style="padding:16px 20px;background:#fff;">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">'
-      +'<div style="border-right:1px solid rgba(249,115,22,.15);padding-right:20px;">'
-      +'<div style="font-size:10px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">훈련 방법</div>'
-      +'<div style="font-size:12px;color:#374151;line-height:1.8;font-family:Noto Sans KR,sans-serif;">'
+      +'<div style="padding:20px 22px;background:#fff;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;">'
+      +'<div style="border-right:1px solid rgba(249,115,22,.15);padding-right:24px;">'
+      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법</div>'
+      +'<div style="font-size:12.5px;color:#374151;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'<strong>시간</strong> — 1일 4~6시간, 주 5회<br>'
       +'<strong>기간</strong> — 2~3개월 소요<br>'
       +'· 예비과정: 1일 1개<br>'
       +'· 그 외 기초 과정: 1일 5~10개 집중 진행'
       +'</div></div>'
       +'<div style="padding-left:4px;">'
-      +'<div style="font-size:10px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
-      +'<div style="font-size:12px;color:#475569;line-height:1.8;font-family:Noto Sans KR,sans-serif;">'
+      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
+      +'<div style="font-size:12.5px;color:#475569;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'또래 수준의 역량 회복 기간을 최대한 단축<br>'
       +'· 노트 없이 발문 수업 1일 2~3개 읽고 바로 발표<br>'
       +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong>'
@@ -6554,35 +6577,37 @@ function buildLastPage(total, activeKeysOverride) {
       +'</div></div></div>'
     ) : '')
     +(D.flagTeukmok ? (
-      '<div style="margin:16px 72px 0;border:1px solid #7C3AED;border-radius:10px;overflow:hidden;">'
-      +'<div style="background:#7C3AED;padding:10px 20px;display:flex;align-items:center;gap:8px;">'
-      +'<span style="font-size:14px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">🎯 특목자사고 대비 역량강화 프로그램</span>'
+      '<div style="border:1px solid #7C3AED;border-radius:10px;overflow:hidden;">'
+      +'<div style="background:#7C3AED;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
+      +'<span style="font-size:15px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">🎯 특목자사고 대비 역량강화 프로그램</span>'
       +'</div>'
-      +'<div style="padding:16px 20px;background:#fff;">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">'
-      +'<div style="border-right:1px solid rgba(124,58,237,.15);padding-right:20px;">'
-      +'<div style="font-size:10px;font-weight:700;color:#7C3AED;letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">목표</div>'
-      +'<div style="font-size:12px;color:#374151;line-height:1.8;font-family:Noto Sans KR,sans-serif;">'
+      +'<div style="padding:20px 22px;background:#fff;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;">'
+      +'<div style="border-right:1px solid rgba(124,58,237,.15);padding-right:24px;">'
+      +'<div style="font-size:10.5px;font-weight:700;color:#7C3AED;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">목표</div>'
+      +'<div style="font-size:12.5px;color:#374151;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'중학교 졸업 전 <strong>고급심화과정 완성</strong><br>'
       +'고등 진학 후 학습역량 압도적 우위 확보'
       +'</div></div>'
       +'<div style="padding-left:4px;">'
-      +'<div style="font-size:10px;font-weight:700;color:#7C3AED;letter-spacing:1.2px;margin-bottom:6px;font-family:Noto Sans KR,sans-serif;">권장 사항</div>'
-      +'<div style="font-size:12px;color:#475569;line-height:1.8;font-family:Noto Sans KR,sans-serif;">'
+      +'<div style="font-size:10.5px;font-weight:700;color:#7C3AED;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">권장 사항</div>'
+      +'<div style="font-size:12.5px;color:#475569;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'일반 수강보다 빠른 진행 권장<br>'
       +'심화 어휘·추론 병행 훈련 필요'
       +'</div></div>'
       +'</div></div></div>'
     ) : '')
-    +((D.flagMolip||D.flagTeukmok) ? (
-      '<div style="margin:12px 72px 0;background:#F8FAFC;padding:10px 18px;border-radius:6px;border:1px solid #E2E8F0;">'
-      +'<div style="font-size:11px;color:#475569;line-height:1.7;font-family:Noto Sans KR,sans-serif;">'
-      +'💡 <strong>공통</strong> — 전 과목에 영향을 미치는 독해력 향상이 최우선 해결 과제입니다.'
-      +'</div></div>'
-    ) : '')
+    +'<div style="margin-top:auto;background:#F8FAFC;padding:14px 22px;border-radius:8px;border:1px solid #E2E8F0;">'
+    +'<div style="font-size:12px;color:#475569;line-height:1.8;font-family:Noto Sans KR,sans-serif;">'
+    +'💡 <strong>공통</strong> — 전 과목에 영향을 미치는 독해력 향상이 최우선 해결 과제입니다.'
+    +'</div></div>'
     +'</div>'
     +buildFooter(total, total);
-  return div;
+
+  var frag = document.createDocumentFragment();
+  frag.appendChild(div);
+  frag.appendChild(extras);
+  return frag;
 }
 
 // ── 렌더링 — 로드맵을 1번째로 ──
@@ -6906,10 +6931,18 @@ function applyEdit() {
   currentCourseCode = _mc;
 
   // 4. 리포트 로드맵 페이지 재렌더 (rptPageWrap에 children 있으면)
+  //    buildLastPage가 1~2개의 .page를 반환할 수 있으므로
+  //    data-rpt-section="roadmap"으로 표시된 기존 페이지를 모두 제거 후 재추가
   var wrap = document.getElementById('rptPageWrap');
   if (wrap && wrap.children.length > 0) {
-    var newPage = buildLastPage(TOTAL, currentActiveKeys.slice());
-    wrap.replaceChild(newPage, wrap.lastChild);
+    var oldRoadmapPages = wrap.querySelectorAll('[data-rpt-section="roadmap"]');
+    var hasExtrasNow = !!(D && (D.flagMolip || D.flagTeukmok));
+    var TOTAL_RM = hasExtrasNow ? 6 : 5;
+    var newPages = buildLastPage(TOTAL_RM, currentActiveKeys.slice());
+    for (var _i=0; _i<oldRoadmapPages.length; _i++) {
+      oldRoadmapPages[_i].parentNode.removeChild(oldRoadmapPages[_i]);
+    }
+    wrap.appendChild(newPages);
   }
 
   // 5. 편집바 재렌더 (editBar가 DOM에 있으면)
@@ -7033,8 +7066,9 @@ function renderReportTab() {
   wrap.style.padding = '28px 16px 60px';
   if (placeholder) placeholder.style.display = 'none';
 
-  // 페이지 빌드
-  var TOTAL = 5;
+  // 페이지 빌드 — 몰입/특목 안내가 있으면 별도 페이지로 분리되어 TOTAL이 6이 됨
+  var hasRoadmapExtras = !!(D && (D.flagMolip || D.flagTeukmok));
+  var TOTAL = hasRoadmapExtras ? 6 : 5;
   try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
   try { wrap.appendChild(buildAnalysisPage(2, TOTAL)); } catch(e){ console.error('[buildAnalysisPage]', e); }
   try { wrap.appendChild(buildDualSlotPage(1, 2, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
