@@ -6560,27 +6560,13 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">권장훈련 로드맵</div>'
     +'</div>'
     +'<div style="height:3px;background:linear-gradient(90deg,'+accentColor+' 0%,'+STEP_COLORS[0]+' 100%);flex-shrink:0;"></div>'
-    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:14px;min-height:0;">'
-    +(showMolipTrack
-      ? '<div style="font-size:16px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:4px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 <strong>두 가지 훈련 트랙</strong>을 제안합니다.</div>'
-      : '<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.</div>'
-    )
-    // ── 일반 트랙 ──
-    +(showMolipTrack
-      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;"><span style="font-size:12px;font-weight:700;color:#475569;font-family:Noto Sans KR,sans-serif;background:#F1F5F9;padding:3px 10px;border-radius:4px;">🐢 일반 훈련</span><span style="font-size:11px;color:#64748B;font-family:Noto Sans KR,sans-serif;">주 2~3회 정규 수업 진도</span></div>'
-      : '')
-    +'<div style="padding:'+(showMolipTrack?'0':'4px 0 0')+';">'
+    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
+    +'<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.'
+    +(showMolipTrack ? '<div style="font-size:11.5px;color:#7C3AED;margin-top:6px;font-weight:500;">⚡ 몰입 훈련 트랙은 다음 페이지에서 별도로 안내합니다.</div>' : '')
+    +'</div>'
+    +'<div style="padding:4px 0 0;">'
     +svgHtml
     +'</div>'
-    // ── 몰입 트랙 ──
-    +(showMolipTrack
-      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><span style="font-size:12px;font-weight:700;color:#fff;background:#7C3AED;font-family:Noto Sans KR,sans-serif;padding:3px 10px;border-radius:4px;">⚡ 몰입 훈련'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span><span style="font-size:11px;color:#64748B;font-family:Noto Sans KR,sans-serif;">1일 4~6시간 · 주 5회 단기 집중</span></div>'
-      +'<div style="padding:0;">'
-      +molipSvgHtml
-      +'</div>'
-      +'<div style="font-size:10.5px;color:#7C3AED;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:-4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong> · 약 2~3개월(학생/집중시간별 차이)</div>'
-      +'<div style="font-size:11.5px;color:#475569;background:#FAF5FF;border-left:3px solid #7C3AED;padding:8px 14px;border-radius:4px;line-height:1.65;font-family:Noto Sans KR,sans-serif;word-break:keep-all;">몰입 훈련은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 누적 속도로 빠르게 단계를 올립니다. 일반 훈련 대비 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.</div>'
-      : '')
     +'<div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'    +'<div style="font-size:11px;color:#94A3B8;letter-spacing:1.8px;font-family:\'Noto Sans KR\',sans-serif;">훈련 목표 &amp; 권장 이유</div>'    +'<div style="font-size:10px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;">훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다.</div>'    +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:12px;">'+detailCards+'</div>'
@@ -6611,7 +6597,23 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">추가 훈련 안내</div>'
     +'</div>'
     +'<div style="height:3px;background:linear-gradient(90deg,#F97316 0%,#7C3AED 100%);flex-shrink:0;"></div>'
-    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:18px;min-height:0;">'
+    +'<div style="flex:1;background:#fff;padding:36px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
+    // ── 몰입 트랙 chevron (별도 페이지) ──
+    +(showMolipTrack ? (
+      '<div style="border:1px solid #E2D5F7;border-radius:10px;background:#FAF5FF;padding:18px 22px;">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+      +'<span style="font-size:13px;font-weight:700;color:#fff;background:#7C3AED;font-family:Noto Sans KR,sans-serif;padding:4px 12px;border-radius:4px;">⚡ 몰입 훈련 권장 트랙'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
+      +'<span style="font-size:11.5px;color:#64748B;font-family:Noto Sans KR,sans-serif;">1일 4~6시간 · 주 5회 단기 집중</span>'
+      +'</div>'
+      +'<div style="padding:2px 0 0;">'
+      +molipSvgHtml
+      +'</div>'
+      +'<div style="font-size:10.5px;color:#7C3AED;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong></div>'
+      +'<div style="font-size:11.5px;color:#475569;background:#fff;border-left:3px solid #7C3AED;padding:10px 14px;border-radius:4px;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;margin-top:10px;">'
+      +'<strong>일반 훈련</strong>은 학생 학년에 맞춰 시작 난이도를 정하고 정규 진도(주 2~3회)로 진행합니다. 반면 <strong>몰입 훈련</strong>은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 1일 5~10개씩 누적 속도로 단계를 올립니다. 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.'
+      +'</div>'
+      +'</div>'
+    ) : '')
     +(D.flagMolip ? (
       '<div style="border:1px solid #F97316;border-radius:10px;overflow:hidden;">'
       +'<div style="background:#F97316;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
