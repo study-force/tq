@@ -6232,6 +6232,16 @@ var COURSES = {
 
 // ── 학년·수준별 코스 추천 함수 ──
 function recommendCourse(level, grade, acc, kor) {
+  // 입력 정규화 — 컴퓨터 간 추천 차이 방지
+  // level: "초저"/"초고" → "초등" (엔진 내부 분리 학제명을 UI 학제명으로 환원)
+  var _lvNorm = {"초저":"초등","초고":"초등","초등(저)":"초등","초등(고)":"초등",
+                 "초등":"초등","중등":"중등","고등":"고등","N수생":"고등","일반":"일반"};
+  level = _lvNorm[level] || level || "";
+  // grade: 문자열 "1" 등을 숫자로 강제 (=== 비교가 실패하지 않도록)
+  grade = parseInt(grade, 10);
+  if (isNaN(grade)) grade = 0;
+  acc   = Number(acc) || 0;
+
   var SMAP = {"90점 이상":90,"80~89점":80,"70~79점":70,"60~69점":60,"60점 미만":50,
               "1등급":90,"2등급":80,"3등급":70,"4등급":60,"5등급 이하":50,
               "매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null};
@@ -6273,6 +6283,10 @@ function recommendCourse(level, grade, acc, kor) {
     if (lev === "하") return "PK09";
     return "PK10";
   }
+  // 알 수 없는 학제일 때도 학년 기반 안전 폴백 (저학년이 중급1을 받지 않도록)
+  if (grade > 0 && grade <= 3)  return "PK06_1"; // 초저
+  if (grade >= 4 && grade <= 6) return "PK06";   // 초고 보수적
+  if (grade >= 7 && grade <= 9) return "PK07";   // 중등 보수적
   return "PK08";
 }
 
