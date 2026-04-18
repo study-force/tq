@@ -205,7 +205,7 @@ input[type=range]{width:100%;accent-color:var(--purple);cursor:pointer;height:4p
 .chk-item input[type=checkbox]{accent-color:#EF4444;margin-top:2px;cursor:pointer;flex-shrink:0;}
 .chk-item span{font-size:11.5px;color:#475569;line-height:1.5}
 .chk-item:has(input:checked){background:#FEF2F2}
-.chk-item:has(input:checked) span{color:#DC2626;font-weight:600}
+.chk-item:has(input:checked) span{color:#B85060;font-weight:600}
 
 .err{display:none;margin-top:8px;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:var(--r-sm);font-size:12px;color:var(--danger);line-height:1.6;}
 .ocr-zone{border:1.5px dashed rgba(139,92,246,.25);border-radius:var(--r);padding:12px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px;background:rgba(139,92,246,.03);}
@@ -1388,7 +1388,7 @@ const UC={"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
 const UBG={"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
 const SC=["#1E40AF","#0BA98E","#B45309","#7C3AED"];
 const FL={acc:"독해정확도",inf:"추론능력",voc:"어휘능력",wm:"워킹메모리",hab:"독해습관",eff:"독해효율성"};
-function ibc(v){return v>=.7?"#DC2626":v>=.4?"#D97706":"#0BA98E";}
+function ibc(v){return v>=.7?"#B85060":v>=.4?"#D97706":"#0BA98E";}
 function badge(lb,on,bg,tx,bd){
   var _bg=on?bg:'var(--surface2)';
   var _tx=on?tx:'var(--text-muted)';
@@ -1399,12 +1399,12 @@ function badge(lb,on,bg,tx,bd){
 
 
 function renderEvidence(evidence){
-  var dotColor={"강점":"#0BA98E","보통":"#8E9BB0","주의":"#D97706","위험":"#DC2626"};
+  var dotColor={"강점":"#0BA98E","보통":"#8E9BB0","주의":"#D97706","위험":"#B85060"};
   var tagStyle={
     "강점":"background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7",
     "보통":"background:#F1F5F9;color:#475569;border:1px solid #CBD5E1",
     "주의":"background:#FEF3C7;color:#92400E;border:1px solid #FDE68A",
-    "위험":"background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5"
+    "위험":"background:#FEE2E2;color:#B85060;border:1px solid #FCA5A5"
   };
 
   var header='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)">'
@@ -1462,7 +1462,7 @@ function renderResult(e,nm){
 
   const defH=(!e.def||e.def.length===0)
     ?`<p style="font-size:11px;color:var(--good)">주요 결손 없음 ✓</p>`
-    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#DC2626;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
+    :(e.def||[]).map(d=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:5px"><div class="dot" style="background:#B85060;margin-top:5px"></div><span style="font-size:11px">${d}</span></div>`).join("");
 
   const prescH=(!e.presc||e.presc.length===0)
     ?`<p style="font-size:11px;color:var(--good)">종합 역량 유지 ✓</p>`
@@ -2114,7 +2114,7 @@ function showFeedbackToast(msg, isErr) {
   var t = document.createElement('div');
   t.textContent = msg;
   t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);'
-    + 'background:' + (isErr ? '#DC2626' : '#059669') + ';color:#fff;'
+    + 'background:' + (isErr ? '#B85060' : '#059669') + ';color:#fff;'
     + 'padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;'
     + 'z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.25);'
     + 'animation:tq-fadein .3s ease both';
@@ -3585,7 +3585,7 @@ gv("btnR").addEventListener("click",openReport);
       <tr><td class="bv-var">inf</td><td>추론능력</td><td class="bv-vals">35, 40, 50, 60, 75</td><td style="font-size:11px;color:#4A5568">&lt;40 결손 / 40~49 낮음 / 50~59 보통하 / 60~74 보통 / ≥75 우수</td><td class="bv-cnt">15</td></tr>
       <tr><td class="bv-var">eff</td><td>독해효율성</td><td class="bv-vals">40, 60, 70, 80</td><td style="font-size:11px;color:#4A5568">&lt;40 심각 / 40~59 회의감 / 60~69 보통 / 70~79 양호 / ≥80 긍정</td><td class="bv-cnt">12</td></tr>
       <tr><td class="bv-var">kv<br><span style="font-size:9px;color:#9CA3AF">(정규화)</span></td><td>국어성적<br><span style="font-size:10px;color:#7A8CA0">학제별 입력 다름</span></td><td class="bv-vals" style="white-space:normal;line-height:1.8"><strong>초등:</strong> 노력요함→50 / 보통→70 / 잘함→80 / 매우잘함→90<br><strong>중등:</strong> 60미만→50 / 60~69→60 / 70~79→70 / 80~89→80 / 90↑→90<br><strong>고등:</strong> 5등급↓→50 / 4등급→60 / 3등급→70 / 2등급→80 / 1등급→90</td><td style="font-size:11px;color:#4A5568;line-height:1.9"><strong>최상위:</strong> kv≥90 / <strong>상위:</strong> kv≥80 / <strong>중위:</strong> kv≥70 / <strong>하위:</strong> kv≥60 / <strong>최하위:</strong> kv&lt;60</td><td class="bv-cnt">5</td></tr>
-      <tr><td class="bv-var">flagC</td><td>모순패턴</td><td class="bv-vals" style="color:#DC2626">kv ≥ 80 AND acc ≤ 30</td><td style="font-size:11px;color:#4A5568">두 변수 교차. 경계: acc=30/31, kv=79/80</td><td class="bv-cnt">4</td></tr>
+      <tr><td class="bv-var">flagC</td><td>모순패턴</td><td class="bv-vals" style="color:#B85060">kv ≥ 80 AND acc ≤ 30</td><td style="font-size:11px;color:#4A5568">두 변수 교차. 경계: acc=30/31, kv=79/80</td><td class="bv-cnt">4</td></tr>
       <tr><td class="bv-var">flagO</td><td>선행과부하</td><td class="bv-vals" style="color:#D97706">acc ≥ 60 AND eff ≤ 40</td><td style="font-size:11px;color:#4A5568">두 변수 교차. 경계: acc=59/60, eff=40/41</td><td class="bv-cnt">4</td></tr>
       <tr><td class="bv-var">habClass</td><td>음독분류</td><td class="bv-vals">없음 / 경미 / 보통 / 심함</td><td style="font-size:11px;color:#4A5568">체크박스 10개 → classifyHabits() → 4단계. 5번 항목 전체 좌우</td><td class="bv-cnt">4단계</td></tr>
       <tr><td class="bv-var">level×grade</td><td>학제·학년</td><td class="bv-vals">초3/4/5/6 중1/2/3 고1/2/3</td><td style="font-size:11px;color:#4A5568">spd 판정 기준 학제별 상이. 프로그램 추천 학년별 세분화</td><td class="bv-cnt">10</td></tr>
@@ -3666,11 +3666,11 @@ gv("btnR").addEventListener("click",openReport);
       <div style="display:flex;flex-direction:column;gap:5px">
         <div style="background:#E6F8F5;border:1px solid #7DD3C8;border-radius:5px;padding:5px 8px;font-size:10px;color:#065F46;text-align:center"><strong>기본유형·서브타입</strong><br>통합완성형 등 4유형</div>
         <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:5px;padding:5px 8px;font-size:10px;color:#92400E;text-align:center"><strong>플래그</strong><br>모순패턴·선행과부하</div>
-        <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:5px;padding:5px 8px;font-size:10px;color:#991B1B;text-align:center"><strong>긴급도</strong><br>즉각·조기·중장기</div>
+        <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:5px;padding:5px 8px;font-size:10px;color:#B85060;text-align:center"><strong>긴급도</strong><br>즉각·조기·중장기</div>
         <div style="background:#E0F2FE;border:1px solid #7DD3FC;border-radius:5px;padding:5px 8px;font-size:10px;color:#0369A1;text-align:center"><strong>처방 우선순위</strong><br>결손요인·인과경로</div>
         <div style="background:#EDE9FE;border:1px solid #C4B5FD;border-radius:5px;padding:5px 8px;font-size:10px;color:#5B21B6;text-align:center"><strong>9개 근거 카드</strong><br>강점·보통·주의·위험</div>
         <div style="background:#D1FAE5;border:1px solid #6EE7B7;border-radius:5px;padding:5px 8px;font-size:10px;color:#065F46;text-align:center"><strong>권장 프로그램</strong><br>학제·학년·acc 매핑</div>
-        <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:5px;padding:5px 8px;font-size:10px;color:#991B1B;text-align:center;font-weight:700">LLM 판독문<br>슬롯 ①②③④ 생성</div>
+        <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:5px;padding:5px 8px;font-size:10px;color:#B85060;text-align:center;font-weight:700">LLM 판독문<br>슬롯 ①②③④ 생성</div>
       </div>
     </div>
   </div>
@@ -3679,7 +3679,7 @@ gv("btnR").addEventListener("click",openReport);
   <div style="margin-top:16px;background:#F8FAFB;border:1px solid #ECF0F6;border-radius:8px;padding:10px 14px">
     <div style="font-size:10px;font-weight:700;color:#7A8CA0;margin-bottom:8px;letter-spacing:.3px">핵심 교차 변수 (전체 출력에 영향)</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-      <span style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;border-radius:10px;padding:2px 9px;font-size:10px;font-weight:600">acc 기준선</span>
+      <span style="background:#FEE2E2;color:#B85060;border:1px solid #FCA5A5;border-radius:10px;padding:2px 9px;font-size:10px;font-weight:600">acc 기준선</span>
       <span style="color:#9CA3AF;font-size:12px">→</span>
       <span style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:10px;padding:2px 9px;font-size:10px;font-weight:600">spd × level</span>
       <span style="color:#9CA3AF;font-size:12px">→</span>
@@ -3735,12 +3735,12 @@ gv("btnR").addEventListener("click",openReport);
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEF3C7;color:#92400E;text-align:center">음독심각도×<br>주의/위험</td>
       </tr>
       <tr>
-        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;font-weight:600;text-align:center">acc 低<br>(&lt;50)</td>
-        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;text-align:center">심각훑어읽기</td>
+        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;font-weight:600;text-align:center">acc 低<br>(&lt;50)</td>
+        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;text-align:center">심각훑어읽기</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEF3C7;color:#92400E;text-align:center">훑기경향주의</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEF3C7;color:#92400E;text-align:center">역량부족</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEF3C7;color:#92400E;text-align:center">훑어읽기</td>
-        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;text-align:center">빠름→훑기+음독<br>충돌 위험</td>
+        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;text-align:center">빠름→훑기+음독<br>충돌 위험</td>
       </tr>
     </tbody>
   </table>
@@ -3755,7 +3755,7 @@ gv("btnR").addEventListener("click",openReport);
         <td style="width:100px;border:1px solid #D8E0EC"></td>
         <th style="padding:5px 10px;border:1px solid #D8E0EC;background:#D1FAE5;color:#065F46;font-weight:600;text-align:center">acc ≥80</th>
         <th style="padding:5px 10px;border:1px solid #D8E0EC;background:#FEF9C3;color:#92400E;font-weight:600;text-align:center">acc 50~79</th>
-        <th style="padding:5px 10px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;font-weight:600;text-align:center">acc &lt;50</th>
+        <th style="padding:5px 10px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;font-weight:600;text-align:center">acc &lt;50</th>
       </tr>
     </thead>
     <tbody>
@@ -3763,7 +3763,7 @@ gv("btnR").addEventListener("click",openReport);
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#E0F2FE;color:#0369A1;font-weight:600;text-align:center">최상위(&gt;89)</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#F0FDF4;color:#166534;text-align:center">강점·안정</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEFCE8;color:#854D0E;text-align:center">노력으로유지</td>
-        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;text-align:center">암기스킬의존</td>
+        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;text-align:center">암기스킬의존</td>
       </tr>
       <tr>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#DBEAFE;color:#1D4ED8;font-weight:600;text-align:center">상위(&gt;74)</td>
@@ -3781,7 +3781,7 @@ gv("btnR").addEventListener("click",openReport);
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#F1F5F9;color:#6B7280;font-weight:600;text-align:center">중위·하위</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#F8FAFC;color:#475569;text-align:center">역량개선시향상</td>
         <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEF3C7;color:#92400E;text-align:center">독해결손→성적영향</td>
-        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#991B1B;text-align:center">독해역량결손직접</td>
+        <td style="padding:5px 8px;border:1px solid #D8E0EC;background:#FEE2E2;color:#B85060;text-align:center">독해역량결손직접</td>
       </tr>
     </tbody>
   </table>
@@ -3790,7 +3790,7 @@ gv("btnR").addEventListener("click",openReport);
   <!-- 수학 추가 교차 -->
   <div style="background:#F8FAFB;border-radius:7px;padding:8px 12px;font-size:10px;color:#4A5568;line-height:1.9">
     <span style="font-weight:600;color:#0B1829">수학 추가 교차: </span>
-    수학최상위 + inf&lt;50 + acc&lt;60 → <span style="color:#991B1B;font-weight:600">공식암기·유형반복</span> ·
+    수학최상위 + inf&lt;50 + acc&lt;60 → <span style="color:#B85060;font-weight:600">공식암기·유형반복</span> ·
     수학최상위 + inf≥60 → <span style="color:#065F46;font-weight:600">추론능력이 반영된 결과</span> ·
     수학최상위 + acc&lt;60 → <span style="color:#92400E;font-weight:600">서술형·지문형 어려움 예상</span>
   </div>
@@ -3802,8 +3802,8 @@ gv("btnR").addEventListener("click",openReport);
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
     <div style="background:#FEF0EE;border:1.5px solid #FCA5A5;border-radius:8px;padding:10px 14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="background:#DC2626;color:#fff;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">flagC</span>
-        <span style="font-size:11px;font-weight:600;color:#991B1B">모순패턴</span>
+        <span style="background:#B85060;color:#fff;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">flagC</span>
+        <span style="font-size:11px;font-weight:600;color:#B85060">모순패턴</span>
       </div>
       <div style="font-size:11px;color:#7F1D1D;line-height:1.7">(국어+영어+수학 정규화 평균 ≥85) AND (acc ≤30)<br>→ 즉각개입 긴급도 강제 상향</div>
     </div>
@@ -3818,7 +3818,7 @@ gv("btnR").addEventListener("click",openReport);
   <div style="font-size:11px;font-weight:600;color:#4A5568;margin-bottom:8px">긴급도 판정 조건</div>
   <div style="display:flex;flex-direction:column;gap:6px">
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="background:#DC2626;color:#fff;border-radius:5px;padding:2px 10px;font-size:10px;font-weight:700;min-width:38px;text-align:center">즉각</span>
+      <span style="background:#B85060;color:#fff;border-radius:5px;padding:2px 10px;font-size:10px;font-weight:700;min-width:38px;text-align:center">즉각</span>
       <span style="font-size:11px;color:#4A5568">flagC(모순패턴) OR (acc&lt;30 AND 성적정상) OR (acc&lt;20)</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
@@ -3837,7 +3837,7 @@ gv("btnR").addEventListener("click",openReport);
   <div style="background:#fff;border:1.5px solid #D8E0EC;border-radius:10px;padding:14px 16px">
     <div style="font-size:12px;font-weight:700;color:#0B1829;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid #ECF0F6">④ 수정 시 주의사항</div>
     <div style="background:#FEF0EE;border-radius:7px;padding:9px 11px;margin-bottom:8px">
-      <div style="font-size:10px;font-weight:700;color:#991B1B;margin-bottom:4px">⚠ 조건 로직 수정 시</div>
+      <div style="font-size:10px;font-weight:700;color:#B85060;margin-bottom:4px">⚠ 조건 로직 수정 시</div>
       <div style="font-size:10px;color:#7F1D1D;line-height:1.7">• flagC/flagO 변경 → 1·5·8·9번 동시 영향<br>• habClass 변경 → 5번 전체 재검토<br>• acc 경계값 변경 → 경계값 탭에서 영향 범위 확인</div>
     </div>
     <div style="background:#ECFDF5;border-radius:7px;padding:9px 11px">
@@ -3850,7 +3850,7 @@ gv("btnR").addEventListener("click",openReport);
     <div style="font-size:11px;color:#4A5568;line-height:1.7;margin-bottom:8px">이산화 후 유효 조합 약 <strong>9.8조 가지</strong> — 전수 테스트 불가.</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       <div style="display:flex;gap:8px;align-items:flex-start;font-size:11px">
-        <span style="background:#DC2626;color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
+        <span style="background:#B85060;color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px">1</span>
         <span style="color:#4A5568">flagC/flagO/habClass 경계값 테스트 (연쇄 영향 최대)</span>
       </div>
       <div style="display:flex;gap:8px;align-items:flex-start;font-size:11px">
@@ -3877,10 +3877,10 @@ gv("btnR").addEventListener("click",openReport);
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">inf</span><span style="font-size:11px;color:#4A5568">추론능력 (0~100)</span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">hab</span><span style="font-size:11px;color:#4A5568">독해습관 점수 (0~100)</span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">eff</span><span style="font-size:11px;color:#4A5568">독해효율성 점수 (0~100)</span></div>
-    <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#DC2626;min-width:72px;font-size:11px">kv</span><span style="font-size:11px;color:#4A5568">국어성적 정규화값<br><span style="font-size:10px;color:rgba(255,255,255,.35)">90점↑→90 / 80~89→80 / 70~79→70 / 60~69→60 / 60↓→50</span></span></div>
+    <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#B85060;min-width:72px;font-size:11px">kv</span><span style="font-size:11px;color:#4A5568">국어성적 정규화값<br><span style="font-size:10px;color:rgba(255,255,255,.35)">90점↑→90 / 80~89→80 / 70~79→70 / 60~69→60 / 60↓→50</span></span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">engVal</span><span style="font-size:11px;color:#4A5568">영어성적 정규화값 (kv와 동일 기준)</span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">mathVal</span><span style="font-size:11px;color:#4A5568">수학성적 정규화값 (kv와 동일 기준)</span></div>
-    <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#DC2626;min-width:72px;font-size:11px">flagC</span><span style="font-size:11px;color:#4A5568">모순패턴<br><span style="font-size:10px;color:rgba(255,255,255,.35)">kv ≥ 80 AND acc ≤ 30</span></span></div>
+    <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#B85060;min-width:72px;font-size:11px">flagC</span><span style="font-size:11px;color:#4A5568">모순패턴<br><span style="font-size:10px;color:rgba(255,255,255,.35)">kv ≥ 80 AND acc ≤ 30</span></span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#D97706;min-width:72px;font-size:11px">flagO</span><span style="font-size:11px;color:#4A5568">선행과부하<br><span style="font-size:10px;color:rgba(255,255,255,.35)">acc ≥ 60 AND eff ≤ 40</span></span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">habClass</span><span style="font-size:11px;color:#4A5568">음독 분류 결과<br><span style="font-size:10px;color:rgba(255,255,255,.35)">심각도 / 표면음독수 / 내재음독(재처리·이해) 수</span></span></div>
     <div style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid #F1F5F9"><span style="font-family:monospace;font-weight:600;color:#0B1829;min-width:72px;font-size:11px">spdGrade</span><span style="font-size:11px;color:#4A5568">독해속도 등급<br><span style="font-size:10px;color:rgba(255,255,255,.35)">학제별 기준 적용 → 느림 / 보통 / 빠름</span></span></div>
@@ -3927,7 +3927,7 @@ gv("btnR").addEventListener("click",openReport);
 <!-- 심각도 범례 -->
 <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:#4A5568">
   <span style="font-weight:600;color:#0B1829">심각도:</span>
-  <span style="background:#FEE2E2;color:#991B1B;border:1px solid #FCA5A5;border-radius:10px;padding:1px 9px">즉각 — 긴급도 강제 상향</span>
+  <span style="background:#FEE2E2;color:#B85060;border:1px solid #FCA5A5;border-radius:10px;padding:1px 9px">즉각 — 긴급도 강제 상향</span>
   <span style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:10px;padding:1px 9px">조기 — 조기 개입 권고</span>
   <span style="background:#DBEAFE;color:#1D4ED8;border:1px solid #93C5FD;border-radius:10px;padding:1px 9px">주의 — 경고 메시지 출력</span>
   <span style="background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;border-radius:10px;padding:1px 9px">정보 — 참고용 표시</span>
@@ -4168,7 +4168,7 @@ function condBadge(v, colKey) {
   if (colKey === '모순패턴') {
     if (v === 'true' || v === '-') {
       var style = v==='true'
-        ? 'background:#FEE2E2;color:#991B1B;border:1.5px solid #FCA5A5'
+        ? 'background:#FEE2E2;color:#B85060;border:1.5px solid #FCA5A5'
         : 'background:#F1F5F9;color:#94A3B8;border:1px solid #CBD5E1';
       return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;'+style+'">'+v+'</span>';
     }
@@ -4179,7 +4179,7 @@ function condBadge(v, colKey) {
   // 변수 종류별 팔레트
   var palette = {
     // 불리언 플래그
-    'true':  {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    'true':  {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     'false': {bg:'#F1F5F9',color:'#64748B',border:'#CBD5E1'},
 
     // acc 구간
@@ -4192,10 +4192,10 @@ function condBadge(v, colKey) {
     '30~49': {bg:'#FFEDD5',color:'#C2410C',border:'#EA580C'},
     '10~29': {bg:'#FFEDD5',color:'#C2410C',border:'#EA580C'},
     '<50':   {bg:'#FEF3C7',color:'#92400E',border:'#FDE68A'},
-    '<30':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
-    '≤10':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
-    '<10':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
-    '심각':  {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '<30':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
+    '≤10':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
+    '<10':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
+    '심각':  {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
 
     // spd등급
     '빠름':   {bg:'#E0F2FE',color:'#0369A1',border:'#7DD3FC'},
@@ -4204,40 +4204,40 @@ function condBadge(v, colKey) {
     '느림·보통':{bg:'#FEF3C7',color:'#92400E',border:'#FDE68A'},
 
     // 음독 심각도
-    '심함':  {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '심함':  {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     '보통':  {bg:'#FEF3C7',color:'#92400E',border:'#FDE68A'},
     '경미':  {bg:'#FEF3C7',color:'#78350F',border:'#F59E0B'},
     '없음':  {bg:'#D1FAE5',color:'#065F46',border:'#6EE7B7'},
 
     // 체크 여부
-    '체크':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '체크':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     '미체크': {bg:'#D1FAE5',color:'#065F46',border:'#6EE7B7'},
 
     // wm
     '≥80':   {bg:'#D1FAE5',color:'#065F46',border:'#6EE7B7'},
     '60~79': {bg:'#E0F2FE',color:'#0369A1',border:'#7DD3FC'},
     '40~59': {bg:'#FEF3C7',color:'#78350F',border:'#F59E0B'},
-    '30~39': {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
-    '<30':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '30~39': {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
+    '<30':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
 
     // gap
-    '≥30(fct>str)':  {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '≥30(fct>str)':  {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     '≤-20(str>fct)': {bg:'#EDE9FE',color:'#5B21B6',border:'#C4B5FD'},
     '<30':           {bg:'#D1FAE5',color:'#065F46',border:'#6EE7B7'},
     'str>fct':       {bg:'#EDE9FE',color:'#5B21B6',border:'#C4B5FD'},
 
     // 기타
     '≥1':   {bg:'#FFEDD5',color:'#C2410C',border:'#EA580C'},
-    '≥2':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '≥2':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     '高':   {bg:'#D1FAE5',color:'#065F46',border:'#6EE7B7'},
-    '低':   {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '低':   {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
   };
 
   // 범위 패턴 자동 색상: 숫자 포함 패턴
   function autoColor(val) {
     // 위험·낮음 패턴 먼저 (< 가 > 보다 먼저)
     if (val.match(/^[<≤]/) || val.includes('낮음') || val.includes('부족') || val.includes('결손'))
-      return {bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'};
+      return {bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'};
     // 범위 구간 (숫자~숫자)
     if (val.includes('~'))
       return {bg:'#E0F2FE',color:'#0369A1',border:'#7DD3FC'};
@@ -4427,7 +4427,7 @@ function scanAllConflicts() {
 
   // 결과를 모달에 표시
   var html = results.map(function(r) {
-    var color = r.type==='태그충돌' ? '#DC2626' : '#D97706';
+    var color = r.type==='태그충돌' ? '#B85060' : '#D97706';
     var bg    = r.type==='태그충돌' ? '#FEF0EE' : '#FFFBEB';
     return '<div style="background:'+bg+';border:1px solid '+color+';border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px">'
       +'<span style="color:'+color+';font-weight:700">'+(r.type==='태그충돌'?'⚠ 태그 충돌':'◈ 중복 조건')+'</span>'
@@ -4640,7 +4640,7 @@ function renderContraTable() {
   var tbody = document.getElementById('contraBody');
   if (!tbody) return;
   var sevStyle = {
-    '즉각':{bg:'#FEE2E2',color:'#991B1B',border:'#FCA5A5'},
+    '즉각':{bg:'#FEE2E2',color:'#B85060',border:'#FCA5A5'},
     '조기':{bg:'#FEF3C7',color:'#92400E',border:'#FDE68A'},
     '주의':{bg:'#DBEAFE',color:'#1D4ED8',border:'#93C5FD'},
     '정보':{bg:'#F1F5F9',color:'#475569',border:'#CBD5E1'}
@@ -5640,7 +5640,7 @@ function _normalizeChecks(arr, aliases) {
 }
 var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
 var FACTOR_LABEL = {어휘력:"어휘의 의미를 문장의 맥락을 통해 정확하게 파악하고 정교하게 처리하는 능력",워킹메모리:"실시간으로 정보를 처리하고 그것을 다시 하나의 단위로 재처리하여 생성하는 작업기억 능력",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단"};
-var TC = {"S1":"#0BA98E","S2":"#10B981","A1":"#2563EB","A2":"#3B82F6","A3":"#D97706","M1":"#8B5CF6","M2":"#F59E0B","L":"#EA580C","C":"#DC2626","통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
+var TC = {"S1":"#0BA98E","S2":"#10B981","A1":"#2563EB","A2":"#3B82F6","A3":"#D97706","M1":"#8B5CF6","M2":"#F59E0B","L":"#EA580C","C":"#B85060","통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#B85060"};
 var BT_NAMES = {"S1":"최상위권 공부 역량","S2":"고정확 부분결함형","A1":"이해 중심의 공부 성향","A2":"노력형 상위권","A3":"암기 의존적 공부 주의","M1":"잠재된 논리적 사고 성향","M2":"역량 미완성형","L":"기초 역량 부족형","C":"학습 기능 발달 시급"};
 var RPT_UC = {"즉각":"#B91C1C","조기":"#B45309","중장기":"#047857"};
 var RPT_UBG = {"즉각":"#FEF2F2","조기":"#FFFBEB","중장기":"#ECFDF5"};
@@ -5881,7 +5881,7 @@ function buildAnalysisPage(pageNum, total) {
   var stamps = [];
   if (D.flagTeukmok) stamps.push({icon:'🎯', text:'특목자사고 권장', color:'#7C3AED'});
   if (D.flagScience) stamps.push({icon:'💎', text:'이과적 소양 잠재', color:'#2563EB'});
-  if (D.flagEmergency) stamps.push({icon:'🚨', text:'학습 역량 부재', color:'#DC2626'});
+  if (D.flagEmergency) stamps.push({icon:'🚨', text:'학습 역량 부재', color:'#B85060'});
   if (D.flagCollapse) stamps.push({icon:'⚠️', text:'성적 붕괴 위기', color:'#EA580C'});
   var stampHtml = stamps.map(function(s){
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+s.color+'12;border:1.5px solid '+s.color+'40;color:'+s.color+';font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px">'+s.icon+' '+s.text+'</span>';
@@ -5902,7 +5902,7 @@ function buildAnalysisPage(pageNum, total) {
   // 근거수집 메시지 — D.evidence에서 추출
   var evidenceHtml = '';
   var SECTION_NAMES = ['① 성적선행지수','② 독해속도','③ 독서의 양','④ 독해의 질','⑤ 정보처리습관','⑥ 워킹메모리','⑦ 추론능력','⑧ 독해효율성','⑨ 학교학업'];
-  var SECTION_COLORS = ['#0BA98E','#2563EB','#8B5CF6','#D97706','#DC2626','#0891B2','#7C3AED','#059669','#475569'];
+  var SECTION_COLORS = ['#0BA98E','#2563EB','#8B5CF6','#D97706','#B85060','#0891B2','#7C3AED','#059669','#475569'];
 
   if (D.evidence && Array.isArray(D.evidence)) {
     evidenceHtml = D.evidence.map(function(item, idx) {
@@ -5910,7 +5910,7 @@ function buildAnalysisPage(pageNum, total) {
       var sName = SECTION_NAMES[idx] || item.title || ('영역 '+(idx+1));
       var sColor = SECTION_COLORS[idx] || '#475569';
       var bullets = item.bullets.filter(function(b){ return b.t !== '_meta'; }).map(function(b) {
-        var tagColor = b.t==='강점'?'#059669':b.t==='주의'?'#D97706':b.t==='위험'?'#DC2626':'#64748B';
+        var tagColor = b.t==='강점'?'#059669':b.t==='주의'?'#D97706':b.t==='위험'?'#B85060':'#64748B';
         var tagBg = b.t==='강점'?'#F0FDF4':b.t==='주의'?'#FFFBEB':b.t==='위험'?'#FEF2F2':'#F8FAFC';
         return '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:4px">'
           +'<span style="flex-shrink:0;font-size:9.5px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:2px">'+b.t+'</span>'
@@ -5921,7 +5921,7 @@ function buildAnalysisPage(pageNum, total) {
       var hasRisk = visibleBullets.some(function(b){ return b.t==='위험'; });
       var hasWarn = visibleBullets.some(function(b){ return b.t==='주의'; });
       var hasStrength = visibleBullets.length > 0 && visibleBullets.every(function(b){ return b.t==='강점'; });
-      var cardBorder = hasRisk ? '#DC2626' : hasWarn ? '#D97706' : hasStrength ? '#059669' : '#94A3B8';
+      var cardBorder = hasRisk ? '#B85060' : hasWarn ? '#D97706' : hasStrength ? '#059669' : '#94A3B8';
       var cardBg = hasRisk ? '#FEF2F2' : hasWarn ? '#FFFBEB' : hasStrength ? '#F0FDF4' : '#F8FAFC';
       return '<div style="margin-bottom:10px;break-inside:avoid;background:'+cardBg+';border-radius:6px;border-left:3px solid '+cardBorder+';padding:8px 10px">'
         +'<div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:5px">'+sName+'</div>'
@@ -6371,20 +6371,22 @@ function buildPrescFromCourse(courseCode) {
 }
 
 // ── 몰입 트랙 활성 키 산정 ──
-// 규칙: 초급예비(병행 베이스, 1번만) + 초급기본부터 일반 트랙 권장 시작 직전 과정까지
-//       (몰입으로 권장훈련 이전 단계를 빠르게 따라잡는 개념)
+// 규칙: 초급예비(병행 베이스, 1번만) + 초급기본부터 일반 트랙 끝점까지
+//       학년 도달점(=일반 트랙 시작점) 이전 단계는 빨강(몰입 단계),
+//       학년 도달점 이후 단계는 정규 색(몰입 종료 후 정규 과정)으로 표시.
 //       단, 중급예비는 건너뜀(예비는 평생 1회).
 function buildMolipActiveKeys(generalActiveKeys) {
   var SEQ = ["비문학독서클럽","초급예비과정","초급기본과정","초급심화과정",
              "중급예비과정","중급기본과정","중급심화과정","고급기본과정","고급심화과정"];
-  // 일반 트랙 첫 활성 인덱스 = 권장 시작점
-  var firstIdx = SEQ.length;
+  // 일반 트랙 첫/마지막 활성 인덱스
+  var firstIdx = SEQ.length, lastIdx = -1;
   (generalActiveKeys||[]).forEach(function(k){
     var i = SEQ.indexOf(k);
-    if (i >= 0 && i < firstIdx) firstIdx = i;
+    if (i >= 0) {
+      if (i < firstIdx) firstIdx = i;
+      if (i > lastIdx) lastIdx = i;
+    }
   });
-  // 몰입 끝점 = 권장 시작 직전 과정
-  var lastIdx = firstIdx - 1;
   if (lastIdx < 2) lastIdx = 2; // 최소 초급기본까지 (예외 보정)
   var keys = ["초급예비과정"]; // 병행 베이스 (1회만)
   for (var i=2; i<=lastIdx; i++) {
@@ -6396,11 +6398,14 @@ function buildMolipActiveKeys(generalActiveKeys) {
 
 // ── chevron SVG 헬퍼 ──
 // activeKeys: 활성화할 과정 키 배열
-// opts.parallelKey: 병행 베이스 키 (다른 활성 노드와 시각적 동등 처리, 위치만 별도 표시 가능)
-// opts.colorOverride: 단일 색 강제 (몰입 트랙용)
+// opts.parallelKey: 병행 베이스 키 (점선 stroke로 시각 구분)
+// opts.colorOverride: 단일 색 강제 (전체 활성 노드를 단일 색으로)
+// opts.redBeforeIdx: 이 ALL_PROGRAMS 인덱스 미만의 활성 노드는 redColor, 이상은 STEP_COLORS
+// opts.redColor: redBeforeIdx 영역 색 (기본 #B85060)
 function buildRoadmapSvg(activeKeys, opts) {
   opts = opts || {};
   var STEP_COLORS = ["#F47A20","#F5C518","#F5C518","#F5C518","#7CB342","#7CB342","#7CB342","#4A90D9","#4A90D9"];
+  var RED_COL = opts.redColor || '#B85060';
   var allSteps = ALL_PROGRAMS.slice();
   var n = allSteps.length;
   var activeColorMap = {};
@@ -6428,6 +6433,7 @@ function buildRoadmapSvg(activeKeys, opts) {
     var colIdx = activeColorMap[step.key] !== undefined ? activeColorMap[step.key] : 0;
     var col;
     if (!isAct) col = '#D1D5DB';
+    else if (opts.redBeforeIdx !== undefined && k < opts.redBeforeIdx) col = RED_COL;
     else if (opts.colorOverride) col = opts.colorOverride;
     else col = (STEP_COLORS[colIdx] || '#F47A20');
     var isLast = (k === n - 1);
@@ -6435,7 +6441,7 @@ function buildRoadmapSvg(activeKeys, opts) {
     var pts = isLast
       ? 'M '+ox+' 0 L '+(ox+nw+5)+' 0 L '+(ox+nw+5)+' '+nh+' L '+ox+' '+nh+' Z'
       : 'M '+ox+' 0 L '+(ox+nw)+' 0 L '+(ox+nw+ntp)+' '+cy3+' L '+(ox+nw)+' '+nh+' L '+ox+' '+nh+' Z';
-    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#7C3AED':'#5B21B6','#DC2626':'#991B1B','#D1D5DB':'#C8D0DC'};
+    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#7C3AED':'#5B21B6','#B85060':'#8C3848','#D1D5DB':'#C8D0DC'};
     var strokeCol = DARK[col] || col;
     // 병행 베이스 키는 점선 strokeDash로 시각 구분
     var dashAttr = (opts.parallelKey && step.key === opts.parallelKey) ? ' stroke-dasharray="3,2"' : '';
@@ -6509,10 +6515,17 @@ function buildLastPage(total, activeKeysOverride) {
   var svgHtml = buildRoadmapSvg(activeKeys);
 
   // 몰입 트랙: D.flagMolip 또는 D.flagMolipRequired가 true이면 두 번째 chevron도 노출
+  // 학년 도달점(=일반 트랙 첫 활성 인덱스) 이전은 빨강(몰입), 이후는 정규 색(정규 과정)
   var showMolipTrack = !!(D.flagMolip || D.flagMolipRequired);
   var molipKeys = showMolipTrack ? buildMolipActiveKeys(activeKeys) : null;
+  var generalFirstIdx = -1;
+  if (showMolipTrack) {
+    for (var _gi=0; _gi<allSteps.length; _gi++) {
+      if (activeKeys.indexOf(allSteps[_gi].key) > -1) { generalFirstIdx = _gi; break; }
+    }
+  }
   var molipSvgHtml = showMolipTrack
-    ? buildRoadmapSvg(molipKeys, { parallelKey: "초급예비과정", colorOverride: "#DC2626" })
+    ? buildRoadmapSvg(molipKeys, { parallelKey: "초급예비과정", redBeforeIdx: generalFirstIdx, redColor: "#B85060" })
     : '';
 
   // Card block: 3개까지 풀카드, 4개 이상 간략 표시
@@ -6567,7 +6580,7 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="height:3px;background:linear-gradient(90deg,'+accentColor+' 0%,'+STEP_COLORS[0]+' 100%);flex-shrink:0;"></div>'
     +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
     +'<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.'
-    +(showMolipTrack ? '<div style="font-size:11.5px;color:#DC2626;margin-top:6px;font-weight:500;">⚡ 몰입 훈련 트랙은 다음 페이지에서 별도로 안내합니다.</div>' : '')
+    +(showMolipTrack ? '<div style="font-size:11.5px;color:#B85060;margin-top:6px;font-weight:500;">⚡ 몰입 훈련 트랙은 다음 페이지에서 별도로 안내합니다.</div>' : '')
     +'</div>'
     +'<div style="padding:4px 0 0;">'
     +svgHtml
@@ -6597,51 +6610,51 @@ function buildLastPage(total, activeKeysOverride) {
   extras.className = 'page';
   extras.setAttribute('data-rpt-section', 'roadmap');
   extras.innerHTML =
-    '<div style="background:#666666;border-bottom:2px solid #DC2626;padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
+    '<div style="background:#666666;border-bottom:2px solid #B85060;padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
     +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);letter-spacing:0.8px;margin-bottom:2px;font-family:\'Noto Sans KR\',sans-serif;">SUPPLEMENTARY TRAINING GUIDE</div>'
     +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">추가 훈련 안내</div>'
     +'</div>'
-    +'<div style="height:3px;background:linear-gradient(90deg,#DC2626 0%,#7C3AED 100%);flex-shrink:0;"></div>'
+    +'<div style="height:3px;background:linear-gradient(90deg,#B85060 0%,#7C3AED 100%);flex-shrink:0;"></div>'
     +'<div style="flex:1;background:#fff;padding:36px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
     // ── 몰입 트랙 chevron (별도 페이지) ──
     +(showMolipTrack ? (
       '<div style="border:1px solid #FECACA;border-radius:10px;background:#FEF2F2;padding:18px 22px;">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-      +'<span style="font-size:13px;font-weight:700;color:#fff;background:#DC2626;font-family:Noto Sans KR,sans-serif;padding:4px 12px;border-radius:4px;">⚡ 몰입 훈련 권장 트랙'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:#fff;background:#B85060;font-family:Noto Sans KR,sans-serif;padding:4px 12px;border-radius:4px;">⚡ 몰입 훈련 권장 트랙</span>'
       +'<span style="font-size:11.5px;color:#64748B;font-family:Noto Sans KR,sans-serif;">1일 4~6시간 · 주 5회 단기 집중</span>'
       +'</div>'
       +'<div style="padding:2px 0 0;">'
       +molipSvgHtml
       +'</div>'
-      +'<div style="font-size:10.5px;color:#DC2626;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong></div>'
-      +'<div style="font-size:11.5px;color:#475569;background:#fff;border-left:3px solid #DC2626;padding:10px 14px;border-radius:4px;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;margin-top:10px;">'
-      +'<strong>일반 훈련</strong>은 학생 학년에 맞춰 시작 난이도를 정하고 정규 진도(주 2~3회)로 진행합니다. 반면 <strong>몰입 훈련</strong>은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 1일 5~10개씩 누적 속도로 단계를 올립니다. 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.'
+      +'<div style="font-size:10.5px;color:#B85060;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong></div>'
+      +'<div style="font-size:11.5px;color:#475569;background:#fff;border-left:3px solid #B85060;padding:10px 14px;border-radius:4px;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;margin-top:10px;">'
+      +'<strong>일반 훈련</strong>은 학생 학년에 맞춰 시작 난이도를 정하고 정규 진도(주 3~5회 2시간)로 진행합니다. 반면 <strong>몰입 훈련</strong>은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 1일 5~10개씩 누적 속도로 단계를 올립니다. 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.'
       +'</div>'
       +'</div>'
     ) : '')
     +(D.flagMolip ? (
-      '<div style="border:1px solid #DC2626;border-radius:10px;overflow:hidden;">'
-      +'<div style="background:#DC2626;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
-      +'<span style="font-size:15px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">⚡ 몰입훈련 안내'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
+      '<div style="border:1px solid #B85060;border-radius:10px;overflow:hidden;">'
+      +'<div style="background:#B85060;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
+      +'<span style="font-size:15px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">⚡ 몰입훈련 안내</span>'
       +'</div>'
       +'<div style="padding:20px 22px;background:#fff;">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;">'
       +'<div style="border-right:1px solid rgba(220,38,38,.15);padding-right:24px;">'
-      +'<div style="font-size:10.5px;font-weight:700;color:#DC2626;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법 (병행)</div>'
+      +'<div style="font-size:10.5px;font-weight:700;color:#B85060;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법 (병행)</div>'
       +'<div style="font-size:12.5px;color:#374151;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'<strong>시간</strong> — 1일 4~6시간, 주 5회<br>'
       +'<strong>기간</strong> — <strong>약 2~3개월</strong> (학생·집중시간별 차이)<br>'
       +'· <strong>초급예비</strong>: 1일 1개 (병행 베이스, 평생 1회)<br>'
       +'· <strong>기초~학년 적합 과정</strong>: 1일 5~10개 집중<br>'
-      +'<span style="font-size:11.5px;color:#DC2626;">▸ 두 라인을 동시에 진행, 예비가 끝나거나 학년 난이도 도달 시 종료</span>'
+      +'<span style="font-size:11.5px;color:#B85060;">▸ 두 라인을 동시에 진행, 예비가 끝나거나 학년 난이도 도달 시 종료</span>'
       +'</div></div>'
       +'<div style="padding-left:4px;">'
-      +'<div style="font-size:10.5px;font-weight:700;color:#DC2626;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
+      +'<div style="font-size:10.5px;font-weight:700;color:#B85060;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
       +'<div style="font-size:12.5px;color:#475569;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'또래 수준의 역량 회복 기간을 최대한 단축<br>'
       +'· 노트 없이 발문 수업 1일 2~3개 읽고 바로 발표<br>'
       +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong><br>'
-      +'<span style="font-size:11.5px;color:#DC2626;">▸ 몰입 종료 후 → 주 3회 + 오프라인 노트작성 병행</span>'
+      +'<span style="font-size:11.5px;color:#B85060;">▸ 몰입 종료 후 → 주 3회 + 오프라인 노트작성 병행</span>'
       +'</div></div>'
       +'</div></div></div>'
     ) : '')
