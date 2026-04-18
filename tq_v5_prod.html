@@ -6370,6 +6370,82 @@ function buildPrescFromCourse(courseCode) {
   return course.steps.map(function(key, i){ return { p: i+1, c: key }; });
 }
 
+// ── 몰입 트랙 활성 키 산정 ──
+// 규칙: 초급예비(병행 베이스, 1번만) + 초급기본부터 일반 트랙 마지막 과정까지
+//       단, 중급예비는 건너뜀(예비는 평생 1회).
+function buildMolipActiveKeys(generalActiveKeys) {
+  var SEQ = ["비문학독서클럽","초급예비과정","초급기본과정","초급심화과정",
+             "중급예비과정","중급기본과정","중급심화과정","고급기본과정","고급심화과정"];
+  var lastIdx = 2; // 최소 초급기본까지
+  (generalActiveKeys||[]).forEach(function(k){
+    var i = SEQ.indexOf(k);
+    if (i > lastIdx) lastIdx = i;
+  });
+  var keys = ["초급예비과정"]; // 병행 베이스 (1회만)
+  for (var i=2; i<=lastIdx; i++) {
+    if (SEQ[i] === "중급예비과정") continue; // 예비 중복 제외
+    keys.push(SEQ[i]);
+  }
+  return keys;
+}
+
+// ── chevron SVG 헬퍼 ──
+// activeKeys: 활성화할 과정 키 배열
+// opts.parallelKey: 병행 베이스 키 (다른 활성 노드와 시각적 동등 처리, 위치만 별도 표시 가능)
+// opts.colorOverride: 단일 색 강제 (몰입 트랙용)
+function buildRoadmapSvg(activeKeys, opts) {
+  opts = opts || {};
+  var STEP_COLORS = ["#F47A20","#F5C518","#F5C518","#F5C518","#7CB342","#7CB342","#7CB342","#4A90D9","#4A90D9"];
+  var allSteps = ALL_PROGRAMS.slice();
+  var n = allSteps.length;
+  var activeColorMap = {};
+  allSteps.forEach(function(step, k){
+    if (activeKeys.indexOf(step.key) > -1) activeColorMap[step.key] = k;
+  });
+  var nw=57, nh=78, ntp=16, ngp=1;
+  var cy3 = nh / 2;
+  var svgW = n * nw + (n - 1) * (ntp + ngp);
+  var svgH = nh + 8;
+  var parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+svgW+' '+svgH+'" width="100%" style="overflow:visible;display:block;">'];
+  var NODE_LABELS = {
+    '비문학독서클럽': ['독서','클럽'],
+    '초급예비과정':   ['초급','예비'],
+    '초급기본과정':   ['초급','기본'],
+    '초급심화과정':   ['초급','심화'],
+    '중급예비과정':   ['중급','예비'],
+    '중급기본과정':   ['중급','기본'],
+    '중급심화과정':   ['중급','심화'],
+    '고급기본과정':   ['고급','기본'],
+    '고급심화과정':   ['고급','심화']
+  };
+  allSteps.forEach(function(step, k){
+    var isAct  = activeKeys.indexOf(step.key) > -1;
+    var colIdx = activeColorMap[step.key] !== undefined ? activeColorMap[step.key] : 0;
+    var col;
+    if (!isAct) col = '#D1D5DB';
+    else if (opts.colorOverride) col = opts.colorOverride;
+    else col = (STEP_COLORS[colIdx] || '#F47A20');
+    var isLast = (k === n - 1);
+    var ox = k * (nw + ntp + ngp);
+    var pts = isLast
+      ? 'M '+ox+' 0 L '+(ox+nw+5)+' 0 L '+(ox+nw+5)+' '+nh+' L '+ox+' '+nh+' Z'
+      : 'M '+ox+' 0 L '+(ox+nw)+' 0 L '+(ox+nw+ntp)+' '+cy3+' L '+(ox+nw)+' '+nh+' L '+ox+' '+nh+' Z';
+    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#7C3AED':'#5B21B6','#D1D5DB':'#C8D0DC'};
+    var strokeCol = DARK[col] || col;
+    // 병행 베이스 키는 점선 strokeDash로 시각 구분
+    var dashAttr = (opts.parallelKey && step.key === opts.parallelKey) ? ' stroke-dasharray="3,2"' : '';
+    parts.push('<path d="'+pts+'" fill="'+(isAct ? col : '#F1F5F9')+'" stroke="'+strokeCol+'" stroke-width="1.5"'+dashAttr+'/>');
+    var tx = isLast ? ox + nw/2 : ox + nw/2 + ntp/2;
+    var sp = NODE_LABELS[step.key] || ['??','??'];
+    var txtFill = isAct ? '#fff' : '#C4CDD6';
+    var fw = isAct ? '500' : '400';
+    parts.push('<text x="'+(isLast ? tx+2 : tx-3)+'" y="'+(cy3-11.5)+'" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="'+fw+'" fill="'+txtFill+'" font-family="\'Noto Sans KR\',sans-serif">'+sp[0]+'</text>');
+    parts.push('<text x="'+(isLast ? tx+2 : tx-3)+'" y="'+(cy3+9.5)+'" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="'+fw+'" fill="'+txtFill+'" font-family="\'Noto Sans KR\',sans-serif">'+sp[1]+'</text>');
+  });
+  parts.push('</svg>');
+  return parts.join('');
+}
+
 function buildLastPage(total, activeKeysOverride) {
   var ALL_KEYS = ALL_PROGRAMS.map(function(p){ return p.key; });
   var activeKeys;
@@ -6425,46 +6501,14 @@ function buildLastPage(total, activeKeysOverride) {
   var accentColor = lastActiveIdx >= 0 ? STEP_COLORS[activeColorMap[allSteps[lastActiveIdx].key]] : "#6366F1";
 
   // ── 로드맵 SVG — chevron 화살표 노드 ──
-  // Roadmap SVG - chevron nodes
-  var nw=57, nh=78, ntp=16, ngp=1;
-  var cy3 = nh / 2;
-  var svgW = n * nw + (n - 1) * (ntp + ngp);
-  var svgH = nh + 8;
-  var svgParts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+svgW+' '+svgH+'" width="100%" style="overflow:visible;display:block;">'];
-  // 과정명에서 '과정' 제거 후 2글자씩 줄바꿈
-  var NODE_LABELS = {
-    '비문학독서클럽': ['독서','클럽'],
-    '초급예비과정':   ['초급','예비'],
-    '초급기본과정':   ['초급','기본'],
-    '초급심화과정':   ['초급','심화'],
-    '중급예비과정':   ['중급','예비'],
-    '중급기본과정':   ['중급','기본'],
-    '중급심화과정':   ['중급','심화'],
-    '고급기본과정':   ['고급','기본'],
-    '고급심화과정':   ['고급','심화']
-  };
-  allSteps.forEach(function(step, k){
-    var isAct  = activeKeys.indexOf(step.key) > -1;
-    var colIdx = activeColorMap[step.key] !== undefined ? activeColorMap[step.key] : 0;
-    var col    = isAct ? (STEP_COLORS[colIdx] || '#F47A20') : '#D1D5DB';
-    var isLast = (k === n - 1);
-    var ox = k * (nw + ntp + ngp);
-    var pts = isLast
-      ? 'M '+ox+' 0 L '+(ox+nw+5)+' 0 L '+(ox+nw+5)+' '+nh+' L '+ox+' '+nh+' Z'
-      : 'M '+ox+' 0 L '+(ox+nw)+' 0 L '+(ox+nw+ntp)+' '+cy3+' L '+(ox+nw)+' '+nh+' L '+ox+' '+nh+' Z';
-    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#D1D5DB':'#C8D0DC'};
-    var strokeCol = DARK[col] || col;
-    var strokeAttr = ' stroke="'+strokeCol+'" stroke-width="1.5"';
-    svgParts.push('<path d="'+pts+'" fill="'+(isAct ? col : '#F1F5F9')+'"'+strokeAttr+'/>');
-    var tx = isLast ? ox + nw/2 : ox + nw/2 + ntp/2;
-    var sp = NODE_LABELS[step.key] || ['??','??'];
-    var txtFill = isAct ? '#fff' : '#C4CDD6';
-    var fw = isAct ? '500' : '400';
-    svgParts.push('<text x="'+(isLast ? tx+2 : tx-3)+'" y="'+(cy3-11.5)+'" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="'+fw+'" fill="'+txtFill+'" font-family="\'Noto Sans KR\',sans-serif">'+sp[0]+'</text>');
-    svgParts.push('<text x="'+(isLast ? tx+2 : tx-3)+'" y="'+(cy3+9.5)+'" text-anchor="middle" dominant-baseline="central" font-size="21" font-weight="'+fw+'" fill="'+txtFill+'" font-family="\'Noto Sans KR\',sans-serif">'+sp[1]+'</text>');
-  });
-  svgParts.push('</svg>');
-  var svgHtml = svgParts.join('');
+  var svgHtml = buildRoadmapSvg(activeKeys);
+
+  // 몰입 트랙: D.flagMolip 또는 D.flagMolipRequired가 true이면 두 번째 chevron도 노출
+  var showMolipTrack = !!(D.flagMolip || D.flagMolipRequired);
+  var molipKeys = showMolipTrack ? buildMolipActiveKeys(activeKeys) : null;
+  var molipSvgHtml = showMolipTrack
+    ? buildRoadmapSvg(molipKeys, { parallelKey: "초급예비과정", colorOverride: "#7C3AED" })
+    : '';
 
   // Card block: 3개까지 풀카드, 4개 이상 간략 표시
   var detailCards = activePrograms.map(function(step, k){
@@ -6516,11 +6560,27 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">권장훈련 로드맵</div>'
     +'</div>'
     +'<div style="height:3px;background:linear-gradient(90deg,'+accentColor+' 0%,'+STEP_COLORS[0]+' 100%);flex-shrink:0;"></div>'
-    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
-    +'<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.</div>'
-    +'<div style="padding:4px 0 0;">'
+    +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:14px;min-height:0;">'
+    +(showMolipTrack
+      ? '<div style="font-size:16px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:4px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 <strong>두 가지 훈련 트랙</strong>을 제안합니다.</div>'
+      : '<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.</div>'
+    )
+    // ── 일반 트랙 ──
+    +(showMolipTrack
+      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:2px;"><span style="font-size:12px;font-weight:700;color:#475569;font-family:Noto Sans KR,sans-serif;background:#F1F5F9;padding:3px 10px;border-radius:4px;">🐢 일반 훈련</span><span style="font-size:11px;color:#64748B;font-family:Noto Sans KR,sans-serif;">주 2~3회 정규 수업 진도</span></div>'
+      : '')
+    +'<div style="padding:'+(showMolipTrack?'0':'4px 0 0')+';">'
     +svgHtml
     +'</div>'
+    // ── 몰입 트랙 ──
+    +(showMolipTrack
+      ? '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><span style="font-size:12px;font-weight:700;color:#fff;background:#7C3AED;font-family:Noto Sans KR,sans-serif;padding:3px 10px;border-radius:4px;">⚡ 몰입 훈련'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span><span style="font-size:11px;color:#64748B;font-family:Noto Sans KR,sans-serif;">1일 4~6시간 · 주 5회 단기 집중</span></div>'
+      +'<div style="padding:0;">'
+      +molipSvgHtml
+      +'</div>'
+      +'<div style="font-size:10.5px;color:#7C3AED;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:-4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong> · 약 2~3개월(학생/집중시간별 차이)</div>'
+      +'<div style="font-size:11.5px;color:#475569;background:#FAF5FF;border-left:3px solid #7C3AED;padding:8px 14px;border-radius:4px;line-height:1.65;font-family:Noto Sans KR,sans-serif;word-break:keep-all;">몰입 훈련은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 누적 속도로 빠르게 단계를 올립니다. 일반 훈련 대비 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.</div>'
+      : '')
     +'<div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'    +'<div style="font-size:11px;color:#94A3B8;letter-spacing:1.8px;font-family:\'Noto Sans KR\',sans-serif;">훈련 목표 &amp; 권장 이유</div>'    +'<div style="font-size:10px;color:#94A3B8;font-family:\'Noto Sans KR\',sans-serif;">훈련 시작 후 학생의 성실도와 누적 훈련결과에 따라 과정이 조정될 수 있습니다.</div>'    +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:12px;">'+detailCards+'</div>'
@@ -6560,19 +6620,21 @@ function buildLastPage(total, activeKeysOverride) {
       +'<div style="padding:20px 22px;background:#fff;">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;">'
       +'<div style="border-right:1px solid rgba(249,115,22,.15);padding-right:24px;">'
-      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법</div>'
+      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법 (병행)</div>'
       +'<div style="font-size:12.5px;color:#374151;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'<strong>시간</strong> — 1일 4~6시간, 주 5회<br>'
-      +'<strong>기간</strong> — 2~3개월 소요<br>'
-      +'· 예비과정: 1일 1개<br>'
-      +'· 그 외 기초 과정: 1일 5~10개 집중 진행'
+      +'<strong>기간</strong> — <strong>약 2~3개월</strong> (학생·집중시간별 차이)<br>'
+      +'· <strong>초급예비</strong>: 1일 1개 (병행 베이스, 평생 1회)<br>'
+      +'· <strong>기초~학년 적합 과정</strong>: 1일 5~10개 집중<br>'
+      +'<span style="font-size:11.5px;color:#7C3AED;">▸ 두 라인을 동시에 진행, 예비가 끝나거나 학년 난이도 도달 시 종료</span>'
       +'</div></div>'
       +'<div style="padding-left:4px;">'
       +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
       +'<div style="font-size:12.5px;color:#475569;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'또래 수준의 역량 회복 기간을 최대한 단축<br>'
       +'· 노트 없이 발문 수업 1일 2~3개 읽고 바로 발표<br>'
-      +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong>'
+      +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong><br>'
+      +'<span style="font-size:11.5px;color:#7C3AED;">▸ 몰입 종료 후 → 주 3회 + 오프라인 노트작성 병행</span>'
       +'</div></div>'
       +'</div></div></div>'
     ) : '')
