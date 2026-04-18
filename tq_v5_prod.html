@@ -3132,7 +3132,7 @@ function rpBuildResultHTML(eng, inp) {
 
   var fct      = inp.fact_score  > 0 ? inp.fact_score  : eng.acc;
   var str_     = inp.structure_score  > 0 ? inp.structure_score  : eng.acc;
-  var avgAcc   = Math.round((fct + str_) / 2);
+  var avgAcc   = Math.round((eng && eng.acc) || 0);
   var _spdRaw = (inp&&inp.reading_score)||(eng&&eng.spd)||0;
   var spd = isNaN(Number(_spdRaw)) ? 0 : Number(_spdRaw);
 
@@ -5621,6 +5621,22 @@ var D = null;
 
 var HABIT_ITEMS = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해하기 잘 안됨","긴 문장은 줄여 읽기를 함","긴 글은 내용 기억이 잘 안됨","모르는 단어가 없어도 이해가 잘 안됨","글 읽는 속도가 느린 편임"];
 var EFF_ITEMS   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+
+// 입력 폼 ↔ 리포트 문자열 차이 흡수 (저장된 모든 레코드 대상)
+var HABIT_ALIASES = {
+  "소리내어 읽거나 속발음을 함": "소리 내어 읽거나 속발음을 함",
+  "단어를 다 알아도 이해가 안됨": "모르는 단어가 없어도 이해가 잘 안됨",
+  "긴 문장은 이해가 잘 안됨": "긴 문장은 이해하기 잘 안됨",
+  "긴 문장은 훑어 읽기를 함": "긴 문장은 줄여 읽기를 함",
+  "긴 글은 내용 기억이 잘 안남": "긴 글은 내용 기억이 잘 안됨"
+};
+var EFF_ALIASES = {
+  "국어시험 점수가 유난히 낮다": "국어 시험 점수가 유난히 낮다",
+  "문제를 이해를 못해서 틀린다": "문제를 이해 못해서 틀린다"
+};
+function _normalizeChecks(arr, aliases) {
+  return (Array.isArray(arr) ? arr : []).map(function(s){ return aliases[s] || s; });
+}
 var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
 var FACTOR_LABEL = {어휘력:"어휘의 의미를 문장의 맥락을 통해 정확하게 파악하고 정교하게 처리하는 능력",워킹메모리:"실시간으로 정보를 처리하고 그것을 다시 하나의 단위로 재처리하여 생성하는 작업기억 능력",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단"};
 var TC = {"S1":"#0BA98E","S2":"#10B981","A1":"#2563EB","A2":"#3B82F6","A3":"#D97706","M1":"#8B5CF6","M2":"#F59E0B","L":"#EA580C","C":"#DC2626","통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
@@ -5726,11 +5742,13 @@ function buildPage1() {
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
   var factual    = D.fct>0 ? D.fct : D.acc;
   var structural = D.str_>0 ? D.str_ : D.acc;
-  var avgAcc     = Math.round((factual+structural)/2);
+  var avgAcc     = Math.round(D.acc || 0);
   var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
 
-  var habChecked = HABIT_ITEMS.map(function(item){ return Array.isArray(D.habChecked) && D.habChecked.indexOf(item)>-1; });
-  var effChecked = EFF_ITEMS.map(function(item){ return Array.isArray(D.effChecked) && D.effChecked.indexOf(item)>-1; });
+  var habCheckedRaw = _normalizeChecks(D.habChecked, HABIT_ALIASES);
+  var effCheckedRaw = _normalizeChecks(D.effChecked, EFF_ALIASES);
+  var habChecked = HABIT_ITEMS.map(function(item){ return habCheckedRaw.indexOf(item)>-1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return effCheckedRaw.indexOf(item)>-1; });
   var habitCount = habChecked.filter(Boolean).length;
   var effCount   = effChecked.filter(Boolean).length;
 
@@ -5854,7 +5872,7 @@ function buildAnalysisPage(pageNum, total) {
   div.style.overflow = 'visible';
 
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
-  var avgAcc = Math.round(((D.fct>0?D.fct:D.acc)+(D.str_>0?D.str_:D.acc))/2);
+  var avgAcc = Math.round(D.acc || 0);
   var btName = BT_NAMES[D.bt] || D.bt || "";
   var btColor = TC[D.bt] || "#475569";
 
@@ -6286,7 +6304,7 @@ var ALL_PROGRAMS = [
     sessions:60, period:"3~5개월",
     reasonFn: function(d){
       var r=[];
-      var avg=Math.round(((d.fct||d.acc)+(d.str_||d.acc))/2);
+      var avg=Math.round(d.acc||0);
       if(avg<50) r.push("독해 정확도가 기준에 미치지 못해 글을 읽어도 내용을 정확히 파악하지 못하는 상태입니다. 기초 독해 정확도 훈련이 가장 시급합니다.");
       if(d.habChecked&&d.habChecked.indexOf("읽다가 글줄을 자주 놓침")>-1) r.push("읽는 중 글줄을 놓치는 습관이 있어 체계적인 읽기 방식 훈련이 필요합니다.");
       if(!r.length) r.push("독해 정확도를 체계적으로 높여 안정적인 독해 기반을 형성합니다.");

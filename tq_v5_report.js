@@ -10,6 +10,27 @@ var D = null;
 
 var HABIT_ITEMS = ["이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음","단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해하기 잘 안됨","긴 문장은 줄여 읽기를 함","긴 글은 내용 기억이 잘 안됨","모르는 단어가 없어도 이해가 잘 안됨","글 읽는 속도가 느린 편임"];
 var EFF_ITEMS   = ["독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다","시험에서 시간에 쫓긴다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다","밤새워 책을 읽은 경험이 없다"];
+
+// 입력 폼(HAB_ITEMS/EFF_ITEMS)과 리포트(HABIT_ITEMS/EFF_ITEMS) 문자열 차이를 흡수
+// (저장된 모든 레코드 — 신규/구버전 모두 적용)
+var HABIT_ALIASES = {
+  // 옛날 RPT 포맷
+  "소리내어 읽거나 속발음을 함": "소리 내어 읽거나 속발음을 함",
+  "단어를 다 알아도 이해가 안됨": "모르는 단어가 없어도 이해가 잘 안됨",
+  // 입력 폼(tq_v5_prod.html HAB_ITEMS) ↔ 리포트(HABIT_ITEMS) 차이
+  "긴 문장은 이해가 잘 안됨": "긴 문장은 이해하기 잘 안됨",
+  "긴 문장은 훑어 읽기를 함": "긴 문장은 줄여 읽기를 함",
+  "긴 글은 내용 기억이 잘 안남": "긴 글은 내용 기억이 잘 안됨"
+};
+var EFF_ALIASES = {
+  // 옛날 RPT 포맷
+  "국어시험 점수가 유난히 낮다": "국어 시험 점수가 유난히 낮다",
+  // 입력 폼 ↔ 리포트 차이
+  "문제를 이해를 못해서 틀린다": "문제를 이해 못해서 틀린다"
+};
+function _normalizeChecks(arr, aliases) {
+  return (Array.isArray(arr) ? arr : []).map(function(s){ return aliases[s] || s; });
+}
 var FACTOR_COLORS = {어휘력:"#9589D9",워킹메모리:"#68C1F4",추론능력:"#8ED962",독해습관:"#7EBF6F",독해효율성:"#647AB3"};
 var FACTOR_LABEL = {어휘력:"어휘의 의미를 문장의 맥락을 통해 정확하게 파악하고 정교하게 처리하는 능력",워킹메모리:"실시간으로 정보를 처리하고 그것을 다시 하나의 단위로 재처리하여 생성하는 작업기억 능력",추론능력:"글의 사실적 전개과정에서 한 단계 더 나아가 논리적 개연성 속에서 전반의 내용을 추론하는 능력",독해습관:"공부 효율에 결정적 영향을 미치는 글을 읽고 이해하는 능력의 품질과 성능에 관여하는 세부 기준",독해효율성:"인지·이해·기억 등 독해 관련 활동 전반에 치명적 영향을 미치는 독해효율성의 문제점과 개선점 진단"};
 var TC = {"통합완성형":"#0BA98E","사실강점형":"#2563EB","추론잠재형":"#D97706","기초개발형":"#DC2626"};
@@ -113,11 +134,13 @@ function buildPage1() {
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
   var factual    = D.fct>0 ? D.fct : D.acc;
   var structural = D.str_>0 ? D.str_ : D.acc;
-  var avgAcc     = Math.round((factual+structural)/2);
+  var avgAcc     = Math.round(D.acc || 0);
   var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
 
-  var habChecked = HABIT_ITEMS.map(function(item){ return Array.isArray(D.habChecked) && D.habChecked.indexOf(item)>-1; });
-  var effChecked = EFF_ITEMS.map(function(item){ return Array.isArray(D.effChecked) && D.effChecked.indexOf(item)>-1; });
+  var habCheckedRaw = _normalizeChecks(D.habChecked, HABIT_ALIASES);
+  var effCheckedRaw = _normalizeChecks(D.effChecked, EFF_ALIASES);
+  var habChecked = HABIT_ITEMS.map(function(item){ return habCheckedRaw.indexOf(item)>-1; });
+  var effChecked = EFF_ITEMS.map(function(item){ return effCheckedRaw.indexOf(item)>-1; });
   var habitCount = habChecked.filter(Boolean).length;
   var effCount   = effChecked.filter(Boolean).length;
 
