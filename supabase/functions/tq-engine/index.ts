@@ -228,7 +228,7 @@ function collectEvidenceLegacy(inp: Record<string,any>, kv: number|null, flagC: 
     if(inf<35)mpush(b,"eng_7_9","위험","추론의지도 추론역량도 부족한 상태");
     if(inf<35)mpush(b,"eng_7_10","위험","수학·과학에서 개념이해가 불가능하여 공식 암기에만 의존");
     if(inf<35)mpush(b,"eng_7_11","위험","이과적 사고 자체가 어려운 상태");
-    if(flagC&&inf>=80&&acc>=70&&effChecked.filter((c:string)=>["문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다"].indexOf(c)>-1).length>=2&&mathVal!==null&&mathVal<80)mpush(b,"7_19_new1774447017789","주의","수학적 사고역량이 성적에 반영되지 않는 상황 — 공부방법 점검 필요(일반선행이 아닌 월반학습으로 전환 검토)");
+    if(flagC&&inf>=80&&acc>=70&&effChecked.filter((c:string)=>["문제를 이해를 못해서 틀린다","문제를 이해 못해서 틀린다","서술형 평가 시험 점수가 낮다","지문형 수학문제가 어렵다"].indexOf(c)>-1).length>=2&&mathVal!==null&&mathVal<80)mpush(b,"7_19_new1774447017789","주의","수학적 사고역량이 성적에 반영되지 않는 상황 — 공부방법 점검 필요(일반선행이 아닌 월반학습으로 전환 검토)");
     if(flagC&&inf<50&&mathVal!==null&&mathVal>70)mpush(b,"7_19_new1774461696373","주의","수학 공식암기와 문제유형 연습을 통한 성적 유지 — 고학년으로 갈수록 수학 공부에 어려움이 커짐");
     ev.push({id:"추론능력",title:"7) 추론능력",bullets:b});
   }
