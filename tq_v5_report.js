@@ -128,8 +128,8 @@ function buildFooter(pageNum, total) {
 function buildPage1() {
   var TOTAL = 4;
   var RPT_lvLabel = (lvMap[D.level]||D.level||"")+(D.grade?" "+D.grade+"학년":"");
-  var factual    = D.fct>0 ? D.fct : D.acc;
-  var structural = D.str_>0 ? D.str_ : D.acc;
+  var factual    = (D.fct !== undefined && D.fct !== null) ? D.fct : D.acc;
+  var structural = (D.str_ !== undefined && D.str_ !== null) ? D.str_ : D.acc;
   var avgAcc     = Math.round(D.acc || 0);
   var accColor   = avgAcc<=60?"#EF4444":avgAcc<=70?"#F97316":avgAcc<=80?"#EAB308":avgAcc<=90?"#22C55E":"#3B82F6";
 
