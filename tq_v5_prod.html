@@ -6371,16 +6371,21 @@ function buildPrescFromCourse(courseCode) {
 }
 
 // ── 몰입 트랙 활성 키 산정 ──
-// 규칙: 초급예비(병행 베이스, 1번만) + 초급기본부터 일반 트랙 마지막 과정까지
+// 규칙: 초급예비(병행 베이스, 1번만) + 초급기본부터 일반 트랙 권장 시작 직전 과정까지
+//       (몰입으로 권장훈련 이전 단계를 빠르게 따라잡는 개념)
 //       단, 중급예비는 건너뜀(예비는 평생 1회).
 function buildMolipActiveKeys(generalActiveKeys) {
   var SEQ = ["비문학독서클럽","초급예비과정","초급기본과정","초급심화과정",
              "중급예비과정","중급기본과정","중급심화과정","고급기본과정","고급심화과정"];
-  var lastIdx = 2; // 최소 초급기본까지
+  // 일반 트랙 첫 활성 인덱스 = 권장 시작점
+  var firstIdx = SEQ.length;
   (generalActiveKeys||[]).forEach(function(k){
     var i = SEQ.indexOf(k);
-    if (i > lastIdx) lastIdx = i;
+    if (i >= 0 && i < firstIdx) firstIdx = i;
   });
+  // 몰입 끝점 = 권장 시작 직전 과정
+  var lastIdx = firstIdx - 1;
+  if (lastIdx < 2) lastIdx = 2; // 최소 초급기본까지 (예외 보정)
   var keys = ["초급예비과정"]; // 병행 베이스 (1회만)
   for (var i=2; i<=lastIdx; i++) {
     if (SEQ[i] === "중급예비과정") continue; // 예비 중복 제외
@@ -6430,7 +6435,7 @@ function buildRoadmapSvg(activeKeys, opts) {
     var pts = isLast
       ? 'M '+ox+' 0 L '+(ox+nw+5)+' 0 L '+(ox+nw+5)+' '+nh+' L '+ox+' '+nh+' Z'
       : 'M '+ox+' 0 L '+(ox+nw)+' 0 L '+(ox+nw+ntp)+' '+cy3+' L '+(ox+nw)+' '+nh+' L '+ox+' '+nh+' Z';
-    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#7C3AED':'#5B21B6','#D1D5DB':'#C8D0DC'};
+    var DARK={'#F47A20':'#C85F00','#F5C518':'#C89B00','#7CB342':'#5A8A1E','#4A90D9':'#2B6BAD','#7C3AED':'#5B21B6','#DC2626':'#991B1B','#D1D5DB':'#C8D0DC'};
     var strokeCol = DARK[col] || col;
     // 병행 베이스 키는 점선 strokeDash로 시각 구분
     var dashAttr = (opts.parallelKey && step.key === opts.parallelKey) ? ' stroke-dasharray="3,2"' : '';
@@ -6507,7 +6512,7 @@ function buildLastPage(total, activeKeysOverride) {
   var showMolipTrack = !!(D.flagMolip || D.flagMolipRequired);
   var molipKeys = showMolipTrack ? buildMolipActiveKeys(activeKeys) : null;
   var molipSvgHtml = showMolipTrack
-    ? buildRoadmapSvg(molipKeys, { parallelKey: "초급예비과정", colorOverride: "#7C3AED" })
+    ? buildRoadmapSvg(molipKeys, { parallelKey: "초급예비과정", colorOverride: "#DC2626" })
     : '';
 
   // Card block: 3개까지 풀카드, 4개 이상 간략 표시
@@ -6562,7 +6567,7 @@ function buildLastPage(total, activeKeysOverride) {
     +'<div style="height:3px;background:linear-gradient(90deg,'+accentColor+' 0%,'+STEP_COLORS[0]+' 100%);flex-shrink:0;"></div>'
     +'<div style="flex:1;background:#fff;padding:42px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
     +'<div style="font-size:17px;color:#1A2332;font-family:\'Noto Sans KR\',sans-serif;padding-bottom:8px;text-align:center;font-weight:400;">'+D.name+' 학생에게는 다음 '+actN+'단계 훈련을 권장합니다.'
-    +(showMolipTrack ? '<div style="font-size:11.5px;color:#7C3AED;margin-top:6px;font-weight:500;">⚡ 몰입 훈련 트랙은 다음 페이지에서 별도로 안내합니다.</div>' : '')
+    +(showMolipTrack ? '<div style="font-size:11.5px;color:#DC2626;margin-top:6px;font-weight:500;">⚡ 몰입 훈련 트랙은 다음 페이지에서 별도로 안내합니다.</div>' : '')
     +'</div>'
     +'<div style="padding:4px 0 0;">'
     +svgHtml
@@ -6592,51 +6597,51 @@ function buildLastPage(total, activeKeysOverride) {
   extras.className = 'page';
   extras.setAttribute('data-rpt-section', 'roadmap');
   extras.innerHTML =
-    '<div style="background:#666666;border-bottom:2px solid #F97316;padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
+    '<div style="background:#666666;border-bottom:2px solid #DC2626;padding:26px 72px 22px;flex-shrink:0;position:relative;overflow:hidden;">'
     +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);letter-spacing:0.8px;margin-bottom:2px;font-family:\'Noto Sans KR\',sans-serif;">SUPPLEMENTARY TRAINING GUIDE</div>'
     +'<div style="font-size:31px;font-weight:700;color:#fff;letter-spacing:-.5px;font-family:\'Noto Sans KR\',sans-serif;">추가 훈련 안내</div>'
     +'</div>'
-    +'<div style="height:3px;background:linear-gradient(90deg,#F97316 0%,#7C3AED 100%);flex-shrink:0;"></div>'
+    +'<div style="height:3px;background:linear-gradient(90deg,#DC2626 0%,#7C3AED 100%);flex-shrink:0;"></div>'
     +'<div style="flex:1;background:#fff;padding:36px 72px 20px;display:flex;flex-direction:column;gap:16px;min-height:0;">'
     // ── 몰입 트랙 chevron (별도 페이지) ──
     +(showMolipTrack ? (
-      '<div style="border:1px solid #E2D5F7;border-radius:10px;background:#FAF5FF;padding:18px 22px;">'
+      '<div style="border:1px solid #FECACA;border-radius:10px;background:#FEF2F2;padding:18px 22px;">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-      +'<span style="font-size:13px;font-weight:700;color:#fff;background:#7C3AED;font-family:Noto Sans KR,sans-serif;padding:4px 12px;border-radius:4px;">⚡ 몰입 훈련 권장 트랙'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:#fff;background:#DC2626;font-family:Noto Sans KR,sans-serif;padding:4px 12px;border-radius:4px;">⚡ 몰입 훈련 권장 트랙'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
       +'<span style="font-size:11.5px;color:#64748B;font-family:Noto Sans KR,sans-serif;">1일 4~6시간 · 주 5회 단기 집중</span>'
       +'</div>'
       +'<div style="padding:2px 0 0;">'
       +molipSvgHtml
       +'</div>'
-      +'<div style="font-size:10.5px;color:#7C3AED;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong></div>'
-      +'<div style="font-size:11.5px;color:#475569;background:#fff;border-left:3px solid #7C3AED;padding:10px 14px;border-radius:4px;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;margin-top:10px;">'
+      +'<div style="font-size:10.5px;color:#DC2626;font-family:Noto Sans KR,sans-serif;text-align:center;margin-top:4px;letter-spacing:.3px;">↑ 점선 박스(초급예비)는 모든 단계와 <strong>동시 진행되는 병행 베이스</strong></div>'
+      +'<div style="font-size:11.5px;color:#475569;background:#fff;border-left:3px solid #DC2626;padding:10px 14px;border-radius:4px;line-height:1.7;font-family:Noto Sans KR,sans-serif;word-break:keep-all;margin-top:10px;">'
       +'<strong>일반 훈련</strong>은 학생 학년에 맞춰 시작 난이도를 정하고 정규 진도(주 2~3회)로 진행합니다. 반면 <strong>몰입 훈련</strong>은 학생이 충분히 소화할 수 있는 <strong>초급기본부터 시작</strong>해 1일 5~10개씩 누적 속도로 단계를 올립니다. 시작 난이도를 낮추고 진행 속도를 높여 단기간에 또래 수준 회복을 목표로 합니다.'
       +'</div>'
       +'</div>'
     ) : '')
     +(D.flagMolip ? (
-      '<div style="border:1px solid #F97316;border-radius:10px;overflow:hidden;">'
-      +'<div style="background:#F97316;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
+      '<div style="border:1px solid #DC2626;border-radius:10px;overflow:hidden;">'
+      +'<div style="background:#DC2626;padding:12px 22px;display:flex;align-items:center;gap:8px;">'
       +'<span style="font-size:15px;font-weight:700;color:#fff;font-family:Noto Sans KR,sans-serif;">⚡ 몰입훈련 안내'+(D.flagMolipRequired?' (필수)':' (권장)')+'</span>'
       +'</div>'
       +'<div style="padding:20px 22px;background:#fff;">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;">'
-      +'<div style="border-right:1px solid rgba(249,115,22,.15);padding-right:24px;">'
-      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법 (병행)</div>'
+      +'<div style="border-right:1px solid rgba(220,38,38,.15);padding-right:24px;">'
+      +'<div style="font-size:10.5px;font-weight:700;color:#DC2626;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 방법 (병행)</div>'
       +'<div style="font-size:12.5px;color:#374151;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'<strong>시간</strong> — 1일 4~6시간, 주 5회<br>'
       +'<strong>기간</strong> — <strong>약 2~3개월</strong> (학생·집중시간별 차이)<br>'
       +'· <strong>초급예비</strong>: 1일 1개 (병행 베이스, 평생 1회)<br>'
       +'· <strong>기초~학년 적합 과정</strong>: 1일 5~10개 집중<br>'
-      +'<span style="font-size:11.5px;color:#7C3AED;">▸ 두 라인을 동시에 진행, 예비가 끝나거나 학년 난이도 도달 시 종료</span>'
+      +'<span style="font-size:11.5px;color:#DC2626;">▸ 두 라인을 동시에 진행, 예비가 끝나거나 학년 난이도 도달 시 종료</span>'
       +'</div></div>'
       +'<div style="padding-left:4px;">'
-      +'<div style="font-size:10.5px;font-weight:700;color:#F97316;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
+      +'<div style="font-size:10.5px;font-weight:700;color:#DC2626;letter-spacing:1.2px;margin-bottom:8px;font-family:Noto Sans KR,sans-serif;">훈련 목표</div>'
       +'<div style="font-size:12.5px;color:#475569;line-height:1.9;font-family:Noto Sans KR,sans-serif;">'
       +'또래 수준의 역량 회복 기간을 최대한 단축<br>'
       +'· 노트 없이 발문 수업 1일 2~3개 읽고 바로 발표<br>'
       +'· 과정 통과 기준: 활용테스트 60회 누적 <strong>80점 이상</strong><br>'
-      +'<span style="font-size:11.5px;color:#7C3AED;">▸ 몰입 종료 후 → 주 3회 + 오프라인 노트작성 병행</span>'
+      +'<span style="font-size:11.5px;color:#DC2626;">▸ 몰입 종료 후 → 주 3회 + 오프라인 노트작성 병행</span>'
       +'</div></div>'
       +'</div></div></div>'
     ) : '')
