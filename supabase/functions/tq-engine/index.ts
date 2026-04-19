@@ -35,19 +35,6 @@ const SMAP: Record<string,number|null> = {
   "매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null
 };
 
-const HAB_ITEMS = [
-  "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
-  "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
-  "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
-  "글 읽는 속도가 느린 편임"
-];
-const EFF_ITEMS = [
-  "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
-  "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
-  "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
-  "밤새워 책을 읽은 경험이 없다"
-];
-
 function classifyHabits(checked: string[]) {
   const 표면음독키=["소리 내어","또박또박"];
   const 내재재처리키=["이미 읽은 곳","글줄을 자주","짚어가며"];
@@ -641,40 +628,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, inp, name, imageBase64, imageType, engineResult } = body;
-
-    // ── OCR ──
-    if (action === "ocr") {
-      if (!imageBase64 || !imageType) {
-        return new Response(JSON.stringify({error:"이미지 데이터 없음"}),{status:400,headers:CORS});
-      }
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:800,
-          messages:[{role:"user",content:[
-            {type:"image",source:{type:"base64",media_type:imageType,data:imageBase64}},
-            {type:"text",text:`이 TQ테스트 결과지 이미지에서 정보를 추출해 JSON만 반환하세요.
-수치: fact_understand, struct_understand, speed, vocabulary, working_memory, inference, student_name, school_level(초등/중등/고등/일반), grade(숫자), kor_score
-체크리스트(● 빨간 원=true, ○ 빈 원=false, 위→아래 순서):
-독해습관 10개: ${HAB_ITEMS.map((t,i)=>i+". "+t).join(" | ")}
-hab_checks: boolean 10개 배열
-독해효율성 10개: ${EFF_ITEMS.map((t,i)=>i+". "+t).join(" | ")}
-eff_checks: boolean 10개 배열
-hab_count(이미지의 잘못된독해습관 숫자), eff_count(이미지의 독해효율성결함 숫자)
-JSON만 출력: {fact_understand,struct_understand,speed,vocabulary,working_memory,inference,student_name,school_level,grade,kor_score,hab_count,eff_count,hab_checks:[],eff_checks:[]}`}
-          ]}]
-        })
-      });
-      if (!resp.ok) {
-        const e = await resp.json();
-        return new Response(JSON.stringify({error:e.error?.message||"OCR API 오류"}),{status:502,headers:CORS});
-      }
-      const data = await resp.json();
-      let raw = data.content[0].text.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
-      return new Response(raw, { headers: { ...CORS, "Content-Type":"application/json" } });
-    }
+    const { action, inp, name, engineResult } = body;
 
     // ── 엔진 실행 ──
     if (action === "engine") {
@@ -714,7 +668,7 @@ JSON만 출력: {fact_understand,struct_understand,speed,vocabulary,working_memo
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},
         body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:5500, system:SYS_P,
+          model:"claude-sonnet-4-6", max_tokens:5500, system:SYS_P,
           messages:[{role:"user",content:`${name||"학생"} 학생의 판독문 4슬롯과 훈련 추천 이유를 작성하세요.
 【필수1】 각 슬롯 200자 이상, 체크리스트 항목을 슬롯②에 반드시 반영하세요.
 【필수2】 roadmap_reasons: 9개 과정 전체(비문학독서클럽, 초급예비과정, 초급기본과정, 초급심화과정, 중급예비과정, 중급기본과정, 중급심화과정, 고급기본과정, 고급심화과정)에 대해 이 학생의 진단 결과를 근거로 개인화된 이유를 작성하세요.
@@ -1057,7 +1011,7 @@ JSON만 출력하세요.`}]
         method: "POST",
         headers: {"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1500, system: SYS_ROADMAP,
+          model: "claude-sonnet-4-6", max_tokens: 1500, system: SYS_ROADMAP,
           messages: [{role:"user", content: `학생 정보:\n${JSON.stringify(student, null, 2)}\n\n선택된 훈련 과정:\n${JSON.stringify(programs, null, 2)}\n\nJSON만 출력하세요.`}]
         })
       });
