@@ -208,9 +208,6 @@ input[type=range]{width:100%;accent-color:var(--purple);cursor:pointer;height:4p
 .chk-item:has(input:checked) span{color:#DC5C5C;font-weight:600}
 
 .err{display:none;margin-top:8px;padding:10px 14px;background:var(--danger-bg);border:1px solid var(--danger-bd);border-radius:var(--r-sm);font-size:12px;color:var(--danger);line-height:1.6;}
-.ocr-zone{border:1.5px dashed rgba(139,92,246,.25);border-radius:var(--r);padding:12px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:10px;background:rgba(139,92,246,.03);}
-.ocr-zone:hover{border-color:var(--purple);background:rgba(139,92,246,.07)}
-.ocr-zone input{display:none}
 .div{height:1px;background:#E2E8F0;margin:10px -14px}
 
 /* ════ 우측 패널 카드 시스템 ════ */
@@ -438,11 +435,6 @@ details summary:hover{color:var(--tx2)}
 #page-input .chk-item:hover { background: rgba(255,255,255,.04); }
 #page-input .chk-item:has(input:checked) { background: rgba(239,68,68,.08); }
 #page-input .chk-item:has(input:checked) span { color: var(--danger); }
-#page-input .ocr-zone {
-  border-color: #c7d2fe;
-  background: #eef2ff;
-  color: #4338ca;
-}
 #page-input input[type=range] { accent-color: #8B5CF6; }
 #page-input input[type=number],
 #page-input input[type=text],
@@ -589,9 +581,6 @@ details summary:hover{color:var(--tx2)}
 
   <!-- 숨겨진 폼 DOM (JS 엔진이 읽는 값만 유지 — 화면에 표시 안 됨) -->
   <div id="hidden-form-inputs" style="display:none;visibility:hidden;position:absolute;left:-9999px">
-    <div id="imgFullWrap"><img id="imgFull" src=""></div>
-    <div id="imgPreviewLeft"><img id="imgPreviewLeftImg" src=""></div>
-    <div id="ocrZone"><input type="file" id="imgInput" accept="image/*"><span id="ocrStatus"></span><div id="ocrPlaceholder"></div></div>
     <input type="text" id="iName" value="" autocomplete="off">
     <input type="date" id="iDate" value="">
     <select id="iLevel" onchange="onLevelChange()">
@@ -682,7 +671,6 @@ details summary:hover{color:var(--tx2)}
 <!-- 학부모 리포트 모달 -->
 
 <!-- 이미지 미리보기 전역 컨테이너 (JS로 resultView 안으로 이동) -->
-<div id="imgPreviewWrap" style="display:none"><img id="imgPreview" src="" alt=""><button onclick="clearImg()" style="display:none">✕</button></div>
 
 <script>
 
@@ -1103,28 +1091,12 @@ function doReanalyze(){
 }
 window.doReanalyze=doReanalyze;
 
+// OCR 기능 제거됨 — clearImg/toggleImgFull은 호환성 위한 no-op
 function clearImg(){
-  var wrap=gv("imgPreviewWrap");
-  wrap.style.display="none";
-  gv("imgPreview").src="";
-  gv("imgFull").src="";
-  gv("imgPreviewLeft").style.display="none";
-  gv("imgPreviewLeftImg").src="";
-  gv("ocrPlaceholder").style.display="block";
-  gv("ocrStatus").textContent="";
-  gv("imgInput").value="";
   var slot=document.getElementById("imgSlot");
   if(slot) slot.style.display="none";
-  document.body.appendChild(wrap);
 }
 window.clearImg=clearImg;
-
-function toggleImgFull(){
-  const wrap=gv("imgFullWrap");
-  wrap.style.display=wrap.style.display==="none"?"flex":"none";
-  if(wrap.style.display==="flex") wrap.style.display="block";
-}
-window.toggleImgFull=toggleImgFull;
 
 // 정확도 자동산출
 function updateAccuracy(){
@@ -1171,123 +1143,7 @@ function getInputs(){
   };
 }
 
-// ── OCR ──
-async function processOcrFile(file){
-  // 이미지 미리보기 표시
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const src=e.target.result;
-    // 우측 미리보기
-    gv("imgPreview").src=src;
-    gv("imgFull").src=src;
-    gv("imgPreviewWrap").style.display="block";
-    // 좌측 미리보기
-    gv("imgPreviewLeftImg").src=src;
-    gv("imgPreviewLeft").style.display="block";
-    gv("ocrPlaceholder").style.display="none";
-  };
-  reader.readAsDataURL(file);
-
-  const status=gv("ocrStatus");
-  status.textContent="인식 중...";
-  try{
-    const b64=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=()=>res(r.result.split(",")[1]);
-      r.onerror=rej;
-      r.readAsDataURL(file);
-    });
-        const resp=await fetch(TQ_API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-academy-token":TQ_API_TOKEN},
-      body:JSON.stringify({action:"ocr",imageBase64:b64,imageType:file.type})
-    });
-    if(!resp.ok)throw new Error("OCR 서버 오류 ("+resp.status+") — URL과 토큰을 확인하세요");
-    let raw=await resp.text();
-    raw=raw.trim().replace(/^\x60\x60\x60[a-z]*\s*/,"").replace(/\s*\x60\x60\x60$/,"");
-    const parsed=JSON.parse(raw);
-    // 폼에 값 적용
-    if(parsed.fact_understand!=null){gv("sFct").value=parsed.fact_understand;gv("sFctV").textContent=parsed.fact_understand;}
-    if(parsed.struct_understand!=null){gv("sStr").value=parsed.struct_understand;gv("sStrV").textContent=parsed.struct_understand;}
-    if(parsed.speed!=null){gv("sSpd").value=parseInt(parsed.speed)||0;}
-    if(parsed.vocabulary!=null){gv("sVoc").value=parsed.vocabulary;gv("sVocV").textContent=parsed.vocabulary;}
-    if(parsed.working_memory!=null){gv("sWm").value=parsed.working_memory;gv("sWmV").textContent=parsed.working_memory;}
-    if(parsed.inference!=null){gv("sInf").value=parsed.inference;gv("sInfV").textContent=parsed.inference;}
-    if(parsed.student_name){gv("iName").value=parsed.student_name;}
-    if(parsed.grade){
-      // iGrade는 select — buildGrade 후 value 설정
-      buildGrade();
-      var grSel=gv("iGrade");
-      var grVal=String(parsed.grade);
-      for(var gi=0;gi<grSel.options.length;gi++){
-        if(grSel.options[gi].value===grVal){grSel.selectedIndex=gi;break;}
-      }
-    }
-    if(parsed.school_level){
-      var lvRemap={"초저":"초등","초고":"초등","중등":"중등","고등":"고등","일반":"일반"};
-      var mappedLv=lvRemap[parsed.school_level]||parsed.school_level;
-      const sel=gv("iLevel");
-      for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===mappedLv){sel.selectedIndex=i;break;}}
-      buildScores();buildGrade();
-    }
-    // 독해습관 체크리스트 — boolean 배열 + 카운트 검증
-    if(parsed.hab_checks&&parsed.hab_checks.length>0){
-      var habTrue=parsed.hab_checks.filter(Boolean).length;
-      var habTarget=parsed.hab_count||habTrue;
-      // true 개수가 카운트와 다르면 마지막 항목부터 조정
-      if(habTrue>habTarget){
-        var adjusted=parsed.hab_checks.slice();
-        for(var j=adjusted.length-1;j>=0&&habTrue>habTarget;j--){
-          if(adjusted[j]){adjusted[j]=false;habTrue--;}
-        }
-        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!adjusted[i];});
-      } else {
-        HAB_ITEMS.forEach(function(_,i){const el=gv("h"+i);if(el)el.checked=!!parsed.hab_checks[i];});
-      }
-    }
-    // 독해효율성 체크리스트 — boolean 배열 + 카운트 검증
-    if(parsed.eff_checks&&parsed.eff_checks.length>0){
-      var effTrue=parsed.eff_checks.filter(Boolean).length;
-      var effTarget=parsed.eff_count||effTrue;
-      if(effTrue>effTarget){
-        var adjusted2=parsed.eff_checks.slice();
-        for(var k=adjusted2.length-1;k>=0&&effTrue>effTarget;k--){
-          if(adjusted2[k]){adjusted2[k]=false;effTrue--;}
-        }
-        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!adjusted2[i];});
-      } else {
-        EFF_ITEMS.forEach(function(_,i){const el=gv("e"+i);if(el)el.checked=!!parsed.eff_checks[i];});
-      }
-    }
-    updateChkScore();
-    updateAccuracy();
-    status.textContent="✓ 수치 + 체크리스트 자동 입력 완료";
-    setTimeout(()=>{status.textContent="";},3000);
-  }catch(e){
-    status.textContent="인식 실패: "+e.message;
-  }
-}
-document.getElementById("imgInput").addEventListener("change",function(){
-  if(this.files[0]) processOcrFile(this.files[0]);
-});
-
-// ── 클립보드 붙여넣기 ──
-document.addEventListener("paste",function(e){
-  const items=e.clipboardData&&e.clipboardData.items;
-  if(!items)return;
-  for(var i=0;i<items.length;i++){
-    if(items[i].type.startsWith("image/")){
-      const file=items[i].getAsFile();
-      if(!file)continue;
-      const zone=document.getElementById("ocrZone");
-      zone.style.borderColor="var(--teal)";
-      zone.style.background="var(--teal-bg)";
-      setTimeout(function(){zone.style.borderColor="";zone.style.background="";},1500);
-      processOcrFile(file);
-      break;
-    }
-  }
-});
+// ── OCR 기능 제거됨 (이미지 자동 인식 미사용) ──
 
 // ── 규칙 엔진 ──
 // ────────────────────────────────────────────────────────────
@@ -1771,23 +1627,12 @@ gv("btnA").addEventListener("click",async function(){
     showResultPage(inp.name);
     // 등장 애니메이션 실행
     runEntryAnimation(rv, eng, inp);
-    // imgSlot: 이미지 있으면 이미지, 없으면 결과지 썸네일
-    var wrap=gv("imgPreviewWrap");
+    // imgSlot: OCR 제거됨 → 항상 결과지 썸네일 분기로 진입
     var slot=document.getElementById("imgSlot");
     if(slot){
       slot.innerHTML="";
-      var hasImg = gv("imgPreview") && gv("imgPreview").src && gv("imgPreview").src.startsWith("data:");
       var imgAndCards = document.getElementById("imgAndCards");
-      if(wrap && hasImg){
-        slot.appendChild(wrap);
-        slot.style.display="block";
-        if(imgAndCards) imgAndCards.style.gridTemplateColumns="1fr 1fr 1fr";
-        wrap.style.display="block";
-        gv("imgPreview").style.width="200px";
-        gv("imgPreview").style.height="100%";
-        gv("imgPreview").style.objectFit="cover";
-        gv("imgPreviewLeftImg").style.width="200px";
-      } else {
+      {
         // 결과지 썸네일을 imgSlot에 직접 삽입
         var thumbDiv = document.createElement("div");
         thumbDiv.style.cssText="width:100%;cursor:zoom-in;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-sm);transition:box-shadow .2s;position:relative;";
