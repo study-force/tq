@@ -5976,7 +5976,9 @@ function buildAnalysisPage(pageNum, total) {
       } else {
         rows = scoreRow('국어', D.kor_score)+scoreRow('영어', D.eng_score)+scoreRow('수학', D.math_score);
       }
-      if (!rows.replace(/<div[^>]*>(?:내신|모의고사)<\/div>/g,'').trim()) return '';
+      // 일반인 등 학교성적 데이터가 전혀 없을 때도 grid 셀 자리는 유지
+      // (빈 자식이면 우측 1fr 셀로 가야 할 학습역량 차트가 가운데 100px 셀에 끼어 찌그러짐)
+      if (!rows.replace(/<div[^>]*>(?:내신|모의고사)<\/div>/g,'').trim()) return '<div></div>';
       return '<div style="display:flex;flex-direction:column;justify-content:center;gap:4px;border-left:1px solid rgba(255,255,255,.08);padding-left:16px">'
         +(isHigh ? '' : '<div style="font-size:9px;font-weight:600;color:#64748B;letter-spacing:1px;margin-bottom:2px">학교 성적</div>')
         +rows
