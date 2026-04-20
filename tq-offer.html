@@ -1515,15 +1515,19 @@ nav {
   .elem-step-header { flex-direction: column; align-items: flex-start !important; gap: 8px !important; margin-bottom: 24px !important; }
   .elem-step-tag { font-size: 11px !important; padding: 4px 12px !important; }
   .elem-step-heading { font-size: 22px !important; letter-spacing: -0.5px !important; }
-  .elem-grid, .elem-3col { grid-template-columns: 1fr !important; gap: 16px !important; }
-  .elem-col { padding: 20px !important; }
-  .elem-col-arrow { display: none !important; }
-  .elem-col-label { font-size: 14px !important; }
+  .elem-grid, .elem-3col { grid-template-columns: 1fr !important; gap: 16px !important; width: 100% !important; }
+  .elem-col { padding: 20px !important; width: 100% !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center; }
+  .elem-col > div, .elem-col > p, .elem-col > ul { width: 100% !important; text-align: left; }
+  .elem-col-label { font-size: 14px !important; justify-content: flex-start; }
   .elem-col-desc { font-size: 12px !important; margin-bottom: 14px !important; }
+  .elem-col-arrow { display: none !important; }
   .elem-col-num { font-size: 10px !important; padding: 3px 8px !important; }
-  .elem-col-phones { justify-content: center !important; gap: 8px !important; }
+  .elem-col-phones { justify-content: center !important; gap: 8px !important; width: 100%; margin: 0 auto 16px !important; }
   .elem-mini-phone { width: 110px !important; }
-  .elem-col:nth-child(3) .elem-mini-phone { width: 160px !important; }
+  .elem-col:nth-child(3) .elem-mini-phone { width: 180px !important; max-width: 90% !important; }
+  .booking-box { width: 100% !important; }
+  .elem-booking-box { max-width: 100% !important; }
+  .elem-booking-points { text-align: left; }
   .elem-chars-mini { display: none !important; }
   .booking-highlight { padding: 20px 18px !important; }
   .booking-mockup { flex-direction: column; gap: 20px !important; }
