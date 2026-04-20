@@ -1548,12 +1548,34 @@ nav {
   .offer-title h2 { font-size: 22px !important; }
   .offer-card h3, .offer-card .card-title { font-size: 18px !important; }
   .card-items li { font-size: 13px !important; line-height: 1.5 !important; }
-  .pricing-label { font-size: 12px !important; }
+
+  /* 가격 박스 (STEP 2): 세로 배치 */
+  .pricing-box { padding: 14px 16px !important; }
+  .pricing-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px;
+    margin-bottom: 4px !important;
+  }
+  .pricing-label { font-size: 12px !important; line-height: 1.5 !important; word-break: keep-all; }
   .pricing-val { font-size: 13px !important; }
   .pricing-val strong { font-size: 15px !important; }
+  .pricing-val span[style*="line-through"] { font-size: 12px !important; }
+
+  /* STEP 1, STEP 2 카드 전체 padding */
+  .offer-card.featured { padding: 28px 20px !important; }
+  .offer-card.featured > div[style*="display:flex"][style*="margin-bottom:20px"] { gap: 8px !important; margin-bottom: 16px !important; }
+  .offer-card.featured > div[style*="display:flex"] span[style*="font-size:11px"][style*="STEP"],
+  .offer-card.featured span[style*="font-size:18px"][style*="font-weight:800"] { font-size: 14px !important; }
+  .offer-card.featured p[style*="font-size:14px"] { font-size: 13px !important; line-height: 1.6 !important; }
 
   /* 선착순 혜택 박스 */
-  .offer-bg div[style*="선착순"] { padding: 24px 20px 20px !important; }
+  .offer-bg div[style*="border-radius:16px"][style*="padding:32px"] { padding: 24px 16px 20px !important; }
+  .offer-bg div[style*="선착순 20개"] { font-size: 18px !important; }
+  .offer-bg div[style*="font-size:38px"] { font-size: 32px !important; }
+  .offer-bg div[style*="font-size:22px"][style*="line-through"] { font-size: 16px !important; }
+  /* 리본은 모바일에서 작게 */
+  .offer-bg div[style*="rotate(-45deg)"] { font-size: 9px !important; width: 120px !important; }
 
   /* 도입 신청하기 버튼 */
   a[href*="docs.google.com/forms"] { font-size: 14px !important; padding: 12px 36px !important; }
