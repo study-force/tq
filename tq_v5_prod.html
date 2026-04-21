@@ -552,11 +552,19 @@ details summary:hover{color:var(--tx2)}
   }
   /* .page-analysis: 근거자료 분량이 많은 경우 다중 페이지로 자연 분할 허용
      - 평시에는 1페이지 유지, 넘치면 Chrome이 자동으로 새 페이지로 연장
-     - overflow:visible로 전환, height 제한 해제 */
+     - overflow:visible로 전환, height 제한 해제
+     - display:block으로 전환 (flex 컨테이너는 Chrome에서 페이지 분할 불가) */
   #resultPane_리포트 .page.page-analysis {
+    display:block!important;
     height:auto!important;
     min-height:297mm!important;
     overflow:visible!important;
+    page-break-inside:auto!important;
+    break-inside:auto!important;
+  }
+  #resultPane_리포트 .page.page-analysis > * {
+    break-inside:auto!important;
+    page-break-inside:auto!important;
   }
 }
 </style>
@@ -5765,9 +5773,9 @@ function buildAnalysisPage(pageNum, total) {
       var bullets = item.bullets.filter(function(b){ return b.t !== '_meta'; }).map(function(b) {
         var tagColor = b.t==='강점'?'#059669':b.t==='주의'?'#D97706':b.t==='위험'?'#DC5C5C':'#64748B';
         var tagBg = b.t==='강점'?'#F0FDF4':b.t==='주의'?'#FFFBEB':b.t==='위험'?'#FEF2F2':'#F8FAFC';
-        return '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:2px">'
+        return '<div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:4px">'
           +'<span style="flex-shrink:0;font-size:9.5px;font-weight:700;color:'+tagColor+';background:'+tagBg+';border:1px solid '+tagColor+'30;padding:1px 6px;border-radius:3px;margin-top:2px">'+b.t+'</span>'
-          +'<span style="font-size:11px;color:#334155;line-height:1.45">'+b.s+'</span></div>';
+          +'<span style="font-size:11px;color:#334155;line-height:1.55">'+b.s+'</span></div>';
       }).join('');
       // 카드 보더색: 섹션 내 가장 심각한 태그 기준 (위험 > 주의 > 보통 > 강점)
       var visibleBullets = item.bullets.filter(function(b){ return b.t !== '_meta'; });
@@ -5776,8 +5784,8 @@ function buildAnalysisPage(pageNum, total) {
       var hasStrength = visibleBullets.length > 0 && visibleBullets.every(function(b){ return b.t==='강점'; });
       var cardBorder = hasRisk ? '#DC5C5C' : hasWarn ? '#D97706' : hasStrength ? '#059669' : '#94A3B8';
       var cardBg = hasRisk ? '#FEF2F2' : hasWarn ? '#FFFBEB' : hasStrength ? '#F0FDF4' : '#F8FAFC';
-      return '<div style="margin-bottom:6px;break-inside:avoid;background:'+cardBg+';border-radius:6px;border-left:3px solid '+cardBorder+';padding:6px 10px">'
-        +'<div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:3px">'+sName+'</div>'
+      return '<div style="margin-bottom:10px;break-inside:avoid;background:'+cardBg+';border-radius:6px;border-left:3px solid '+cardBorder+';padding:8px 10px">'
+        +'<div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:5px">'+sName+'</div>'
         +bullets+'</div>';
     }).join('');
   }
