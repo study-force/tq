@@ -550,22 +550,6 @@ details summary:hover{color:var(--tx2)}
   #resultPane_리포트 .page:last-child {
     page-break-after:auto!important; break-after:auto!important;
   }
-  /* .page-analysis: 근거자료 분량이 많은 경우 다중 페이지로 자연 분할 허용
-     - 평시에는 1페이지 유지, 넘치면 Chrome이 자동으로 새 페이지로 연장
-     - overflow:visible로 전환, height 제한 해제
-     - display:block으로 전환 (flex 컨테이너는 Chrome에서 페이지 분할 불가) */
-  #resultPane_리포트 .page.page-analysis {
-    display:block!important;
-    height:auto!important;
-    min-height:297mm!important;
-    overflow:visible!important;
-    page-break-inside:auto!important;
-    break-inside:auto!important;
-  }
-  #resultPane_리포트 .page.page-analysis > * {
-    break-inside:auto!important;
-    page-break-inside:auto!important;
-  }
 }
 </style>
 </head>
@@ -5725,10 +5709,10 @@ function buildPage1() {
 // ══════════════════════════
 // 페이지 2 — 분석 상세 (학생정보 + 근거수집 + 정규분포)
 // ══════════════════════════
-function buildAnalysisPage(pageNum, total) {
+function buildAnalysisPage(pageNum, total, evidenceSubset, isContinuation) {
   var M = '72px';
   var div = document.createElement('div');
-  div.className = 'page page-analysis';
+  div.className = 'page page-analysis' + (isContinuation ? ' page-analysis-cont' : '');
   div.style.height = 'auto';
   div.style.minHeight = '1123px';
   div.style.overflow = 'visible';
@@ -5760,13 +5744,17 @@ function buildAnalysisPage(pageNum, total) {
     return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9"><span style="color:#64748B;font-size:13px">'+r[0]+'</span><span style="color:#1E293B;font-size:13px;font-weight:600">'+r[1]+'</span></div>';
   }).join('');
 
-  // 근거수집 메시지 — D.evidence에서 추출
+  // 근거수집 메시지 — D.evidence에서 추출 (분할 모드 지원)
   var evidenceHtml = '';
   var SECTION_NAMES = ['① 성적선행지수','② 독해속도','③ 독서의 양','④ 독해의 질','⑤ 정보처리습관','⑥ 워킹메모리','⑦ 추론능력','⑧ 독해효율성','⑨ 학교학업'];
   var SECTION_COLORS = ['#0BA98E','#2563EB','#8B5CF6','#D97706','#DC5C5C','#0891B2','#7C3AED','#059669','#475569'];
+  var evidenceSource = evidenceSubset || D.evidence;
+  var evidenceOffset = (evidenceSubset && D.evidence) ? D.evidence.indexOf(evidenceSubset[0]) : 0;
+  if (evidenceOffset < 0) evidenceOffset = 0;
 
-  if (D.evidence && Array.isArray(D.evidence)) {
-    evidenceHtml = D.evidence.map(function(item, idx) {
+  if (evidenceSource && Array.isArray(evidenceSource)) {
+    evidenceHtml = evidenceSource.map(function(item, relIdx) {
+      var idx = evidenceOffset + relIdx;
       if (!item || !item.bullets || item.bullets.length === 0) return '';
       var sName = SECTION_NAMES[idx] || item.title || ('영역 '+(idx+1));
       var sColor = SECTION_COLORS[idx] || '#475569';
@@ -5791,6 +5779,21 @@ function buildAnalysisPage(pageNum, total) {
   }
 
   var RPT_dateStr2 = D.date ? D.date.replace(/-/g,'. ') : '';
+
+  // 연속 페이지(isContinuation)는 상단 제목/공부역량 카드를 생략하고 근거 섹션만 표시
+  if (isContinuation) {
+    div.innerHTML = ''
+      +'<div style="padding:30px '+M+' 0"></div>'
+      +'<div style="padding:0 '+M+'">'
+      +'<div style="font-size:16px;font-weight:700;color:#1E293B;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #1E293B">학습역량 정밀 진단 (계속)</div>'
+      +'<div style="columns:2;column-gap:24px;column-rule:1px solid #E2E8F0">'
+      +evidenceHtml
+      +'</div>'
+      +'</div>'
+      +'<div style="flex:1"></div>'
+      +buildFooter(pageNum, total);
+    return div;
+  }
 
   div.innerHTML = ''
     +'<div style="padding:30px '+M+' 0">'
@@ -7219,13 +7222,38 @@ function renderReportTab() {
   if (placeholder) placeholder.style.display = 'none';
 
   // 페이지 빌드 — 몰입/특목 안내가 있으면 각각 별도 페이지로 분리
-  // 둘 다 활성: 5 + 2 = 7페이지, 하나만 활성: 6페이지, 둘 다 비활성: 5페이지
+  // 근거 bullet 30개 초과 시 분석 페이지를 2페이지로 자동 분할 (인쇄 잘림 방지)
   var extrasN = (D && D.flagMolip ? 1 : 0) + (D && D.flagTeukmok ? 1 : 0);
-  var TOTAL = 5 + extrasN;
-  try { wrap.appendChild(buildPage1()); } catch(e){ console.error('[buildPage1]', e); }
-  try { wrap.appendChild(buildAnalysisPage(2, TOTAL)); } catch(e){ console.error('[buildAnalysisPage]', e); }
-  try { wrap.appendChild(buildDualSlotPage(1, 2, 3, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
-  try { wrap.appendChild(buildDualSlotPage(3, 4, 4, TOTAL)); } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
+  var evBulletCount = 0;
+  if (D.evidence && Array.isArray(D.evidence)) {
+    D.evidence.forEach(function(it){
+      if (it && it.bullets) {
+        it.bullets.forEach(function(b){ if (b.t !== '_meta') evBulletCount++; });
+      }
+    });
+  }
+  var analysisSplit = evBulletCount > 30;
+  var analysisPages = analysisSplit ? 2 : 1;
+  var TOTAL = 4 + analysisPages + extrasN;
+  var pg = 1;
+  try { wrap.appendChild(buildPage1()); pg++; } catch(e){ console.error('[buildPage1]', e); }
+  if (analysisSplit) {
+    // 총 bullet의 절반 지점을 넘어가는 섹션에서 분할
+    var halfTarget = Math.ceil(evBulletCount / 2);
+    var cumBullet = 0;
+    var splitIdx = D.evidence.length;
+    for (var i = 0; i < D.evidence.length; i++) {
+      var c = (D.evidence[i].bullets || []).filter(function(b){return b.t!=='_meta';}).length;
+      cumBullet += c;
+      if (cumBullet >= halfTarget) { splitIdx = i + 1; break; }
+    }
+    try { wrap.appendChild(buildAnalysisPage(pg, TOTAL, D.evidence.slice(0, splitIdx), false)); pg++; } catch(e){ console.error('[buildAnalysisPage A]', e); }
+    try { wrap.appendChild(buildAnalysisPage(pg, TOTAL, D.evidence.slice(splitIdx), true)); pg++; } catch(e){ console.error('[buildAnalysisPage B]', e); }
+  } else {
+    try { wrap.appendChild(buildAnalysisPage(pg, TOTAL)); pg++; } catch(e){ console.error('[buildAnalysisPage]', e); }
+  }
+  try { wrap.appendChild(buildDualSlotPage(1, 2, pg, TOTAL)); pg++; } catch(e){ console.error('[buildDualSlotPage 1-2]', e); }
+  try { wrap.appendChild(buildDualSlotPage(3, 4, pg, TOTAL)); pg++; } catch(e){ console.error('[buildDualSlotPage 3-4]', e); }
   try { wrap.appendChild(buildLastPage(TOTAL, currentActiveKeys.length ? currentActiveKeys.slice() : null)); } catch(e){ console.error('[buildLastPage]', e); }
 
   // currentActiveKeys는 편집바(showEditBar/rebuildEditBar)에서 관리
