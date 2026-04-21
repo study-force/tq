@@ -5042,7 +5042,27 @@ function injectTqDataAndRun(d) {
             console.log('[TQ] slots 재세팅 완료');
           }
         }
-        if (window.__TQ_SLOTS && window.__TQ_SLOTS.slot1) {
+        // Lazy Regen: 400자 초과 오버플로 슬롯 감지 → 판독문 재생성 자동 트리거
+        var _overflowDetected = false;
+        if (window.__TQ_SLOTS) {
+          ['slot1','slot2','slot3','slot4'].forEach(function(k){
+            var _c = window.__TQ_SLOTS[k];
+            if (_c && typeof _c === 'string' && _c.length > 400) _overflowDetected = true;
+          });
+        }
+        if (_overflowDetected) {
+          console.log('[TQ] 오버플로 슬롯 감지 → 판독문 재생성 트리거');
+          window.__TQ_SLOTS = null;
+          var _tabRptReg = document.getElementById('resultTab_리포트');
+          if (_tabRptReg) {
+            _tabRptReg.style.color = 'rgba(255,255,255,.5)';
+            _tabRptReg.innerHTML = '📄 리포트 <span style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;margin-left:4px" class="blink">재생성 중…</span>';
+          }
+          setTimeout(function(){
+            var _bB = document.getElementById('btnB');
+            if (_bB && window.__eng) { _bB.disabled = false; _bB.click(); }
+          }, 800);
+        } else if (window.__TQ_SLOTS && window.__TQ_SLOTS.slot1) {
           try { renderReportTab(); window.__reportRendered = true; } catch(e){ console.error('[renderReportTab]',e); }
         } else {
           console.warn('[TQ] slots 없음 — renderReportTab 건너뜀');
@@ -5181,7 +5201,16 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
               // 슬롯 복원 후 리포트 렌더
               window.__TQ_SLOTS = saved.slots;
-              if (!window.__reportRendered) {
+              // Lazy Regen: 오버플로 감지 시 렌더 건너뜀 (injectTqDataAndRun이 재생성 처리)
+              var _ovf = false;
+              if (window.__TQ_SLOTS) {
+                ['slot1','slot2','slot3','slot4'].forEach(function(k){
+                  var _c = window.__TQ_SLOTS[k];
+                  if (_c && typeof _c === 'string' && _c.length > 400) _ovf = true;
+                });
+              }
+              if (_ovf) { window.__TQ_SLOTS = null; }
+              else if (!window.__reportRendered) {
                 // eng.date 보완 (load 경로)
                 if (window.__eng && window.__inp && window.__inp.reg_date) {
                   window.__eng.date = window.__inp.reg_date.slice(0,10);
@@ -5296,7 +5325,16 @@ window.addEventListener('message', function(event) {
       if (btnA) btnA.click();
       setTimeout(function() {
         window.__TQ_SLOTS = saved.slots;
-        if (!window.__reportRendered) {
+        // Lazy Regen: 오버플로 감지 시 렌더 건너뜀 (injectTqDataAndRun이 재생성 처리)
+        var _ovf = false;
+        if (window.__TQ_SLOTS) {
+          ['slot1','slot2','slot3','slot4'].forEach(function(k){
+            var _c = window.__TQ_SLOTS[k];
+            if (_c && typeof _c === 'string' && _c.length > 400) _ovf = true;
+          });
+        }
+        if (_ovf) { window.__TQ_SLOTS = null; }
+        else if (!window.__reportRendered) {
           try { renderReportTab(); window.__reportRendered = true; } catch(e){}
         }
         if(saved.reg_date || saved.test_date) var _tDate = (saved.created_at || '').slice(0,10);
