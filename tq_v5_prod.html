@@ -492,7 +492,7 @@ details summary:hover{color:var(--tx2)}
 }
 /* ── standalone 리포트 CSS (이식) ── */
 @font-face{font-family:'S-CoreDream';src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff')format('woff');font-weight:400;}
-#resultPane_리포트 .page{width:794px;height:1123px;padding:30px;box-sizing:border-box;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+#resultPane_리포트 .page{width:794px;height:1123px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
 #rptPageWrap{display:flex;flex-direction:column;align-items:center;gap:24px;padding:28px 16px 60px;}
 #resultPane_리포트 * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 @page {
@@ -534,13 +534,13 @@ details summary:hover{color:var(--tx2)}
     padding:0!important;
     margin:0!important;
   }
-  /* .page: 인쇄 시 8mm 여백 적용
+  /* .page: 인쇄 시 5mm 여백 적용
      - 프린터 물리적 인쇄 불가 영역 대비
      - 여백없음/기본 설정에서도 콘텐츠 잘림 방지 */
   #resultPane_리포트 .page {
     box-shadow:none!important; border-radius:0!important;
     margin:0!important;
-    padding:8mm!important;
+    padding:5mm!important;
     box-sizing:border-box!important;
     page-break-after:always!important; break-after:page!important;
     height:297mm!important; width:210mm!important;
