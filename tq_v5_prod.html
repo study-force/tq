@@ -492,7 +492,7 @@ details summary:hover{color:var(--tx2)}
 }
 /* ── standalone 리포트 CSS (이식) ── */
 @font-face{font-family:'S-CoreDream';src:url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff')format('woff');font-weight:400;}
-#resultPane_리포트 .page{width:794px;height:1123px;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+#resultPane_리포트 .page{width:794px;height:1123px;padding:30px;box-sizing:border-box;background:white;box-shadow:0 8px 40px rgba(0,0,0,.18);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
 #rptPageWrap{display:flex;flex-direction:column;align-items:center;gap:24px;padding:28px 16px 60px;}
 #resultPane_리포트 * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 @page {
@@ -534,13 +534,13 @@ details summary:hover{color:var(--tx2)}
     padding:0!important;
     margin:0!important;
   }
-  /* .page: 인쇄 시 5mm 여백 적용
+  /* .page: 인쇄 시 8mm 여백 적용
      - 프린터 물리적 인쇄 불가 영역 대비
      - 여백없음/기본 설정에서도 콘텐츠 잘림 방지 */
   #resultPane_리포트 .page {
     box-shadow:none!important; border-radius:0!important;
     margin:0!important;
-    padding:5mm!important;
+    padding:8mm!important;
     box-sizing:border-box!important;
     page-break-after:always!important; break-after:page!important;
     height:297mm!important; width:210mm!important;
@@ -5932,7 +5932,7 @@ var N_BY_GRADE = {P12:842,P3:2502,P4:5166,P5:7160,P6:10094,M1:11601,M2:9377,M3:9
 
 // ── 학년별 lookup 함수 ──
 function gradeKeyOf(D){
-  D = D || (typeof window !== "undefined" ? window.D : {}) || {};
+  D = D || (typeof window !== "undefined" ? (window.__RPT_D || window.D) : null) || {};
   var lv = D.uiLevel || D.level || "";
   var g = parseInt(D.grade, 10);
   if (lv === "초등" || lv === "초저" || lv === "초고") {
@@ -6095,6 +6095,19 @@ function buildSlotBlock(i) {
   var iconBg = ["#DBEAFE","#DCFCE7","#FEF3C7","#F3E8FF"][i-1] || "#E2E8F0";
 
   var M = '72px';
+
+  // 본문 단락 구성: \n\n 기준 분리, 단락 간 margin 14px (기존 빈줄 gap의 약 절반)
+  var bodyHtml;
+  if (txt) {
+    var paras = String(txt).split(/\n\s*\n+/).map(function(s){return s.trim();}).filter(Boolean);
+    if (paras.length <= 1) paras = String(txt).split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
+    bodyHtml = paras.map(function(p, idx){
+      var mb = (idx === paras.length-1) ? 0 : 14;
+      return '<p style="margin:0 0 '+mb+'px 0;">'+p+'</p>';
+    }).join('');
+  } else {
+    bodyHtml = '<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>';
+  }
   return ''
     // 헤더: 원형 번호 배지 + 서브타이틀 + 질문
     +'<div style="padding:0 '+M+' 8px '+M+';flex-shrink:0;display:flex;align-items:center;gap:14px;">'
@@ -6110,8 +6123,8 @@ function buildSlotBlock(i) {
     +'<div style="flex:1;min-height:0;margin:0 '+M+';background:'+lightBg+';border-radius:8px;padding:24px 30px 24px 34px;position:relative;overflow:hidden;">'
     +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+slotColor+';border-radius:4px 0 0 4px;"></div>'
     +'<div style="position:absolute;bottom:10px;right:14px;font-size:52px;color:'+slotColor+';opacity:.05;font-family:\'Noto Serif KR\',serif;line-height:1;pointer-events:none;font-weight:700;">'+i+'</div>'
-    +'<div style="font-size:15px;line-height:2.05;color:#1E293B;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;white-space:pre-wrap;">'
-    +(txt||'<span style="color:#8E9BB0;font-size:13px;font-family:\'Noto Sans KR\',sans-serif;">판독문이 생성되지 않았습니다.</span>')
+    +'<div style="font-size:15px;line-height:2.05;color:#1E293B;word-break:keep-all;letter-spacing:-.02em;font-family:\'Noto Serif KR\',serif;font-weight:400;">'
+    +bodyHtml
     +'</div>'
     +'</div>';
 }
