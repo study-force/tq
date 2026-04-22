@@ -1432,6 +1432,8 @@ function renderResult(e,nm){
     <!-- 중앙 카드 -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
+      ${Number(e.spd)>=3000?'<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:28%;left:50%;width:460px;max-width:92%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">':''}
+
       <!-- 독해정확도 -->
       <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
