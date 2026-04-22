@@ -5648,7 +5648,7 @@ function buildPage1() {
     var on=habChecked[i];
     return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3.5px">'
       +'<span style="color:'+(on?"#cc0000":"#CBD5E1")+';font-size:15px;min-width:13px;line-height:1">'+(on?"●":"○")+'</span>'
-      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:'+(item==="모르는 단어가 없어도 이해가 잘 안됨"?"-0.08em":"-0.02em")+';white-space:nowrap">'+item+'</span></div>';
+      +'<span style="font-size:14.5px;color:'+(on?"#1E293B":"#64748B")+';font-weight:400;letter-spacing:'+(item==="모르는 단어가 없어도 이해가 잘 안됨"?"-0.12em":"-0.02em")+';white-space:nowrap">'+item+'</span></div>';
   }).join('');
 
   var effRows = EFF_ITEMS.map(function(item,i){
@@ -5719,7 +5719,7 @@ function buildPage1() {
     +'<span style="color:#1E293B;font-size:15px">잘못된 독해습관</span><span style="margin-left:auto;color:#EF4444;font-size:28px;font-weight:400;font-family:Tahoma,sans-serif">'+habitCount+'</span></div></div></div>'
 
     // 열3
-    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%;min-width:0;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:30px">'
+    +'<div style="display:flex;flex-direction:column;padding-top:50px;width:100%;min-width:0;transform:scaleX(0.95);transform-origin:left center;letter-spacing:-0.03em;padding-left:2px">'
     +'<div style="margin-bottom:8px"><span style="font-size:23px;font-weight:400;color:#1E293B;letter-spacing:-0.04em;display:inline-block;font-family:\'S-CoreDream\',\'Noto Sans KR\',sans-serif;">독해효율성</span></div>'
     +effRows
     +'<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div style="display:inline-flex;align-items:center;width:100%;border-top:3px solid #1E293B;padding-top:6px;">'
