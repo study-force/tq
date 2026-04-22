@@ -1432,7 +1432,7 @@ function renderResult(e,nm){
     <!-- 중앙 카드 -->
     <div style="display:flex;flex-direction:column;gap:0;background:#ffffff;border:1px solid #E2E8F0;border-radius:16px;padding:66px 36px;width:500px;flex-shrink:0;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.25)">
 
-      ${Number(e.spd)>=3000?'<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:28%;left:50%;width:460px;max-width:92%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">':''}
+      ${Number(e.spd)>=3000?'<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:28%;left:50%;width:391px;max-width:78%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">':''}
 
       <!-- 독해정확도 -->
       <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:20px">
@@ -3061,7 +3061,7 @@ function rpBuildResultHTML(eng, inp) {
 
     // INVALID DATA 도장 (독해속도 3000자/분 이상일 때)
     +(Number(spd)>=3000
-      ? '<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:30%;left:50%;width:620px;max-width:90%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">'
+      ? '<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:30%;left:50%;width:527px;max-width:76%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">'
       : '')
 
     // 상단 3열
@@ -5691,7 +5691,7 @@ function buildPage1() {
 
     // INVALID DATA 도장 (독해속도 3000자/분 이상일 때)
     +(Number(D.spd)>=3000
-      ? '<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:30%;left:50%;width:620px;max-width:90%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">'
+      ? '<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:30%;left:50%;width:527px;max-width:76%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">'
       : '')
 
 
