@@ -3055,7 +3055,12 @@ function rpBuildResultHTML(eng, inp) {
   +'</div>'
 
   // ── 본문
-  +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0;">'
+  +'<div style="flex:1;padding:20px 24px;display:grid;grid-template-rows:1fr auto 1fr;gap:0;min-height:0;position:relative;">'
+
+    // INVALID DATA 도장 (독해속도 3000자/분 이상일 때)
+    +(Number(spd)>=3000
+      ? '<img src="images/invalid_data.png" alt="INVALID DATA" style="position:absolute;top:30%;left:50%;width:620px;max-width:90%;height:auto;transform:translate(-50%,-50%) rotate(-14deg);z-index:999;pointer-events:none;opacity:.92;">'
+      : '')
 
     // 상단 3열
     +'<div style="display:grid;grid-template-columns:45fr 27.5fr 27.5fr;gap:8px;">'
