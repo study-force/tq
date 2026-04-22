@@ -5720,7 +5720,7 @@ function buildPage1() {
     +'</div></div>'
     +'<div style="width:100%;display:flex;flex-direction:column;align-items:center">'
     +'<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:33px;font-weight:400;color:#475569;letter-spacing:-0.04em">독해속도</span><span style="font-size:16px;color:#666;font-weight:400">(자/분)</span></div>'
-    +'<div style="font-size:'+(D.spd>=1000?74:92)+'px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif;letter-spacing:-.06em;white-space:nowrap">'+Number(D.spd).toLocaleString()+'</div>'
+    +'<div style="font-size:'+(D.spd>=10000?74:(D.spd>=1000?90:92))+'px;font-weight:900;color:#1E293B;line-height:1;margin-top:-4px;font-family:Tahoma,sans-serif;letter-spacing:-.06em;white-space:nowrap">'+Number(D.spd).toLocaleString()+'</div>'
     +'</div></div>'
 
     // 열2
