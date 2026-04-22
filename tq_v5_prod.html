@@ -534,13 +534,13 @@ details summary:hover{color:var(--tx2)}
     padding:0!important;
     margin:0!important;
   }
-  /* .page: 인쇄 시 5mm 여백 적용
-     - 프린터 물리적 인쇄 불가 영역 대비
-     - 여백없음/기본 설정에서도 콘텐츠 잘림 방지 */
+  /* .page: 웹 캔버스(794×1123px ≒ 210×297mm)와 동일하게 유지
+     - @page margin:0 + padding:0 으로 웹과 인쇄 레이아웃 완전 일치
+     - 프린터 물리 여백은 브라우저 인쇄 설정(여백=없음 또는 최소)에서 처리 */
   #resultPane_리포트 .page {
     box-shadow:none!important; border-radius:0!important;
     margin:0!important;
-    padding:5mm!important;
+    padding:0!important;
     box-sizing:border-box!important;
     page-break-after:always!important; break-after:page!important;
     height:297mm!important; width:210mm!important;
