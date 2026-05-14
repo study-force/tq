@@ -1,0 +1,4 @@
+# tq-engine은 클라이언트(브라우저)가 직접 호출하며 자체 헤더(x-academy-token)로 인증.
+# Supabase JWT 검증을 끄지 않으면 401이 발생하므로 명시.
+[functions.tq-engine]
+verify_jwt = false
