@@ -4,8 +4,17 @@ import path from "node:path";
 const nextConfig = {
   // 정적 파일은 모두 public/에서 자동 서빙됨.
   turbopack: {
-    // 부모 디렉터리에 다른 lockfile이 있어서 workspace root 추정이 흔들리는 것 방지
     root: path.resolve("."),
+  },
+  // 루트 접속 시 응시 페이지로 리다이렉트 (기존 index.html meta refresh 대체)
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/tq_v5_prod.html",
+        permanent: false,
+      },
+    ];
   },
 };
 
