@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/tq_v5_prod.html",
-      "permanent": false
-    }
-  ]
-}
