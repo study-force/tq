@@ -6,16 +6,7 @@ const nextConfig = {
   turbopack: {
     root: path.resolve("."),
   },
-  // 루트 접속 시 응시 페이지로 리다이렉트 (기존 index.html meta refresh 대체)
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/tq_v5_prod.html",
-        permanent: false,
-      },
-    ];
-  },
+  // '/' 리다이렉트는 vercel.json에서 처리 (Next.js redirects보다 우선)
 };
 
 export default nextConfig;
