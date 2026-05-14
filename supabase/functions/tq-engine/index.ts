@@ -708,6 +708,20 @@ JSON만 출력하세요.`}]
         return new Response(JSON.stringify({error:"저장 데이터 없음"}),{status:400,headers:CORS});
       }
 
+      // 파생값 보강 — 외부 URL 진입 시 acc/hab_score/eff_score가 누락되는 케이스 방어
+      // (직접 폼 입력은 클라이언트의 getInputs()에서 이미 채워 보냄)
+      if (si.acc == null && si.fact_score != null && si.structure_score != null) {
+        si.acc = Math.round((Number(si.fact_score) + Number(si.structure_score)) / 2 / 10) * 10;
+      }
+      if (si.hab_score == null) {
+        const hCount = Array.isArray(si.reading_habit_checks) ? si.reading_habit_checks.length : 0;
+        si.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
+      }
+      if (si.eff_score == null) {
+        const eCount = Array.isArray(si.reading_effect_checks) ? si.reading_effect_checks.length : 0;
+        si.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
+      }
+
       const today = si.reg_date || new Date().toISOString().slice(0,10);
 
       const dbPost = async (table: string, data: any, prefer="return=representation") => {
