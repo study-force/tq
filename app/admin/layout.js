@@ -34,17 +34,27 @@ export default function AdminLayout({ children }) {
     router.replace("/admin/login");
   };
 
-  if (pathname === "/admin/login") return <>{children}</>;
-  if (auth === null) return <div style={s.loading}>인증 확인 중...</div>;
-  if (!auth) return null;
+  const adminHead = (
+    <>
+      <title>TQ Admin</title>
+      <link rel="icon" type="image/svg+xml" href="/favicon-admin.svg" />
+    </>
+  );
+
+  if (pathname === "/admin/login") return <>{adminHead}{children}</>;
+  if (auth === null) return <>{adminHead}<div style={s.loading}>인증 확인 중...</div></>;
+  if (!auth) return <>{adminHead}</>;
 
   return (
-    <div style={s.layout}>
-      <div style={s.topBar}>
-        <a style={s.topLogo} href="/admin">📘 TQ Admin</a>
-        <button style={s.topLogout} onClick={handleLogout}>로그아웃</button>
+    <>
+      {adminHead}
+      <div style={s.layout}>
+        <div style={s.topBar}>
+          <a style={s.topLogo} href="/admin">📘 TQ Admin</a>
+          <button style={s.topLogout} onClick={handleLogout}>로그아웃</button>
+        </div>
+        <div style={s.main}>{children}</div>
       </div>
-      <div style={s.main}>{children}</div>
-    </div>
+    </>
   );
 }
