@@ -19,16 +19,23 @@ export async function GET(request) {
     const to   = searchParams.get("to");
 
     // 기간 필터는 reg_date (YYYY-MM-DD) 기준
-    let q = sb.from("tq_results")
-      .select("id, name, user_school_grade, user_section, reg_date, reading_score, academy_token, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
-    if (from) q = q.gte("reg_date", from);
-    if (to)   q = q.lte("reg_date", to);
-
-    const { data: rows, error } = await q;
-    if (error) throw error;
-    const all = rows || [];
+    // Supabase 기본 max-rows=1000 우회 — range로 페이지네이션해서 전체 수집
+    const PAGE_SIZE = 1000;
+    const HARD_CAP  = 10000; // 안전 상한
+    const all = [];
+    for (let offset = 0; offset < HARD_CAP; offset += PAGE_SIZE) {
+      let q = sb.from("tq_results")
+        .select("id, name, user_school_grade, user_section, reg_date, reading_score, academy_token, created_at")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (from) q = q.gte("reg_date", from);
+      if (to)   q = q.lte("reg_date", to);
+      const { data: rows, error } = await q;
+      if (error) throw error;
+      if (!rows || rows.length === 0) break;
+      all.push(...rows);
+      if (rows.length < PAGE_SIZE) break;
+    }
 
     // KST 기준 "오늘"
     const now = new Date();
