@@ -429,9 +429,9 @@ function RulesTable({ rules, isContradictionMode, editingId, editBuf, setEditBuf
           </tr>
           <tr>
             {COND_COLS.map(c => (
-              <th key={c.key} style={{ ...S.th, minWidth: c.width }}>{c.label}</th>
+              <th key={c.key} style={{ ...S.th, ...S.thRow2, minWidth: c.width }}>{c.label}</th>
             ))}
-            <th style={{ ...S.th, minWidth: 60 }}>기타</th>
+            <th style={{ ...S.th, ...S.thRow2, minWidth: 60 }}>기타</th>
           </tr>
         </thead>
         <tbody>
@@ -606,9 +606,10 @@ const S = {
   btnSave: { background: "#059669", color: "#fff" },
   btnEdit: { background: "#F1F5F9", color: "#475569", border: "1px solid #E2E8F0" },
   btnCancel: { background: "transparent", color: "#64748B", border: "1px solid #E2E8F0" },
-  dtWrap: { overflow: "auto", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.06)" },
-  dt: { width: "100%", borderCollapse: "collapse", background: "#fff", minWidth: 1200 },
-  th: { background: "#E8EDF3", padding: "8px 6px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#475569", borderBottom: "1px solid #CBD5E1", borderRight: "1px solid #D5DCE5", whiteSpace: "nowrap" },
+  dtWrap: { overflow: "auto", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.06)", maxHeight: "calc(100vh - 200px)" },
+  dt: { width: "100%", borderCollapse: "separate", borderSpacing: 0, background: "#fff", minWidth: 1200 },
+  th: { background: "#E8EDF3", padding: "8px 6px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#475569", borderBottom: "1px solid #CBD5E1", borderRight: "1px solid #D5DCE5", whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 5 },
+  thRow2: { top: 32 },
   grpCond: { background: "#DBEAFE", color: "#1D4ED8", fontSize: 12, fontWeight: 700, letterSpacing: ".03em", borderBottom: "1px solid #93C5FD" },
   tr: { borderBottom: "1px solid #F1F5F9" },
   trEditing: { background: "#FFFBEB" },
