@@ -618,7 +618,7 @@ const S = {
   grpCond: { background: "#DBEAFE", color: "#1D4ED8", fontSize: 12, fontWeight: 700, letterSpacing: ".03em", borderBottom: "1px solid #93C5FD" },
   tr: { borderBottom: "1px solid #F1F5F9" },
   trEditing: { background: "#FFFBEB" },
-  td: { padding: "6px 6px", fontSize: 12, verticalAlign: "middle", textAlign: "center", borderRight: "1px solid #F8FAFC" },
+  td: { padding: "6px 6px", fontSize: 12, verticalAlign: "middle", textAlign: "center", borderRight: "1px solid #F8FAFC", borderBottom: "1px solid #F1F5F9" },
   textCell: { textAlign: "left", fontSize: 12, lineHeight: 1.5, whiteSpace: "normal", color: "#334155", maxWidth: 350, minWidth: 200 },
   ruleId: { color: "#94A3B8", fontFamily: "monospace", fontSize: 11, whiteSpace: "nowrap" },
   condVal: { display: "inline-block", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" },
