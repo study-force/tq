@@ -128,6 +128,100 @@ export function LogicView() {
       </div>
 
       <div style={R.box}>
+        <div style={R.boxTitle}>② 5번·9번 교차 매트릭스</div>
+
+        <p style={{ fontSize: 12, color: "#64748B", marginBottom: 10, textAlign: "center", fontWeight: 600 }}>
+          5번 정보처리습관 — 음독 × 속도 × 정확도
+        </p>
+        <div style={{ overflowX: "auto", marginBottom: 20 }}>
+          <table style={{ ...R.table, minWidth: 600 }}>
+            <thead>
+              <tr>
+                <td style={{ width: 90 }}></td>
+                <th style={{ ...R.th, background: "#DBEAFE", color: "#1D4ED8", textAlign: "center" }}>spd 빠름</th>
+                <th style={{ ...R.th, textAlign: "center" }}>spd 보통</th>
+                <th style={{ ...R.th, background: "#FEF9C3", color: "#92400E", textAlign: "center" }}>spd 느림</th>
+                <th style={{ ...R.th, textAlign: "center" }}>음독 없음</th>
+                <th style={{ ...R.th, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>음독 있음</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ ...R.td, background: "#D1FAE5", color: "#065F46", fontWeight: 600, textAlign: "center" }}>acc ≥70</td>
+                <td style={{ ...R.td, background: "#F0FDF4", color: "#166534", textAlign: "center" }}>정상·재검사</td>
+                <td style={{ ...R.td, background: "#F0FDF4", color: "#166534", textAlign: "center" }}>강점</td>
+                <td style={{ ...R.td, background: "#FEFCE8", color: "#854D0E", textAlign: "center" }}>집요함·성실</td>
+                <td style={{ ...R.td, background: "#F0FDF4", color: "#166534", textAlign: "center" }}>강점</td>
+                <td style={{ ...R.td, background: "#FEFCE8", color: "#854D0E", textAlign: "center" }}>빠름→자연현상<br />느림→속도병목</td>
+              </tr>
+              <tr>
+                <td style={{ ...R.td, background: "#FEF9C3", color: "#92400E", fontWeight: 600, textAlign: "center" }}>acc 50~69</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>훑어읽기주의</td>
+                <td style={{ ...R.td, textAlign: "center" }}>보통</td>
+                <td style={{ ...R.td, background: "#FEFCE8", color: "#854D0E", textAlign: "center" }}>역량개선여지</td>
+                <td style={{ ...R.td, textAlign: "center" }}>보통</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>음독심각도×<br />주의/위험</td>
+              </tr>
+              <tr>
+                <td style={{ ...R.td, background: "#FEE2E2", color: "#991B1B", fontWeight: 600, textAlign: "center" }}>acc &lt;50</td>
+                <td style={{ ...R.td, background: "#FEE2E2", color: "#991B1B", textAlign: "center" }}>심각훑어읽기</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>훑기경향주의</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>역량부족</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>훑어읽기</td>
+                <td style={{ ...R.td, background: "#FEE2E2", color: "#991B1B", textAlign: "center" }}>빠름→훑기+음독<br />충돌 위험</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style={{ fontSize: 12, color: "#64748B", marginBottom: 10, textAlign: "center", fontWeight: 600 }}>
+          9번 학교학업 — 성적 × acc 교차
+        </p>
+        <div style={{ overflowX: "auto", marginBottom: 12 }}>
+          <table style={R.table}>
+            <thead>
+              <tr>
+                <td style={{ width: 100 }}></td>
+                <th style={{ ...R.th, background: "#D1FAE5", color: "#065F46", textAlign: "center" }}>acc ≥80</th>
+                <th style={{ ...R.th, background: "#FEF9C3", color: "#92400E", textAlign: "center" }}>acc 50~79</th>
+                <th style={{ ...R.th, background: "#FEE2E2", color: "#991B1B", textAlign: "center" }}>acc &lt;50</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ ...R.td, background: "#DBEAFE", color: "#1D4ED8", fontWeight: 600, textAlign: "center" }}>최상위(&gt;89)</td>
+                <td style={{ ...R.td, background: "#F0FDF4", color: "#166534", textAlign: "center" }}>강점·안정</td>
+                <td style={{ ...R.td, background: "#FEFCE8", color: "#854D0E", textAlign: "center" }}>노력으로유지</td>
+                <td style={{ ...R.td, background: "#FEE2E2", color: "#991B1B", textAlign: "center" }}>암기스킬의존</td>
+              </tr>
+              <tr>
+                <td style={{ ...R.td, background: "#DBEAFE", color: "#1D4ED8", fontWeight: 600, textAlign: "center" }}>상위(&gt;74)</td>
+                <td style={{ ...R.td, background: "#F0FDF4", color: "#166534", textAlign: "center" }}>강점·균형</td>
+                <td style={{ ...R.td, textAlign: "center" }}>역량키우면따라옴</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>과부하가능성</td>
+              </tr>
+              <tr>
+                <td style={{ ...R.td, fontWeight: 600, textAlign: "center" }}>중상위</td>
+                <td style={{ ...R.td, textAlign: "center" }}>보통</td>
+                <td style={{ ...R.td, textAlign: "center" }}>역량낮음점검</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>역량결손</td>
+              </tr>
+              <tr>
+                <td style={{ ...R.td, color: "#64748B", fontWeight: 600, textAlign: "center" }}>중위·하위</td>
+                <td style={{ ...R.td, textAlign: "center" }}>역량개선시향상</td>
+                <td style={{ ...R.td, background: "#FEF3C7", color: "#92400E", textAlign: "center" }}>독해결손→성적영향</td>
+                <td style={{ ...R.td, background: "#FEE2E2", color: "#991B1B", textAlign: "center" }}>독해역량결손직접</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ background: "#F8FAFC", borderRadius: 7, padding: "8px 12px", fontSize: 11, color: "#475569", lineHeight: 1.9 }}>
+          <b>수학 추가 교차:</b> 수학최상위 + inf&lt;50 + acc&lt;60 → <b style={{ color: "#DC2626" }}>공식암기·유형반복</b> · 수학최상위 + inf≥60 → <b style={{ color: "#059669" }}>추론능력 반영</b> · 수학최상위 + acc&lt;60 → <b style={{ color: "#D97706" }}>서술형·지문형 어려움</b>
+        </div>
+      </div>
+
+      <div style={R.box}>
         <div style={R.boxTitle}>플래그·긴급도 조건</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px" }}>
@@ -157,6 +251,28 @@ export function LogicView() {
               <span style={{ fontSize: 11, color: "#475569" }}>{desc}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div style={R.box}>
+        <div style={R.boxTitle}>④ 수정 주의사항 & QC</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ background: "#FEF2F2", borderRadius: 8, padding: "10px 14px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#991B1B", marginBottom: 6 }}>⚠ 조건 로직 수정 시</div>
+            <div style={{ fontSize: 11, color: "#7F1D1D", lineHeight: 1.7 }}>
+              • flagC/flagO 변경 → 1·5·8·9번 동시 영향<br />
+              • habClass 변경 → 5번 전체 재검토<br />
+              • acc 경계값 변경 → 경계값 탭에서 영향 범위 확인
+            </div>
+          </div>
+          <div style={{ background: "#F0FDF4", borderRadius: 8, padding: "10px 14px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#065F46", marginBottom: 6 }}>✓ 메시지 텍스트 수정 시</div>
+            <div style={{ fontSize: 11, color: "#064E3B", lineHeight: 1.7 }}>
+              • 어드민에서 직접 수정 → DB 즉시 반영<br />
+              • 조건 로직 변경 없어 상대적으로 안전<br />
+              • 약 9.8조 교차 조합 — 전수 테스트 불가, 실제 학생 데이터로 QC
+            </div>
+          </div>
         </div>
       </div>
 
