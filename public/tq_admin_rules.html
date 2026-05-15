@@ -7,10 +7,8 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><polygon points='32,4 40,24 62,24 44,38 50,58 32,46 14,58 20,38 2,24 24,24' fill='%23DC2626'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script>
-// iframe이 아닌 직접 접속 시 어드민 포털로 리다이렉트
-if(window.parent===window && !location.search.includes('standalone=1')){
-  location.href='https://element.sfcenter.co.kr/admin/tq-rules';
-}
+// 마이그레이션 기간: 옛 페이지는 standalone 모드로 직접 접근 가능 (비교/검증용)
+// (마이그레이션 완료 후 이 파일 전체 제거 예정)
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>

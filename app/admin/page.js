@@ -9,7 +9,7 @@ const SECTIONS = [
     desc: "TQ 의사결정 테이블, 경계값 관리",
     color: "#8B5CF6",
     bg: "#F5F3FF",
-    enabled: false,
+    enabled: true,
   },
   {
     href: "/admin/tq-usage",
