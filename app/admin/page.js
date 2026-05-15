@@ -18,7 +18,7 @@ const SECTIONS = [
     desc: "TQ 컨설턴트·학원별 검사 통계",
     color: "#10B981",
     bg: "#ECFDF5",
-    enabled: false,
+    enabled: true,
   },
 ];
 
