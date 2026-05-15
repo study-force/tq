@@ -420,8 +420,8 @@ function RulesTable({ rules, isContradictionMode, editingId, editBuf, setEditBuf
       <table style={S.dt}>
         <thead>
           <tr>
-            <th rowSpan={2} style={{ ...S.th, width: 30 }}>#</th>
-            <th rowSpan={2} style={{ ...S.th, width: 100 }}>Rule ID</th>
+            <th rowSpan={2} style={{ ...S.th, ...S.thNumStickyL, width: 30 }}>#</th>
+            <th rowSpan={2} style={{ ...S.th, ...S.thIdStickyL, width: 100 }}>Rule ID</th>
             <th colSpan={COND_COLS.length + 1} style={{ ...S.th, ...S.grpCond }}>조건</th>
             <th rowSpan={2} style={{ ...S.th, width: 60 }}>태그</th>
             <th rowSpan={2} style={{ ...S.th, minWidth: 200, textAlign: "left" }}>메시지 텍스트</th>
@@ -438,10 +438,11 @@ function RulesTable({ rules, isContradictionMode, editingId, editBuf, setEditBuf
           {rules.map((r, i) => {
             const isEd = editingId === r.id;
             const conds = r.conditions || {};
+            const rowBg = isEd ? "#FFFBEB" : "#fff";
             return (
               <tr key={r.id} style={{ ...S.tr, ...(isEd ? S.trEditing : {}) }}>
-                <td style={{ ...S.td, color: "#475569", fontSize: 11 }}>{i + 1}</td>
-                <td style={S.td}>
+                <td style={{ ...S.td, ...S.tdNumSticky, color: "#475569", fontSize: 11, background: rowBg }}>{i + 1}</td>
+                <td style={{ ...S.td, ...S.tdIdSticky, background: rowBg }}>
                   <span style={S.ruleId}>{r.rule_id}</span>
                   {isContradictionMode && <div style={{ fontSize: 10, color: "#94A3B8" }}>{r.area}) {r.area_name}</div>}
                 </td>
@@ -610,6 +611,10 @@ const S = {
   dt: { width: "100%", borderCollapse: "separate", borderSpacing: 0, background: "#fff", minWidth: 1200 },
   th: { background: "#E8EDF3", padding: "8px 6px", textAlign: "center", fontSize: 11, fontWeight: 600, color: "#475569", borderBottom: "1px solid #CBD5E1", borderRight: "1px solid #D5DCE5", whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 5 },
   thRow2: { top: 32 },
+  thNumStickyL: { left: 0, zIndex: 7 },
+  thIdStickyL:  { left: 30, zIndex: 7 },
+  tdNumSticky:  { position: "sticky", left: 0,  zIndex: 3 },
+  tdIdSticky:   { position: "sticky", left: 30, zIndex: 3 },
   grpCond: { background: "#DBEAFE", color: "#1D4ED8", fontSize: 12, fontWeight: 700, letterSpacing: ".03em", borderBottom: "1px solid #93C5FD" },
   tr: { borderBottom: "1px solid #F1F5F9" },
   trEditing: { background: "#FFFBEB" },
