@@ -702,9 +702,10 @@ function showSavedResultToast(testDate) {
   msg.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
   t.appendChild(msg);
 
-  // 데이터 삭제 버튼 — 어드민 진입(?admin=1) + 저장된 레코드(window.__TQ_SAVED_ID) 있을 때만 노출
+  // 데이터 삭제 버튼 — 저장된 레코드(window.__TQ_SAVED_ID) 있으면 노출
+  // (실서버 적용 시 어드민 한정 노출 방식 별도 검토 — 현재는 모두 노출)
   // 클릭 시 archived_at = NOW() 세팅(soft-delete) → 학원에서 결과판독 재클릭 시 새로 분석됨
-  if (window.__isAdminView && window.__TQ_SAVED_ID) {
+  if (window.__TQ_SAVED_ID) {
     var btn = document.createElement('button');
     btn.textContent = '데이터 삭제';
     btn.title = '이 학생의 분석 데이터를 비활성화합니다. 학원에서 결과판독을 다시 누르면 새로 분석됩니다.';
@@ -716,23 +717,18 @@ function showSavedResultToast(testDate) {
     t.appendChild(btn);
   }
 
-  // 닫기 버튼 — 어드민 진입 시에만 노출 (학원은 토스트가 자동 사라짐)
-  if (window.__isAdminView) {
-    var close = document.createElement('button');
-    close.textContent = '✕';
-    close.title = '닫기';
-    close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
-      + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
-    close.onclick = function(){ t.remove(); };
-    t.appendChild(close);
-  }
+  // 닫기 버튼 — 토스트를 명시적으로 닫을 수 있도록 항상 노출
+  var close = document.createElement('button');
+  close.textContent = '✕';
+  close.title = '닫기';
+  close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
+    + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
+  close.onclick = function(){ t.remove(); };
+  t.appendChild(close);
 
   document.body.appendChild(t);
-  // 학원: 4초 후 자동 사라짐 (기존 동작 유지)
-  // 어드민: 자동 닫힘 없음 — 재분석 클릭 또는 ✕ 클릭으로 닫음
-  if (!window.__isAdminView) {
-    setTimeout(function(){ if (t && t.parentNode) t.remove(); }, 4000);
-  }
+  // 자동 닫힘 없음 — 사용자가 ✕ 또는 [데이터 삭제]를 누를 때까지 유지
+  // (실서버 적용 시 학원 모드에서 자동 닫힘 부활 검토)
 }
 
 // ── 데이터 삭제 — 현재 로드된 레코드를 soft-delete (archived_at 세팅) ──
