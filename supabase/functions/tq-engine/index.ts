@@ -70,6 +70,27 @@ function normalizeInpChecks(inp: Record<string, any>) {
   inp.reading_effect_checks = normalizeChecksToStrings(inp.reading_effect_checks, EFF_LIST);
 }
 
+// ── 파생값 보강 — 외부 tqdata에 acc/hab_score/eff_score가 없는 경우 계산 ──
+// 외부 진입 경로(?tqdata=...)에서는 fact_score/structure_score만 들어오고
+// acc는 derived 값이라 누락됨. 엔진은 inp.acc를 직접 사용하므로 입구에서 보충해야
+// 결과에 undefined가 나오지 않음.
+function deriveInpScores(inp: Record<string, any>) {
+  if (!inp || typeof inp !== "object") return;
+  if (inp.acc == null && inp.fact_score != null && inp.structure_score != null) {
+    inp.acc = Math.round((Number(inp.fact_score) + Number(inp.structure_score)) / 2 / 10) * 10;
+  }
+  if (inp.hab_score == null) {
+    const habChecks = normalizeChecksToBooleans(inp.reading_habit_checks, HAB_LIST);
+    const hCount = habChecks.filter(Boolean).length;
+    inp.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
+  }
+  if (inp.eff_score == null) {
+    const effChecks = normalizeChecksToBooleans(inp.reading_effect_checks, EFF_LIST);
+    const eCount = effChecks.filter(Boolean).length;
+    inp.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
+  }
+}
+
 function classifyHabits(checked: string[]) {
   const 표면음독키=["소리 내어","또박또박"];
   const 내재재처리키=["이미 읽은 곳","글줄을 자주","짚어가며"];
@@ -670,12 +691,12 @@ serve(async (req) => {
     const body = await req.json();
     const { action, inp, name, engineResult } = body;
 
-    // inp가 있으면 체크리스트 형식을 캐논(문자열 배열)으로 정규화 — 모든 액션 공통
-    // 외부 tqdata(boolean 배열) 입력이 들어와도 runEngine / save / generate 어디서든
-    // .includes() 호출이 안전하게 동작하도록 입구에서 한 번에 변환.
-    if (inp) normalizeInpChecks(inp);
-    if (body && body.si)  normalizeInpChecks(body.si);   // 일부 액션에서 si로 받을 가능성 방어
-    if (body && body.inp) normalizeInpChecks(body.inp);  // (위와 동일 객체 보장)
+    // inp가 있으면 체크리스트 형식을 캐논(문자열 배열)으로 정규화 + 파생값 보충
+    // 외부 tqdata는 boolean 배열 + acc 누락 형태로 들어오므로 모든 액션 진입 전에 통일.
+    // (runEngine 내부의 .includes() 안전성, e.acc=undefined로 렌더링 시 'undefined' 표시 방지)
+    if (inp) { normalizeInpChecks(inp); deriveInpScores(inp); }
+    if (body && body.si)  { normalizeInpChecks(body.si);  deriveInpScores(body.si); }
+    if (body && body.inp) { normalizeInpChecks(body.inp); deriveInpScores(body.inp); }
 
     // ── 엔진 실행 ──
     if (action === "engine") {
@@ -750,25 +771,10 @@ JSON만 출력하세요.`}]
         return new Response(JSON.stringify({error:"저장 데이터 없음"}),{status:400,headers:CORS});
       }
 
-      // 파생값 보강 — 외부 URL 진입 시 acc/hab_score/eff_score가 누락되는 케이스 방어
-      // (직접 폼 입력은 클라이언트의 getInputs()에서 이미 채워 보냄)
-      if (si.acc == null && si.fact_score != null && si.structure_score != null) {
-        si.acc = Math.round((Number(si.fact_score) + Number(si.structure_score)) / 2 / 10) * 10;
-      }
-
-      // 체크리스트는 body 파싱 직후 module-level normalizeInpChecks로 이미 캐논(문자열 배열)으로 변환됨.
-      // 여기서는 boolean[] 형태가 다시 필요하므로 module-level 헬퍼로 재계산.
+      // 체크리스트 정규화/파생값(acc/hab_score/eff_score) 보강은 이미 body 파싱 직후에 처리됨.
+      // habRows/effRows 저장을 위해 boolean[] 형태만 다시 계산.
       const habChecks = normalizeChecksToBooleans(si.reading_habit_checks, HAB_LIST);
       const effChecks = normalizeChecksToBooleans(si.reading_effect_checks, EFF_LIST);
-      const hCount = habChecks.filter(Boolean).length;
-      const eCount = effChecks.filter(Boolean).length;
-
-      if (si.hab_score == null) {
-        si.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
-      }
-      if (si.eff_score == null) {
-        si.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
-      }
 
       const today = si.reg_date || new Date().toISOString().slice(0,10);
 
