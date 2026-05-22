@@ -675,20 +675,39 @@ details summary:hover{color:var(--tx2)}
 <script>
 
 // ── 어드민 진입 식별 ──
-// URL에 ?admin=1 이 있으면 어드민 컨텍스트로 간주 (재분석 등 운영 기능 노출).
-// 학원 시스템(sfos.kr 등)에서 보낼 때는 이 파라미터가 없어 일반 응시 모드로 동작.
-window.__isAdminView = (function() {
+// tq.sfcenter.co.kr/admin 에 미리 로그인되어 있으면 admin_session 쿠키 보유.
+// 페이지 로드 시 /api/admin/auth GET 호출 → 쿠키 검증 → admin 여부 반환.
+// (정식 방식은 추후 구서버 PHP가 HMAC 토큰을 tqdata에 실어 보내는 것 — 추가 작업 필요)
+window.__isAdminView = false;
+window.__adminCheckPromise = (function() {
   try {
-    var p = new URLSearchParams(window.location.search);
-    return p.get('admin') === '1' || p.get('sf_admin') === '1';
-  } catch (_) { return false; }
+    return fetch('/api/admin/auth', { credentials: 'include' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        window.__isAdminView = !!(d && d.authenticated);
+        if (window.__isAdminView) console.log('[TQ] admin session detected');
+        return window.__isAdminView;
+      })
+      .catch(function(){ window.__isAdminView = false; return false; });
+  } catch (_) {
+    return Promise.resolve(false);
+  }
 })();
 
 // ── 저장된 결과 알림 토스트 ──
+// admin 세션 체크가 완료된 뒤 렌더 → admin 여부에 따라 [데이터 삭제] / ✕ / 자동 닫힘 분기
 function showSavedResultToast(testDate) {
+  Promise.resolve(window.__adminCheckPromise || false).then(function(){
+    _renderSavedResultToast(testDate);
+  });
+}
+
+function _renderSavedResultToast(testDate) {
   // 기존 토스트 제거 (중복 방지)
   var existing = document.getElementById('_tqSavedToast');
   if (existing) existing.remove();
+
+  var isAdmin = !!window.__isAdminView;
 
   var t = document.createElement('div');
   t.id = '_tqSavedToast';
@@ -702,10 +721,9 @@ function showSavedResultToast(testDate) {
   msg.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
   t.appendChild(msg);
 
-  // 데이터 삭제 버튼 — 저장된 레코드(window.__TQ_SAVED_ID) 있으면 노출
-  // (실서버 적용 시 어드민 한정 노출 방식 별도 검토 — 현재는 모두 노출)
+  // [데이터 삭제] — admin 세션 + 저장된 레코드(window.__TQ_SAVED_ID) 있을 때만 노출
   // 클릭 시 archived_at = NOW() 세팅(soft-delete) → 학원에서 결과판독 재클릭 시 새로 분석됨
-  if (window.__TQ_SAVED_ID) {
+  if (isAdmin && window.__TQ_SAVED_ID) {
     var btn = document.createElement('button');
     btn.textContent = '데이터 삭제';
     btn.title = '이 학생의 분석 데이터를 비활성화합니다. 학원에서 결과판독을 다시 누르면 새로 분석됩니다.';
@@ -717,18 +735,23 @@ function showSavedResultToast(testDate) {
     t.appendChild(btn);
   }
 
-  // 닫기 버튼 — 토스트를 명시적으로 닫을 수 있도록 항상 노출
-  var close = document.createElement('button');
-  close.textContent = '✕';
-  close.title = '닫기';
-  close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
-    + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
-  close.onclick = function(){ t.remove(); };
-  t.appendChild(close);
+  // ✕ — admin 모드에서만 노출 (학원 모드는 자동 닫힘)
+  if (isAdmin) {
+    var close = document.createElement('button');
+    close.textContent = '✕';
+    close.title = '닫기';
+    close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
+      + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
+    close.onclick = function(){ t.remove(); };
+    t.appendChild(close);
+  }
 
   document.body.appendChild(t);
-  // 자동 닫힘 없음 — 사용자가 ✕ 또는 [데이터 삭제]를 누를 때까지 유지
-  // (실서버 적용 시 학원 모드에서 자동 닫힘 부활 검토)
+  // 학원 모드: 4초 후 자동 닫힘 (기존 UX 복원)
+  // admin 모드: 자동 닫힘 없음 — ✕ 또는 [데이터 삭제]로 닫음
+  if (!isAdmin) {
+    setTimeout(function(){ if (t && t.parentNode) t.remove(); }, 4000);
+  }
 }
 
 // ── 데이터 삭제 — 현재 로드된 레코드를 soft-delete (archived_at 세팅) ──
