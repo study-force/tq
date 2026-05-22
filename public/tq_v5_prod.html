@@ -674,6 +674,16 @@ details summary:hover{color:var(--tx2)}
 
 <script>
 
+// ── 어드민 진입 식별 ──
+// URL에 ?admin=1 이 있으면 어드민 컨텍스트로 간주 (재분석 등 운영 기능 노출).
+// 학원 시스템(sfos.kr 등)에서 보낼 때는 이 파라미터가 없어 일반 응시 모드로 동작.
+window.__isAdminView = (function() {
+  try {
+    var p = new URLSearchParams(window.location.search);
+    return p.get('admin') === '1' || p.get('sf_admin') === '1';
+  } catch (_) { return false; }
+})();
+
 // ── 저장된 결과 알림 토스트 ──
 function showSavedResultToast(testDate) {
   // 기존 토스트 제거 (중복 방지)
@@ -692,8 +702,8 @@ function showSavedResultToast(testDate) {
   msg.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
   t.appendChild(msg);
 
-  // 재분석 버튼 — 원본 tqdata가 보존돼 있을 때만 노출
-  if (window.__tqdataOriginal) {
+  // 재분석 버튼 — 어드민 진입(?admin=1) + 원본 tqdata 보존 시에만 노출
+  if (window.__isAdminView && window.__tqdataOriginal) {
     var btn = document.createElement('button');
     btn.textContent = '재분석';
     btn.title = '기존 분석 결과를 지우고 원본 데이터로 다시 분석합니다';
@@ -705,17 +715,23 @@ function showSavedResultToast(testDate) {
     t.appendChild(btn);
   }
 
-  // 닫기 버튼
-  var close = document.createElement('button');
-  close.textContent = '✕';
-  close.title = '닫기';
-  close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
-    + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
-  close.onclick = function(){ t.remove(); };
-  t.appendChild(close);
+  // 닫기 버튼 — 어드민 진입 시에만 노출 (학원은 토스트가 자동 사라짐)
+  if (window.__isAdminView) {
+    var close = document.createElement('button');
+    close.textContent = '✕';
+    close.title = '닫기';
+    close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
+      + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
+    close.onclick = function(){ t.remove(); };
+    t.appendChild(close);
+  }
 
   document.body.appendChild(t);
-  // 자동 닫힘 없음 — 사용자가 명시적으로 닫거나 재분석을 누를 때까지 유지
+  // 학원: 4초 후 자동 사라짐 (기존 동작 유지)
+  // 어드민: 자동 닫힘 없음 — 재분석 클릭 또는 ✕ 클릭으로 닫음
+  if (!window.__isAdminView) {
+    setTimeout(function(){ if (t && t.parentNode) t.remove(); }, 4000);
+  }
 }
 
 // ── 재분석 — 기존 분석 결과를 지우고 원본 tqdata로 다시 분석 ──
