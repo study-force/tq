@@ -793,11 +793,12 @@ JSON만 출력하세요.`}]
         return prefer.includes("representation") ? await r.json() : null;
       };
 
-      // 1. tq_results — 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
+      // 1. tq_results — 활성(archived_at IS NULL) 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
+      // archived(soft-deleted) 행은 무시 → 손상 후 재전송 시 archived는 그대로 두고 새 행을 만듦
       const nameEnc  = encodeURIComponent(si.name || "");
       const gradeEnc = encodeURIComponent(String(si.user_school_grade || ""));
       const existRes = await fetch(
-        `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&limit=1`,
+        `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&archived_at=is.null&limit=1`,
         { headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` } }
       );
       const existRows = await existRes.json();
@@ -938,7 +939,8 @@ JSON만 출력하세요.`}]
         return await r.json();
       };
 
-      let filter = `name=eq.${encodeURIComponent(loadName)}`;
+      // archived_at IS NULL인 활성 레코드만 조회 (soft-delete 처리된 행은 무시)
+      let filter = `name=eq.${encodeURIComponent(loadName)}&archived_at=is.null`;
       if (loadGrade) filter += `&user_school_grade=eq.${encodeURIComponent(String(loadGrade))}`;
       if (loadSpd)   filter += `&reading_score=eq.${Number(loadSpd)}`;
       if (loadDate)  filter += `&reg_date=eq.${loadDate}`;
@@ -1019,6 +1021,52 @@ JSON만 출력하세요.`}]
         slots,
         reg_date:   main.reg_date,
         created_at: main.created_at
+      }), { headers: CORS });
+    }
+
+    // ── 손상 레코드 아카이브(soft-delete) ──
+    // 어드민이 [데이터 삭제] 클릭 시 호출. archived_at = NOW() 세팅.
+    // 이후 load는 이 행을 무시 → 학원에서 결과판독 재전송 시 새 행으로 정상 저장.
+    if (action === "archive") {
+      const sb = getSupabase();
+      if (!sb.ok) return new Response(JSON.stringify({error:"DB 설정 미완료"}),{status:500,headers:CORS});
+
+      const { id: archiveId, name: archiveName, user_school_grade: archiveGrade,
+              reading_score: archiveSpd, reg_date: archiveDate } = body;
+
+      // 식별: id 직접 또는 (name, grade, reading_score [, reg_date]) 조합
+      let filter: string;
+      if (archiveId) {
+        filter = `id=eq.${encodeURIComponent(String(archiveId))}`;
+      } else if (archiveName) {
+        filter = `name=eq.${encodeURIComponent(String(archiveName))}&archived_at=is.null`;
+        if (archiveGrade) filter += `&user_school_grade=eq.${encodeURIComponent(String(archiveGrade))}`;
+        if (archiveSpd)   filter += `&reading_score=eq.${Number(archiveSpd)}`;
+        if (archiveDate)  filter += `&reg_date=eq.${archiveDate}`;
+      } else {
+        return new Response(JSON.stringify({error:"id 또는 name 필요"}),{status:400,headers:CORS});
+      }
+
+      const nowIso = new Date().toISOString();
+      const archRes = await fetch(`${sb.url}/rest/v1/tq_results?${filter}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": sb.key,
+          "Authorization": `Bearer ${sb.key}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ archived_at: nowIso, updated_at: nowIso })
+      });
+      if (!archRes.ok) {
+        const errText = await archRes.text();
+        return new Response(JSON.stringify({error:"아카이브 실패: " + errText}),{status:500,headers:CORS});
+      }
+      const updated = await archRes.json();
+      return new Response(JSON.stringify({
+        ok: true,
+        archived: Array.isArray(updated) ? updated.length : 0,
+        ids: Array.isArray(updated) ? updated.map((r:any)=>r.id) : []
       }), { headers: CORS });
     }
 
