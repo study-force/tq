@@ -35,6 +35,62 @@ const SMAP: Record<string,number|null> = {
   "매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null
 };
 
+// ══════════════════════════════════════════════════════════════
+// 체크리스트 정규화 (모듈 레벨)
+// 외부 tqdata(boolean 배열, 위치 기반)와 내부 폼(문자열 배열, 이름 기반)을
+// 한 형식으로 통일. runEngine 내부의 classifyHabits / .includes() 등이
+// 문자열 배열을 가정하므로 캐논 형식은 "문자열 배열(체크된 항목명만)"으로 함.
+// ══════════════════════════════════════════════════════════════
+const HAB_LIST = [
+  "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
+  "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
+  "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
+  "글 읽는 속도가 느린 편임"
+];
+const EFF_LIST = [
+  "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
+  "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
+  "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
+  "밤새워 책을 읽은 경험이 없다"
+];
+function normalizeChecksToBooleans(input: any, list: string[]): boolean[] {
+  if (!Array.isArray(input) || input.length === 0) return list.map(() => false);
+  // boolean 배열 (외부 tqdata) — 위치 기반
+  if (typeof input[0] === "boolean") return list.map((_, i) => !!input[i]);
+  // 문자열 배열 (내부 폼) — 이름 기반
+  return list.map((item) => input.includes(item));
+}
+function normalizeChecksToStrings(input: any, list: string[]): string[] {
+  const bools = normalizeChecksToBooleans(input, list);
+  return list.filter((_, i) => bools[i]);
+}
+function normalizeInpChecks(inp: Record<string, any>) {
+  if (!inp || typeof inp !== "object") return;
+  inp.reading_habit_checks  = normalizeChecksToStrings(inp.reading_habit_checks, HAB_LIST);
+  inp.reading_effect_checks = normalizeChecksToStrings(inp.reading_effect_checks, EFF_LIST);
+}
+
+// ── 파생값 보강 — 외부 tqdata에 acc/hab_score/eff_score가 없는 경우 계산 ──
+// 외부 진입 경로(?tqdata=...)에서는 fact_score/structure_score만 들어오고
+// acc는 derived 값이라 누락됨. 엔진은 inp.acc를 직접 사용하므로 입구에서 보충해야
+// 결과에 undefined가 나오지 않음.
+function deriveInpScores(inp: Record<string, any>) {
+  if (!inp || typeof inp !== "object") return;
+  if (inp.acc == null && inp.fact_score != null && inp.structure_score != null) {
+    inp.acc = Math.round((Number(inp.fact_score) + Number(inp.structure_score)) / 2 / 10) * 10;
+  }
+  if (inp.hab_score == null) {
+    const habChecks = normalizeChecksToBooleans(inp.reading_habit_checks, HAB_LIST);
+    const hCount = habChecks.filter(Boolean).length;
+    inp.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
+  }
+  if (inp.eff_score == null) {
+    const effChecks = normalizeChecksToBooleans(inp.reading_effect_checks, EFF_LIST);
+    const eCount = effChecks.filter(Boolean).length;
+    inp.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
+  }
+}
+
 function classifyHabits(checked: string[]) {
   const 표면음독키=["소리 내어","또박또박"];
   const 내재재처리키=["이미 읽은 곳","글줄을 자주","짚어가며"];
@@ -635,6 +691,13 @@ serve(async (req) => {
     const body = await req.json();
     const { action, inp, name, engineResult } = body;
 
+    // inp가 있으면 체크리스트 형식을 캐논(문자열 배열)으로 정규화 + 파생값 보충
+    // 외부 tqdata는 boolean 배열 + acc 누락 형태로 들어오므로 모든 액션 진입 전에 통일.
+    // (runEngine 내부의 .includes() 안전성, e.acc=undefined로 렌더링 시 'undefined' 표시 방지)
+    if (inp) { normalizeInpChecks(inp); deriveInpScores(inp); }
+    if (body && body.si)  { normalizeInpChecks(body.si);  deriveInpScores(body.si); }
+    if (body && body.inp) { normalizeInpChecks(body.inp); deriveInpScores(body.inp); }
+
     // ── 엔진 실행 ──
     if (action === "engine") {
       if (!inp) return new Response(JSON.stringify({error:"입력 데이터 없음"}),{status:400,headers:CORS});
@@ -708,19 +771,10 @@ JSON만 출력하세요.`}]
         return new Response(JSON.stringify({error:"저장 데이터 없음"}),{status:400,headers:CORS});
       }
 
-      // 파생값 보강 — 외부 URL 진입 시 acc/hab_score/eff_score가 누락되는 케이스 방어
-      // (직접 폼 입력은 클라이언트의 getInputs()에서 이미 채워 보냄)
-      if (si.acc == null && si.fact_score != null && si.structure_score != null) {
-        si.acc = Math.round((Number(si.fact_score) + Number(si.structure_score)) / 2 / 10) * 10;
-      }
-      if (si.hab_score == null) {
-        const hCount = Array.isArray(si.reading_habit_checks) ? si.reading_habit_checks.length : 0;
-        si.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
-      }
-      if (si.eff_score == null) {
-        const eCount = Array.isArray(si.reading_effect_checks) ? si.reading_effect_checks.length : 0;
-        si.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
-      }
+      // 체크리스트 정규화/파생값(acc/hab_score/eff_score) 보강은 이미 body 파싱 직후에 처리됨.
+      // habRows/effRows 저장을 위해 boolean[] 형태만 다시 계산.
+      const habChecks = normalizeChecksToBooleans(si.reading_habit_checks, HAB_LIST);
+      const effChecks = normalizeChecksToBooleans(si.reading_effect_checks, EFF_LIST);
 
       const today = si.reg_date || new Date().toISOString().slice(0,10);
 
@@ -739,11 +793,12 @@ JSON만 출력하세요.`}]
         return prefer.includes("representation") ? await r.json() : null;
       };
 
-      // 1. tq_results — 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
+      // 1. tq_results — 활성(archived_at IS NULL) 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
+      // archived(soft-deleted) 행은 무시 → 손상 후 재전송 시 archived는 그대로 두고 새 행을 만듦
       const nameEnc  = encodeURIComponent(si.name || "");
       const gradeEnc = encodeURIComponent(String(si.user_school_grade || ""));
       const existRes = await fetch(
-        `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&limit=1`,
+        `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&archived_at=is.null&limit=1`,
         { headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` } }
       );
       const existRows = await existRes.json();
@@ -806,41 +861,29 @@ JSON만 출력하세요.`}]
         math_score:       si.math_score
       }, "return=minimal");
 
-      // 3. tq_habits
+      // 3. tq_habits — 정규화된 habChecks(boolean 배열) 사용
       await fetch(`${sb.url}/rest/v1/tq_habits?result_id=eq.${rid}`, {
         method: "DELETE",
         headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
       });
-      const HAB_LIST = [
-        "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
-        "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
-        "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
-        "글 읽는 속도가 느린 편임"
-      ];
       const habRows = HAB_LIST.map((item, i) => ({
         result_id:  rid,
         item_order: i,
         item_name:  item,
-        checked:    (si.reading_habit_checks || []).includes(item)
+        checked:    habChecks[i]
       }));
       await dbPost("tq_habits", habRows, "return=minimal");
 
-      // 4. tq_eff_checks
+      // 4. tq_eff_checks — 정규화된 effChecks(boolean 배열) 사용
       await fetch(`${sb.url}/rest/v1/tq_eff_checks?result_id=eq.${rid}`, {
         method: "DELETE",
         headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
       });
-      const EFF_LIST = [
-        "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
-        "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
-        "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
-        "밤새워 책을 읽은 경험이 없다"
-      ];
       const effRows = EFF_LIST.map((item, i) => ({
         result_id:  rid,
         item_order: i,
         item_name:  item,
-        checked:    (si.reading_effect_checks || []).includes(item)
+        checked:    effChecks[i]
       }));
       await dbPost("tq_eff_checks", effRows, "return=minimal");
 
@@ -896,7 +939,8 @@ JSON만 출력하세요.`}]
         return await r.json();
       };
 
-      let filter = `name=eq.${encodeURIComponent(loadName)}`;
+      // archived_at IS NULL인 활성 레코드만 조회 (soft-delete 처리된 행은 무시)
+      let filter = `name=eq.${encodeURIComponent(loadName)}&archived_at=is.null`;
       if (loadGrade) filter += `&user_school_grade=eq.${encodeURIComponent(String(loadGrade))}`;
       if (loadSpd)   filter += `&reading_score=eq.${Number(loadSpd)}`;
       if (loadDate)  filter += `&reg_date=eq.${loadDate}`;
@@ -977,6 +1021,52 @@ JSON만 출력하세요.`}]
         slots,
         reg_date:   main.reg_date,
         created_at: main.created_at
+      }), { headers: CORS });
+    }
+
+    // ── 손상 레코드 아카이브(soft-delete) ──
+    // 어드민이 [데이터 삭제] 클릭 시 호출. archived_at = NOW() 세팅.
+    // 이후 load는 이 행을 무시 → 학원에서 결과판독 재전송 시 새 행으로 정상 저장.
+    if (action === "archive") {
+      const sb = getSupabase();
+      if (!sb.ok) return new Response(JSON.stringify({error:"DB 설정 미완료"}),{status:500,headers:CORS});
+
+      const { id: archiveId, name: archiveName, user_school_grade: archiveGrade,
+              reading_score: archiveSpd, reg_date: archiveDate } = body;
+
+      // 식별: id 직접 또는 (name, grade, reading_score [, reg_date]) 조합
+      let filter: string;
+      if (archiveId) {
+        filter = `id=eq.${encodeURIComponent(String(archiveId))}`;
+      } else if (archiveName) {
+        filter = `name=eq.${encodeURIComponent(String(archiveName))}&archived_at=is.null`;
+        if (archiveGrade) filter += `&user_school_grade=eq.${encodeURIComponent(String(archiveGrade))}`;
+        if (archiveSpd)   filter += `&reading_score=eq.${Number(archiveSpd)}`;
+        if (archiveDate)  filter += `&reg_date=eq.${archiveDate}`;
+      } else {
+        return new Response(JSON.stringify({error:"id 또는 name 필요"}),{status:400,headers:CORS});
+      }
+
+      const nowIso = new Date().toISOString();
+      const archRes = await fetch(`${sb.url}/rest/v1/tq_results?${filter}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": sb.key,
+          "Authorization": `Bearer ${sb.key}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({ archived_at: nowIso, updated_at: nowIso })
+      });
+      if (!archRes.ok) {
+        const errText = await archRes.text();
+        return new Response(JSON.stringify({error:"아카이브 실패: " + errText}),{status:500,headers:CORS});
+      }
+      const updated = await archRes.json();
+      return new Response(JSON.stringify({
+        ok: true,
+        archived: Array.isArray(updated) ? updated.length : 0,
+        ids: Array.isArray(updated) ? updated.map((r:any)=>r.id) : []
       }), { headers: CORS });
     }
 
