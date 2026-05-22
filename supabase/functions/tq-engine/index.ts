@@ -713,12 +713,38 @@ JSON만 출력하세요.`}]
       if (si.acc == null && si.fact_score != null && si.structure_score != null) {
         si.acc = Math.round((Number(si.fact_score) + Number(si.structure_score)) / 2 / 10) * 10;
       }
+
+      // ── 체크리스트 정규화 ──
+      // 외부 tqdata(boolean 배열, 위치 기반) / 내부 폼(문자열 배열, 이름 기반) 양쪽 형식 모두 처리.
+      // 정규화 실패 시 tq_habits/tq_eff_checks가 전부 checked=false로 저장되어 재로드 시 0개로 표시되는 버그를 차단.
+      const HAB_LIST = [
+        "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
+        "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
+        "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
+        "글 읽는 속도가 느린 편임"
+      ];
+      const EFF_LIST = [
+        "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
+        "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
+        "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
+        "밤새워 책을 읽은 경험이 없다"
+      ];
+      function normalizeChecks(input: any, list: string[]): boolean[] {
+        if (!Array.isArray(input) || input.length === 0) return list.map(() => false);
+        // boolean 배열 (외부 tqdata) — 위치 기반
+        if (typeof input[0] === "boolean") return list.map((_, i) => !!input[i]);
+        // 문자열 배열 (내부 폼) — 이름 기반
+        return list.map((item) => input.includes(item));
+      }
+      const habChecks = normalizeChecks(si.reading_habit_checks, HAB_LIST);
+      const effChecks = normalizeChecks(si.reading_effect_checks, EFF_LIST);
+      const hCount = habChecks.filter(Boolean).length;
+      const eCount = effChecks.filter(Boolean).length;
+
       if (si.hab_score == null) {
-        const hCount = Array.isArray(si.reading_habit_checks) ? si.reading_habit_checks.length : 0;
         si.hab_score = Math.max(0, Math.round((1 - hCount / 10) * 10) * 10);
       }
       if (si.eff_score == null) {
-        const eCount = Array.isArray(si.reading_effect_checks) ? si.reading_effect_checks.length : 0;
         si.eff_score = Math.max(0, Math.round((1 - eCount / 10) * 10) * 10);
       }
 
@@ -806,41 +832,29 @@ JSON만 출력하세요.`}]
         math_score:       si.math_score
       }, "return=minimal");
 
-      // 3. tq_habits
+      // 3. tq_habits — 정규화된 habChecks(boolean 배열) 사용
       await fetch(`${sb.url}/rest/v1/tq_habits?result_id=eq.${rid}`, {
         method: "DELETE",
         headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
       });
-      const HAB_LIST = [
-        "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
-        "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
-        "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
-        "글 읽는 속도가 느린 편임"
-      ];
       const habRows = HAB_LIST.map((item, i) => ({
         result_id:  rid,
         item_order: i,
         item_name:  item,
-        checked:    (si.reading_habit_checks || []).includes(item)
+        checked:    habChecks[i]
       }));
       await dbPost("tq_habits", habRows, "return=minimal");
 
-      // 4. tq_eff_checks
+      // 4. tq_eff_checks — 정규화된 effChecks(boolean 배열) 사용
       await fetch(`${sb.url}/rest/v1/tq_eff_checks?result_id=eq.${rid}`, {
         method: "DELETE",
         headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
       });
-      const EFF_LIST = [
-        "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
-        "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
-        "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
-        "밤새워 책을 읽은 경험이 없다"
-      ];
       const effRows = EFF_LIST.map((item, i) => ({
         result_id:  rid,
         item_order: i,
         item_name:  item,
-        checked:    (si.reading_effect_checks || []).includes(item)
+        checked:    effChecks[i]
       }));
       await dbPost("tq_eff_checks", effRows, "return=minimal");
 
