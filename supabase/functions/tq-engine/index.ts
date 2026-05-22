@@ -35,6 +35,41 @@ const SMAP: Record<string,number|null> = {
   "매우잘함":90,"잘함":80,"보통":70,"노력요함":50,"-":null
 };
 
+// ══════════════════════════════════════════════════════════════
+// 체크리스트 정규화 (모듈 레벨)
+// 외부 tqdata(boolean 배열, 위치 기반)와 내부 폼(문자열 배열, 이름 기반)을
+// 한 형식으로 통일. runEngine 내부의 classifyHabits / .includes() 등이
+// 문자열 배열을 가정하므로 캐논 형식은 "문자열 배열(체크된 항목명만)"으로 함.
+// ══════════════════════════════════════════════════════════════
+const HAB_LIST = [
+  "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
+  "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
+  "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
+  "글 읽는 속도가 느린 편임"
+];
+const EFF_LIST = [
+  "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
+  "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
+  "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
+  "밤새워 책을 읽은 경험이 없다"
+];
+function normalizeChecksToBooleans(input: any, list: string[]): boolean[] {
+  if (!Array.isArray(input) || input.length === 0) return list.map(() => false);
+  // boolean 배열 (외부 tqdata) — 위치 기반
+  if (typeof input[0] === "boolean") return list.map((_, i) => !!input[i]);
+  // 문자열 배열 (내부 폼) — 이름 기반
+  return list.map((item) => input.includes(item));
+}
+function normalizeChecksToStrings(input: any, list: string[]): string[] {
+  const bools = normalizeChecksToBooleans(input, list);
+  return list.filter((_, i) => bools[i]);
+}
+function normalizeInpChecks(inp: Record<string, any>) {
+  if (!inp || typeof inp !== "object") return;
+  inp.reading_habit_checks  = normalizeChecksToStrings(inp.reading_habit_checks, HAB_LIST);
+  inp.reading_effect_checks = normalizeChecksToStrings(inp.reading_effect_checks, EFF_LIST);
+}
+
 function classifyHabits(checked: string[]) {
   const 표면음독키=["소리 내어","또박또박"];
   const 내재재처리키=["이미 읽은 곳","글줄을 자주","짚어가며"];
@@ -635,6 +670,13 @@ serve(async (req) => {
     const body = await req.json();
     const { action, inp, name, engineResult } = body;
 
+    // inp가 있으면 체크리스트 형식을 캐논(문자열 배열)으로 정규화 — 모든 액션 공통
+    // 외부 tqdata(boolean 배열) 입력이 들어와도 runEngine / save / generate 어디서든
+    // .includes() 호출이 안전하게 동작하도록 입구에서 한 번에 변환.
+    if (inp) normalizeInpChecks(inp);
+    if (body && body.si)  normalizeInpChecks(body.si);   // 일부 액션에서 si로 받을 가능성 방어
+    if (body && body.inp) normalizeInpChecks(body.inp);  // (위와 동일 객체 보장)
+
     // ── 엔진 실행 ──
     if (action === "engine") {
       if (!inp) return new Response(JSON.stringify({error:"입력 데이터 없음"}),{status:400,headers:CORS});
@@ -714,30 +756,10 @@ JSON만 출력하세요.`}]
         si.acc = Math.round((Number(si.fact_score) + Number(si.structure_score)) / 2 / 10) * 10;
       }
 
-      // ── 체크리스트 정규화 ──
-      // 외부 tqdata(boolean 배열, 위치 기반) / 내부 폼(문자열 배열, 이름 기반) 양쪽 형식 모두 처리.
-      // 정규화 실패 시 tq_habits/tq_eff_checks가 전부 checked=false로 저장되어 재로드 시 0개로 표시되는 버그를 차단.
-      const HAB_LIST = [
-        "이미 읽은 곳을 다시 읽음","읽다가 글줄을 자주 놓침","짚어가며 읽거나 밑줄을 그음",
-        "단어 단위로 또박또박 읽음","소리 내어 읽거나 속발음을 함","긴 문장은 이해가 잘 안됨",
-        "긴 문장은 훑어 읽기를 함","긴 글은 내용 기억이 잘 안남","모르는 단어가 없어도 이해가 잘 안됨",
-        "글 읽는 속도가 느린 편임"
-      ];
-      const EFF_LIST = [
-        "독서량이 많이 부족한 편이다","비문학 책은 어렵게 느껴진다","이해력이 부족한 편이다",
-        "시험에서 시간에 쫓긴다","문제를 이해를 못해서 틀린다","서술형 평가 시험 점수가 낮다",
-        "지문형 수학문제가 어렵다","국어 시험 점수가 유난히 낮다","두꺼운 책을 읽은 경험이 없다",
-        "밤새워 책을 읽은 경험이 없다"
-      ];
-      function normalizeChecks(input: any, list: string[]): boolean[] {
-        if (!Array.isArray(input) || input.length === 0) return list.map(() => false);
-        // boolean 배열 (외부 tqdata) — 위치 기반
-        if (typeof input[0] === "boolean") return list.map((_, i) => !!input[i]);
-        // 문자열 배열 (내부 폼) — 이름 기반
-        return list.map((item) => input.includes(item));
-      }
-      const habChecks = normalizeChecks(si.reading_habit_checks, HAB_LIST);
-      const effChecks = normalizeChecks(si.reading_effect_checks, EFF_LIST);
+      // 체크리스트는 body 파싱 직후 module-level normalizeInpChecks로 이미 캐논(문자열 배열)으로 변환됨.
+      // 여기서는 boolean[] 형태가 다시 필요하므로 module-level 헬퍼로 재계산.
+      const habChecks = normalizeChecksToBooleans(si.reading_habit_checks, HAB_LIST);
+      const effChecks = normalizeChecksToBooleans(si.reading_effect_checks, EFF_LIST);
       const hCount = habChecks.filter(Boolean).length;
       const eCount = effChecks.filter(Boolean).length;
 
