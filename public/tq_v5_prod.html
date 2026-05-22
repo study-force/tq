@@ -676,15 +676,82 @@ details summary:hover{color:var(--tx2)}
 
 // ── 저장된 결과 알림 토스트 ──
 function showSavedResultToast(testDate) {
+  // 기존 토스트 제거 (중복 방지)
+  var existing = document.getElementById('_tqSavedToast');
+  if (existing) existing.remove();
+
   var t = document.createElement('div');
+  t.id = '_tqSavedToast';
   t.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);'
-    + 'background:#0F172A;color:#fff;padding:10px 20px;border-radius:8px;'
+    + 'background:#0F172A;color:#fff;padding:10px 16px;border-radius:8px;'
     + 'font-size:12px;font-weight:500;z-index:99999;'
-    + 'border:1px solid rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(0,0,0,.4);white-space:nowrap;';
-  t.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
+    + 'border:1px solid rgba(139,92,246,.4);box-shadow:0 4px 20px rgba(0,0,0,.4);'
+    + 'white-space:nowrap;display:flex;align-items:center;gap:10px;';
+
+  var msg = document.createElement('span');
+  msg.innerHTML = '📂 <strong style="color:#A78BFA">' + testDate + '</strong> 기존 판독 결과를 불러왔습니다';
+  t.appendChild(msg);
+
+  // 재분석 버튼 — 원본 tqdata가 보존돼 있을 때만 노출
+  if (window.__tqdataOriginal) {
+    var btn = document.createElement('button');
+    btn.textContent = '재분석';
+    btn.title = '기존 분석 결과를 지우고 원본 데이터로 다시 분석합니다';
+    btn.style.cssText = 'background:#8B5CF6;color:#fff;border:none;padding:5px 12px;'
+      + 'border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;';
+    btn.onmouseover = function(){ this.style.background = '#A78BFA'; };
+    btn.onmouseout  = function(){ this.style.background = '#8B5CF6'; };
+    btn.onclick = function(){ if(typeof reanalyzeFromScratch === 'function') reanalyzeFromScratch(); };
+    t.appendChild(btn);
+  }
+
+  // 닫기 버튼
+  var close = document.createElement('button');
+  close.textContent = '✕';
+  close.title = '닫기';
+  close.style.cssText = 'background:transparent;color:rgba(255,255,255,.6);border:none;'
+    + 'padding:2px 4px;cursor:pointer;font-size:14px;line-height:1;';
+  close.onclick = function(){ t.remove(); };
+  t.appendChild(close);
+
   document.body.appendChild(t);
-  setTimeout(function(){ t.remove(); }, 4000);
+  // 자동 닫힘 없음 — 사용자가 명시적으로 닫거나 재분석을 누를 때까지 유지
 }
+
+// ── 재분석 — 기존 분석 결과를 지우고 원본 tqdata로 다시 분석 ──
+function reanalyzeFromScratch() {
+  if (!window.__tqdataOriginal) {
+    alert('원본 데이터가 없어 재분석할 수 없습니다.\n외부 시스템에서 다시 진입해주세요.');
+    return;
+  }
+  if (!confirm('기존 분석 결과를 지우고 원본 데이터로 새로 분석합니다.\n진행하시겠습니까?')) {
+    return;
+  }
+
+  // 1) 토스트 닫기
+  var toast = document.getElementById('_tqSavedToast');
+  if (toast) toast.remove();
+
+  // 2) 분석 상태 초기화
+  window.__inp                = null;
+  window.__eng                = null;
+  window.__TQ_SLOTS           = null;
+  window.__TQ_SAVED_ID        = null;
+  window.__reportRendered     = false;
+  window.__RPT_D              = null;
+  window.__SKIP_AUTO_GENERATE = false;
+  window.__TQ_REANALYZING     = true;   // 일회성 플래그 — injectTqDataAndRun에서 load 건너뜀
+
+  // 3) 결과 화면 비우기
+  var rv = document.getElementById('resultView');
+  if (rv) rv.innerHTML = '';
+
+  // 4) 원본 tqdata로 다시 inject — 새 엔진 실행 + 정상 저장 (Edge Function이 정규화)
+  setTimeout(function(){
+    injectTqDataAndRun(window.__tqdataOriginal);
+  }, 100);
+}
+window.reanalyzeFromScratch = reanalyzeFromScratch;
 
 // ── 판독 결과 저장 ──
 
@@ -4958,8 +5025,12 @@ function injectTqDataAndRun(d) {
   }
   if(window.updateChkScore) window.updateChkScore();
 
+  // 재분석 모드 — 일회성 플래그가 켜져 있으면 load 건너뛰고 바로 엔진 실행
+  var _skipLoad = !!window.__TQ_REANALYZING;
+  if (_skipLoad) window.__TQ_REANALYZING = false;
+
   // 기존 판독 결과 조회 → 있으면 복원, 없으면 엔진 실행
-  if (d.name && d.reading_score && d.reg_date) {
+  if (!_skipLoad && d.name && d.reading_score && d.reg_date) {
     var _loaded = false;  // 로드 완료 플래그
     loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
       _loaded = true;
@@ -5182,6 +5253,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       try {
         var d = JSON.parse(decodeURIComponent(tqRaw));
+        // 재분석 가능하도록 원본 보존 (load가 form을 덮어쓰기 전에 캡쳐)
+        try { window.__tqdataOriginal = JSON.parse(JSON.stringify(d)); } catch(_){}
 
         // 학제 정규화: "초등(고)", "N수생" 등 처리
         var _lvNorm = {'초저':'초등','초고':'초등','초등(저)':'초등','초등(고)':'초등',
@@ -5286,6 +5359,9 @@ window.addEventListener('message', function(event) {
 
   var d = msg.data;
   if (!d.name) { console.warn('[TQ] name 없음'); return; }
+
+  // 재분석 가능하도록 원본 보존 (load가 form을 덮어쓰기 전에 캡쳐)
+  try { window.__tqdataOriginal = JSON.parse(JSON.stringify(d)); } catch(_){}
 
   console.log('[TQ] 수신 데이터 전체:', JSON.stringify(d, null, 2));
 
