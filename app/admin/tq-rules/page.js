@@ -75,7 +75,7 @@ export default function TqRulesAdminPage() {
   const [syncErr, setSyncErr] = useState(false);
   const [syncBusy, setSyncBusy] = useState(false);
 
-  const SYNC_PASSWORD = "asdf1234"; // 기존과 동일 (변경 시 양쪽 같이)
+  const SYNC_CONFIRM_WORD = "동기화"; // 실수 방지용 확인 문구 (실제 보호는 로그인 세션)
 
   const showToast = (msg, isErr = false) => {
     setToast({ msg, isErr });
@@ -244,7 +244,7 @@ export default function TqRulesAdminPage() {
   // ── PROD 동기화 ──
   const openSync = () => { setSyncPw(""); setSyncErr(false); setSyncOpen(true); };
   const confirmSync = async () => {
-    if (syncPw !== SYNC_PASSWORD) { setSyncErr(true); return; }
+    if (syncPw.trim() !== SYNC_CONFIRM_WORD) { setSyncErr(true); return; }
     setSyncOpen(false);
     setSyncBusy(true);
     showToast("동기화 중...");
@@ -383,11 +383,11 @@ export default function TqRulesAdminPage() {
               현재 환경 DB의 <strong>전체 규칙</strong>을 production DB에 반영합니다.<br />
               기존 production 규칙은 <strong style={{ color: "#DC2626" }}>덮어씌워집니다.</strong>
             </p>
-            <label style={S.lbl}>확인 비밀번호</label>
-            <input style={S.input} type="password" autoFocus value={syncPw}
+            <label style={S.lbl}>확인을 위해 <strong>{SYNC_CONFIRM_WORD}</strong> 를 입력하세요</label>
+            <input style={S.input} type="text" autoFocus placeholder={SYNC_CONFIRM_WORD} value={syncPw}
               onChange={e => { setSyncPw(e.target.value); setSyncErr(false); }}
               onKeyDown={e => e.key === "Enter" && confirmSync()} />
-            {syncErr && <div style={{ color: "#DC2626", fontSize: 12, marginTop: 6 }}>비밀번호가 틀렸습니다.</div>}
+            {syncErr && <div style={{ color: "#DC2626", fontSize: 12, marginTop: 6 }}>"{SYNC_CONFIRM_WORD}" 를 정확히 입력하세요.</div>}
             <div style={S.btnRow}>
               <button style={S.btnGhost} onClick={() => setSyncOpen(false)}>취소</button>
               <button style={{ ...S.btnPrimary, background: "#F59E0B" }} onClick={confirmSync}>동기화 실행</button>
