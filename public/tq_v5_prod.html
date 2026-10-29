@@ -5414,37 +5414,12 @@ window.addEventListener('message', function(event) {
     if (landing) landing.style.display = 'none';
   }
 
-  // 기존 판독 결과 조회
+  // 기존 판독 결과 조회 — 복원은 위 injectTqDataAndRun이 한 번만 함, 여기선 대기 화면만 정리 (2026-10-29)
+  //   전엔 여기서도 찾으면 ①분석 버튼을 눌러 판독문을 다시 생성·덮어썼음
   if (d.name && d.reading_score) {
     loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
       updateWaitStep(3, '판독문 구성 중...');
-      window.__inp  = d;
-      window.__eng  = saved.eng;
-      // 저장된 eng에 진단일 보완
-      if (d.reg_date && saved.eng) saved.eng.date = d.reg_date.slice(0,10);
-      window.__nm   = d.name;
-      window.__TQ_SLOTS    = saved.slots;
-      window.__TQ_SAVED_ID = saved.id;
-      var btnA = document.getElementById('btnA');
-      if (btnA) btnA.click();
-      setTimeout(function() {
-        window.__TQ_SLOTS = saved.slots;
-        // Lazy Regen: 오버플로 감지 시 렌더 건너뜀 (injectTqDataAndRun이 재생성 처리)
-        var _ovf = false;
-        if (window.__TQ_SLOTS) {
-          ['slot1','slot2','slot3','slot4'].forEach(function(k){
-            var _c = window.__TQ_SLOTS[k];
-            if (_c && typeof _c === 'string' && _c.length > 520) _ovf = true;
-          });
-        }
-        if (_ovf) { window.__TQ_SLOTS = null; }
-        else if (!window.__reportRendered) {
-          try { renderReportTab(); window.__reportRendered = true; } catch(e){}
-        }
-        if(saved.reg_date || saved.test_date) var _tDate = (saved.created_at || '').slice(0,10);
-        if(_tDate) showSavedResultToast(_tDate);
-        hideWaitScreen();
-      }, 1500);
+      setTimeout(hideWaitScreen, 1500);
     });
   }
 
