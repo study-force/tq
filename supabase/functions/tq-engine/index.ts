@@ -682,6 +682,23 @@ function getSupabase() {
   return { url, key, ok: !!(url && key) };
 }
 
+// ── 판독 기록 완전 삭제 — 하위 표(판독문·분석·체크·점수) 먼저, 마지막에 본 기록 (2026-10-29) ──
+//   TQ 검사 점수 원본은 학원(KT) 시스템에 있음. 여기 지우는 건 판독 리포트 기록뿐 → 다시 판독하면 새로 만들어짐
+const RESULT_CHILD_TABLES = ["tq_slots", "tq_engine", "tq_eff_checks", "tq_habits", "tq_scores"];
+async function deleteResults(sb: { url: string; key: string }, ids: string[]): Promise<number> {
+  if (!ids || !ids.length) return 0;
+  const inList = `in.(${ids.map((id) => encodeURIComponent(String(id))).join(",")})`;
+  const h = { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` };
+  for (const t of RESULT_CHILD_TABLES) {
+    const r = await fetch(`${sb.url}/rest/v1/${t}?result_id=${inList}`, { method: "DELETE", headers: h });
+    if (!r.ok) throw new Error(`${t} 삭제 실패: ` + await r.text());
+  }
+  const r = await fetch(`${sb.url}/rest/v1/tq_results?id=${inList}`, { method: "DELETE", headers: { ...h, "Prefer": "return=representation" } });
+  if (!r.ok) throw new Error("tq_results 삭제 실패: " + await r.text());
+  const del = await r.json();
+  return Array.isArray(del) ? del.length : 0;
+}
+
 // ── 판독 결과 저장 (요소별 테이블) — save 액션과 generate(생성 직후 서버 저장)가 함께 씀 ──
 //   (2026-10-29) 전엔 브라우저가 판독문을 받은 뒤에만 저장 → 생성 중에 창을 닫으면 저장 안 돼 다음에 또 생성(비용)
 async function saveResult(si: any, se: any, ss: any, token: string): Promise<string> {
@@ -732,6 +749,14 @@ async function saveResult(si: any, se: any, ss: any, token: string): Promise<str
       body: JSON.stringify({ user_section: si.user_section || "", academy_token: token, updated_at: new Date().toISOString() })
     });
   } else {
+    // 예전 '삭제'(보관 처리)로 남은 같은 학생·학년·검사일·속도 기록 → 지우고 새로 저장
+    //   (보관 행도 중복 금지 규칙에 걸려 새 저장이 막히고, 열 때마다 다시 생성되던 문제, 2026-10-29)
+    const oldRes = await fetch(
+      `${sb.url}/rest/v1/tq_results?select=id&name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&archived_at=not.is.null`,
+      { headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` } }
+    );
+    const oldRows = oldRes.ok ? await oldRes.json() : [];
+    await deleteResults(sb, (oldRows || []).map((r: any) => r.id));
     const insertRes = await fetch(`${sb.url}/rest/v1/tq_results`, {
       method: "POST",
       headers: {
@@ -1062,27 +1087,17 @@ JSON만 출력하세요.`, 5500);
         return new Response(JSON.stringify({error:"id 또는 name 필요"}),{status:400,headers:CORS});
       }
 
-      const nowIso = new Date().toISOString();
-      const archRes = await fetch(`${sb.url}/rest/v1/tq_results?${filter}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": sb.key,
-          "Authorization": `Bearer ${sb.key}`,
-          "Prefer": "return=representation"
-        },
-        body: JSON.stringify({ archived_at: nowIso, updated_at: nowIso })
+      // 보관 처리(archived_at) 대신 판독 기록을 완전히 삭제 (대표님 2026-10-29)
+      //   보관 행이 남으면 같은 검사를 다시 판독할 때 저장이 막혔음. 응답 키(archived)는 화면 호환용으로 유지
+      const findRes = await fetch(`${sb.url}/rest/v1/tq_results?select=id&${filter}`, {
+        headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
       });
-      if (!archRes.ok) {
-        const errText = await archRes.text();
-        return new Response(JSON.stringify({error:"아카이브 실패: " + errText}),{status:500,headers:CORS});
+      if (!findRes.ok) {
+        return new Response(JSON.stringify({error:"삭제 대상 조회 실패: " + await findRes.text()}),{status:500,headers:CORS});
       }
-      const updated = await archRes.json();
-      return new Response(JSON.stringify({
-        ok: true,
-        archived: Array.isArray(updated) ? updated.length : 0,
-        ids: Array.isArray(updated) ? updated.map((r:any)=>r.id) : []
-      }), { headers: CORS });
+      const ids = ((await findRes.json()) || []).map((r: any) => r.id);
+      const n = await deleteResults(sb, ids);
+      return new Response(JSON.stringify({ ok: true, archived: n, deleted: n, ids }), { headers: CORS });
     }
 
     // ── 베타 피드백 저장 ──
