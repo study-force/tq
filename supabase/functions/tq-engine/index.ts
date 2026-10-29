@@ -19,6 +19,32 @@ function getAllowedTokens(): string[] {
 }
 const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
+// ── Claude 호출 ──
+//   운영 모델은 TQ_MODEL. Sonnet 5.5 전환 전 비교용으로 body.compare_model(아래 목록만)을 받으면 그 모델로 생성 (2026-10-29)
+//   Sonnet 5.5: 생각하기 끔(between_tools) = 지금(4.6)과 같은 방식·비용 / 같은 글이 토큰 약 30% 더 → max_tokens 여유
+const TQ_MODEL = "claude-sonnet-5-5";   // 2026-10-29 4.6→5.5 (비교: 비용 약 30%↓·생성 시간 절반, 문서/TQ_모델비교_4.6vs5.5_20261029.html)
+const COMPARE_MODELS = ["claude-sonnet-4-6", "claude-sonnet-5-5"];
+async function callClaude(model: string, system: string, user: string, maxTokens: number) {
+  const is55 = model === "claude-sonnet-5-5";
+  const body: any = { model, max_tokens: is55 ? Math.round(maxTokens * 1.4) : maxTokens, system, messages: [{ role: "user", content: user }] };
+  if (is55) { body.thinking = { type: "between_tools" }; body.output_config = { effort: "high" }; }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || "Claude API 오류");
+  }
+  const data = await res.json();
+  if (data.stop_reason === "refusal") throw new Error("Claude가 응답을 거절했습니다");
+  // 응답 블록은 종류로 골라 읽음 (5.5는 text 앞에 다른 블록이 올 수 있음)
+  const text = (data.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
+  return { text, usage: data.usage, stop: data.stop_reason };
+}
+function pickModel(b: any) { return b && COMPARE_MODELS.includes(b.compare_model) ? b.compare_model : TQ_MODEL; }
+
 // ── 속도 기준 ──
 const SPDLIM: Record<string,number> = {초저:3000,초고:5000,중등:6000,고등:8000,일반:5000};
 const SPDTH: Record<string,number[]> = {초저:[300,500,700],초고:[400,650,900],중등:[450,700,1000],고등:[450,700,1000],일반:[400,650,900]};
@@ -732,12 +758,8 @@ serve(async (req) => {
         name: name || inp.name || "학생",
         evidence_part1:evForLLM
       };
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},
-        body: JSON.stringify({
-          model:"claude-sonnet-4-6", max_tokens:5500, system:SYS_P,
-          messages:[{role:"user",content:`${name||"학생"} 학생의 판독문 4슬롯과 훈련 추천 이유를 작성하세요.
+      const model = pickModel(body);
+      const out = await callClaude(model, SYS_P, `${name||"학생"} 학생의 판독문 4슬롯과 훈련 추천 이유를 작성하세요.
 【필수1】 각 슬롯 300~500자(공백 포함), 체크리스트 항목을 슬롯②에 반드시 반영하세요.
 【필수2】 roadmap_reasons: 9개 과정 전체(비문학독서클럽, 초급예비과정, 초급기본과정, 초급심화과정, 중급예비과정, 중급기본과정, 중급심화과정, 고급기본과정, 고급심화과정)에 대해 이 학생의 진단 결과를 근거로 개인화된 이유를 작성하세요.
 【필수3】 학생의 학년(school_level)보다 낮은 수준의 과정에는 반드시 "기초를 탄탄히 쌓는 현명한 선택 + 몰입 훈련으로 격차 극복" 기조를 포함하세요.
@@ -747,17 +769,14 @@ serve(async (req) => {
 판독 객체:
 ${JSON.stringify(payload,null,2)}
 
-JSON만 출력하세요.`}]
-        })
-      });
-      if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error?.message||"판독문 생성 API 오류");
-      }
-      const data = await res.json();
-      let raw = data.content[0].text.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
+JSON만 출력하세요.`, 5500);
+      let raw = out.text.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
       const s=raw.indexOf("{"),e_=raw.lastIndexOf("}");
       if(s>=0&&e_>s)raw=raw.slice(s,e_+1);
+      // 비교 요청이면 모델·토큰 사용량을 함께 돌려줌 (화면용 응답은 그대로)
+      if (body.compare_model) {
+        return new Response(JSON.stringify({ model, usage: out.usage, stop: out.stop, raw }), { headers: { ...CORS, "Content-Type":"application/json" } });
+      }
       return new Response(raw, { headers: { ...CORS, "Content-Type":"application/json" } });
     }
 
