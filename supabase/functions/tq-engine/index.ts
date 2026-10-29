@@ -665,31 +665,13 @@ evidence_part1의 [강점] 태그 근거 → 슬롯①의 강점 서술에 활�
 - 목표: 중학 졸업 전 고급심화 완성 → 고등학교 진학 후 비문학 독해에서 압도적 우위
 - 특징: 일반 수강 일정보다 빠른 진행, 심화 어휘·추론 병행
 
-## 훈련 추천 이유 작성 기준 ★ 필수
-roadmap_reasons 에는 아래 9개 과정 전체에 대한 이유를 반드시 작성하세요:
-비문학독서클럽, 초급예비과정, 초급기본과정, 초급심화과정, 중급예비과정, 중급기본과정, 중급심화과정, 고급기본과정, 고급심화과정
-
-각 과정 이유 작성 기준:
-- 반드시 학생의 실제 진단 결과(deficit_factors, causal_paths, evidence_part1, hab_checked, eff_checked)를 근거로 서술
-- 수치 직접 언급 금지, 낙인·부정적 표현 금지
-- 2~3문장, 80~120자
-- 각 과정의 특성에 맞게 이 학생에게 왜 필요한지 개인화하여 작성
-
-## ★★ 학년 대비 하위 과정 선택 시 특별 메시지 규칙
-school_level과 각 과정의 수준을 비교하여, 학생의 학년보다 낮은 수준의 과정에는 반드시 아래 메시지 기조를 포함할 것:
-- 학년 수준 기준: 초등=비문학독서클럽~초급심화, 중등=초급심화~중급심화, 고등=중급기본~고급심화
-- 중학생이 초급 과정을 선택한 경우 → "초등 수준의 독해 기초를 탄탄히 쌓는 현명한 선택입니다. 다만 또래 수준과의 격차를 좁히기 위해 몰입 훈련을 통한 빠른 진행이 중요합니다." 기조 포함
-- 고등학생이 초급·중급 과정을 선택한 경우 → 동일한 기조, 수능까지 남은 시간을 고려한 긴박감 포함
-- 학년에 적합한 과정 → 현재 진단 결과 기반 개인화 이유
-- 학년보다 상위 과정 → 도전적 성장, 선행 심화의 긍정적 의미 강조
-
 출력 규칙:
 - 반드시 유효한 JSON만 출력
 - 각 슬롯 본문은 반드시 2~3개 단락으로 구성하고, 단락 사이는 "\\n\\n"(이스케이프된 빈 줄)으로 구분할 것
 - 한 단락 안에서는 문장 사이 줄바꿈 금지 (자연스러운 wrap으로만 처리)
 - 각 슬롯의 전체 길이는 공백 포함 300~500자 범위를 반드시 지킬 것
 - 큰따옴표 포함 시 \\" 이스케이프
-{"slot1":"...","slot2":"...","slot3":"...","slot4":"...","roadmap_reasons":{"비문학독서클럽":"...","초급예비과정":"...","초급기본과정":"...","초급심화과정":"...","중급예비과정":"...","중급기본과정":"...","중급심화과정":"...","고급기본과정":"...","고급심화과정":"..."}}`;
+{"slot1":"...","slot2":"...","slot3":"...","slot4":"..."}`;
 
 // ── Supabase 헬퍼 ──
 function getSupabase() {
@@ -759,12 +741,10 @@ serve(async (req) => {
         evidence_part1:evForLLM
       };
       const model = pickModel(body);
-      const out = await callClaude(model, SYS_P, `${name||"학생"} 학생의 판독문 4슬롯과 훈련 추천 이유를 작성하세요.
+      const out = await callClaude(model, SYS_P, `${name||"학생"} 학생의 판독문 4슬롯을 작성하세요.
 【필수1】 각 슬롯 300~500자(공백 포함), 체크리스트 항목을 슬롯②에 반드시 반영하세요.
-【필수2】 roadmap_reasons: 9개 과정 전체(비문학독서클럽, 초급예비과정, 초급기본과정, 초급심화과정, 중급예비과정, 중급기본과정, 중급심화과정, 고급기본과정, 고급심화과정)에 대해 이 학생의 진단 결과를 근거로 개인화된 이유를 작성하세요.
-【필수3】 학생의 학년(school_level)보다 낮은 수준의 과정에는 반드시 "기초를 탄탄히 쌓는 현명한 선택 + 몰입 훈련으로 격차 극복" 기조를 포함하세요.
-【필수4】 flag_molip이 true이면: 슬롯④와 해당 과정 이유에 몰입훈련 방식(1일 5~10개 집중, 노트 없이 발문 수업만, 60회 누적 80점 기준)을 구체적으로 안내하세요.
-【필수5】 flag_teukmok이 true이면: 슬롯④와 해당 과정 이유에 특목자사고 대비 역량강화 프로그램(중학 졸업 전 고급심화 완성 목표)을 안내하세요.
+【필수2】 flag_molip이 true이면: 슬롯④에 몰입훈련 방식(1일 5~10개 집중, 노트 없이 발문 수업만, 60회 누적 80점 기준)을 구체적으로 안내하세요.
+【필수3】 flag_teukmok이 true이면: 슬롯④에 특목자사고 대비 역량강화 프로그램(중학 졸업 전 고급심화 완성 목표)을 안내하세요.
 
 판독 객체:
 ${JSON.stringify(payload,null,2)}
@@ -1120,39 +1100,7 @@ JSON만 출력하세요.`, 5500);
       return new Response(JSON.stringify({ok:true}),{headers:CORS});
     }
 
-    // ── 로드맵 추천 이유 생성 ──
-    if (action === "roadmap_reason") {
-      const { student, programs } = body;
-      if (!student || !programs || !programs.length) {
-        return new Response(JSON.stringify({error:"데이터 없음"}),{status:400,headers:CORS});
-      }
-      const SYS_ROADMAP = `당신은 StudyForce TQ테스트의 수석 판독 전문가입니다.
-학생의 진단 결과와 선택된 훈련 과정 목록을 받아, 각 과정별로 "왜 이 학생에게 이 과정이 필요한지"를 학부모에게 설명하는 추천 이유를 작성합니다.
-## 규칙
-1. 각 과정마다 2~3문장, 100자 내외로 작성
-2. 학생의 실제 진단 수치나 체크 항목을 근거로 서술 (수치 직접 언급 금지)
-3. "이 과정에서는 ~을 훈련합니다" + "OO 학생에게 필요한 이유는 ~" 구조
-4. 학생 이름은 반드시 "OO 학생" 형태로 사용
-5. 낙인 표현 금지, 긍정적이고 명확한 톤
-출력: 반드시 JSON만. {"reasons": {"과정명": "추천이유 텍스트", ...}}`;
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {"Content-Type":"application/json","x-api-key":ANTHROPIC_KEY,"anthropic-version":"2023-06-01"},
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6", max_tokens: 1500, system: SYS_ROADMAP,
-          messages: [{role:"user", content: `학생 정보:\n${JSON.stringify(student, null, 2)}\n\n선택된 훈련 과정:\n${JSON.stringify(programs, null, 2)}\n\nJSON만 출력하세요.`}]
-        })
-      });
-      if (!res.ok) {
-        const e = await res.json();
-        throw new Error(e.error?.message || "로드맵 이유 생성 오류");
-      }
-      const data = await res.json();
-      let raw = data.content[0].text.trim().replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
-      const s = raw.indexOf("{"), e_ = raw.lastIndexOf("}");
-      if (s >= 0 && e_ > s) raw = raw.slice(s, e_ + 1);
-      return new Response(raw, { headers: { ...CORS, "Content-Type":"application/json" } });
-    }
+    // (roadmap_reason 액션 삭제 2026-10-29 — 추천 과정 이유는 화면의 정해진 문구 사용, Claude 호출 안 함)
 
     return new Response(JSON.stringify({error:"알 수 없는 action"}),{status:400,headers:CORS});
 
