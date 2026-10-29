@@ -517,6 +517,31 @@ var ALL_PROGRAMS = [
   }
 ];
 
+// ── 추천 과정 이유 — 정해진 문구 (Claude 생성 대신, 대표님 2026-10-29) ──
+//   과정별 reasonFn 문구 + 학년 기조 문구(학년보다 낮은/높은 과정일 때)
+//   몰입훈련·특목자사고는 리포트에 전용 페이지가 있어 여기엔 학년 기조 안의 한마디만
+//   학년별 맞는 범위(ALL_PROGRAMS 순서): 초등 0~3(비문학독서클럽~초급심화) · 중등 3~6(초급심화~중급심화) · 고등 5~8(중급기본~고급심화)
+var GRADE_RANGE = { "초저":[0,3], "초고":[0,3], "초등":[0,3], "중등":[3,6], "고등":[5,8] };
+function ruleReason(step, d) {
+  var base = typeof step.reasonFn === 'function' ? step.reasonFn(d) : (step.goal || step.desc || '');
+  var lv = d.uiLevel || d.level || '';
+  var rg = GRADE_RANGE[lv], idx = ALL_PROGRAMS.indexOf(step);
+  if (!rg || idx < 0) return base;
+  var molip = !!(d.flagMolip || d.flagMolipRequired);
+  var tone = '';
+  if (idx < rg[0]) {
+    if (lv === '고등') tone = molip
+      ? '기초를 탄탄히 쌓는 현명한 선택입니다. 다만 수능까지 남은 시간을 생각하면, 몰입 훈련으로 또래 수준과의 격차를 빠르게 좁히는 것이 중요합니다.'
+      : '기초를 탄탄히 쌓는 현명한 선택입니다. 수능까지 남은 시간을 생각해 속도감 있게 학년 수준 과정으로 올라가는 것이 중요합니다.';
+    else tone = molip
+      ? '초등 수준의 독해 기초를 탄탄히 쌓는 현명한 선택입니다. 다만 또래 수준과의 격차를 좁히기 위해 몰입 훈련을 통한 빠른 진행이 중요합니다.'
+      : '초등 수준의 독해 기초를 탄탄히 쌓는 현명한 선택입니다. 기초가 다져지면 학년 수준 과정으로 빠르게 올라갈 수 있습니다.';
+  } else if (idx > rg[1]) {
+    tone = '학년보다 앞선 과정으로, 한 단계 높은 지문을 미리 경험하며 도전적으로 성장하는 단계입니다.';
+  }
+  return tone ? base + ' ' + tone : base;
+}
+
 // ── 코스 기반 presc 자동 생성 ──
 function buildPrescFromCourse(courseCode) {
   var course = COURSES[courseCode];
@@ -619,7 +644,7 @@ function buildLastPage(total) {
   var detailCards = activePrograms.map(function(step, k){
     var absIdx = ALL_PROGRAMS.indexOf(step);
     var col = STEP_COLORS[absIdx >= 0 ? absIdx : k] || '#F47A20';
-    var reason = (typeof aiReasonCache !== 'undefined' && aiReasonCache[step.key]) ? aiReasonCache[step.key] : ((D.roadmapReasons && D.roadmapReasons[step.key]) ? D.roadmapReasons[step.key] : (typeof step.reasonFn === 'function' ? step.reasonFn(D) : (step._aiReason || step.desc || '')));
+    var reason = (D.roadmapReasons && D.roadmapReasons[step.key]) ? D.roadmapReasons[step.key] : ruleReason(step, D);   // 예전 저장분은 그때 문구, 새 판독은 정해진 문구 (2026-10-29)
     return '<div style="border:1px solid '+col+';background:#fff;padding:13px 20px 13px 18px;position:relative;">'
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+col+';"></div>'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">'
@@ -760,7 +785,6 @@ function buildEditBar() {
 
     // 우측: 액션
     +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">'
-    +'<button id="btnAiReason" onclick="requestAiReasons()" style="padding:7px 16px;background:#6366F1;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">AI 추천 이유 생성</button>'
     +'<button onclick="applyEdit()" style="padding:7px 16px;background:#0BA98E;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">적용</button>'
     +'<button onclick="toggleEditMode(false)" style="padding:7px 12px;background:rgba(255,255,255,.08);color:#94A3B8;border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">닫기</button>'
     +'</div>'
