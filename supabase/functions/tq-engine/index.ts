@@ -83,6 +83,8 @@ function normalizeChecksToBooleans(input: any, list: string[]): boolean[] {
   if (!Array.isArray(input) || input.length === 0) return list.map(() => false);
   // boolean 배열 (외부 tqdata) — 위치 기반
   if (typeof input[0] === "boolean") return list.map((_, i) => !!input[i]);
+  // 숫자 1/0 배열 (학원 admin.sfcenter.co.kr 메시지, 2026-10-29 확인) — 위치 기반
+  if (typeof input[0] === "number") return list.map((_, i) => Number(input[i]) === 1);
   // 문자열 배열 (내부 폼) — 이름 기반
   return list.map((item) => input.includes(item));
 }
@@ -680,6 +682,164 @@ function getSupabase() {
   return { url, key, ok: !!(url && key) };
 }
 
+// ── 판독 결과 저장 (요소별 테이블) — save 액션과 generate(생성 직후 서버 저장)가 함께 씀 ──
+//   (2026-10-29) 전엔 브라우저가 판독문을 받은 뒤에만 저장 → 생성 중에 창을 닫으면 저장 안 돼 다음에 또 생성(비용)
+async function saveResult(si: any, se: any, ss: any, token: string): Promise<string> {
+  const sb = getSupabase();
+  if (!sb.ok) throw new Error("DB 설정 미완료");
+  // 체크리스트 정규화/파생값(acc/hab_score/eff_score) 보강은 이미 body 파싱 직후에 처리됨.
+  // habRows/effRows 저장을 위해 boolean[] 형태만 다시 계산.
+  const habChecks = normalizeChecksToBooleans(si.reading_habit_checks, HAB_LIST);
+  const effChecks = normalizeChecksToBooleans(si.reading_effect_checks, EFF_LIST);
+
+  const today = si.reg_date || new Date().toISOString().slice(0,10);
+
+  const dbPost = async (table: string, data: any, prefer="return=representation") => {
+    const r = await fetch(`${sb.url}/rest/v1/${table}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": sb.key,
+        "Authorization": `Bearer ${sb.key}`,
+        "Prefer": `resolution=merge-duplicates,${prefer}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(`${table} 저장 실패: ` + await r.text());
+    return prefer.includes("representation") ? await r.json() : null;
+  };
+
+  // 1. tq_results — 활성(archived_at IS NULL) 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
+  // archived(soft-deleted) 행은 무시 → 손상 후 재전송 시 archived는 그대로 두고 새 행을 만듦
+  const nameEnc  = encodeURIComponent(si.name || "");
+  const gradeEnc = encodeURIComponent(String(si.user_school_grade || ""));
+  const existRes = await fetch(
+    `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&archived_at=is.null&limit=1`,
+    { headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` } }
+  );
+  const existRows = await existRes.json();
+  let rid: string;
+  if (existRows && existRows.length > 0) {
+    rid = existRows[0].id;
+    await fetch(`${sb.url}/rest/v1/tq_results?id=eq.${rid}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": sb.key,
+        "Authorization": `Bearer ${sb.key}`,
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify({ user_section: si.user_section || "", academy_token: token, updated_at: new Date().toISOString() })
+    });
+  } else {
+    const insertRes = await fetch(`${sb.url}/rest/v1/tq_results`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": sb.key,
+        "Authorization": `Bearer ${sb.key}`,
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({
+        name:               si.name || "",
+        user_school_grade:  String(si.user_school_grade || ""),
+        user_section:       si.user_section || "",
+        reg_date:           today,
+        reading_score:      Number(si.reading_score) || 0,
+        academy_token:      token,
+        updated_at:         new Date().toISOString()
+      })
+    });
+    if (!insertRes.ok) throw new Error("tq_results 삽입 실패: " + await insertRes.text());
+    const inserted = await insertRes.json();
+    rid = inserted[0]?.id;
+    if (!rid) throw new Error("result_id 획득 실패");
+  }
+
+  // 2. tq_scores
+  await fetch(`${sb.url}/rest/v1/tq_scores?result_id=eq.${rid}`, {
+    method: "DELETE",
+    headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
+  });
+  await dbPost("tq_scores", {
+    result_id:        rid,
+    acc:              si.acc,
+    fact_score:       si.fact_score,
+    structure_score:  si.structure_score,
+    voca_score:       si.voca_score,
+    wm_score:         si.wm_score,
+    inference_score:  si.inference_score,
+    hab_score:        si.hab_score,
+    eff_score:        si.eff_score,
+    reading_score:    si.reading_score,
+    kor_score:        si.kor_score,
+    eng_score:        si.eng_score,
+    math_score:       si.math_score
+  }, "return=minimal");
+
+  // 3. tq_habits — 정규화된 habChecks(boolean 배열) 사용
+  await fetch(`${sb.url}/rest/v1/tq_habits?result_id=eq.${rid}`, {
+    method: "DELETE",
+    headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
+  });
+  const habRows = HAB_LIST.map((item, i) => ({
+    result_id:  rid,
+    item_order: i,
+    item_name:  item,
+    checked:    habChecks[i]
+  }));
+  await dbPost("tq_habits", habRows, "return=minimal");
+
+  // 4. tq_eff_checks — 정규화된 effChecks(boolean 배열) 사용
+  await fetch(`${sb.url}/rest/v1/tq_eff_checks?result_id=eq.${rid}`, {
+    method: "DELETE",
+    headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
+  });
+  const effRows = EFF_LIST.map((item, i) => ({
+    result_id:  rid,
+    item_order: i,
+    item_name:  item,
+    checked:    effChecks[i]
+  }));
+  await dbPost("tq_eff_checks", effRows, "return=minimal");
+
+  // 5. tq_engine
+  await fetch(`${sb.url}/rest/v1/tq_engine?result_id=eq.${rid}`, {
+    method: "DELETE",
+    headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
+  });
+  await dbPost("tq_engine", {
+    result_id:    rid,
+    base_type:    se.bt,     sub_type:  se.st,
+    urgency:      se.urg,    tone:      se.tone,
+    flag_c:       se.flagC,  flag_o:    se.flagO,
+    flag_molip:   se.flagMolip||false, flag_molip_required: se.flagMolipRequired||false,
+    flag_teukmok: se.flagTeukmok||false,
+    inv_spd:      se.invSpd, gap:       se.gap,
+    spd_grade:    se.spdGrade,
+    def_factors:  JSON.stringify(se.def  || []),
+    causal_paths: JSON.stringify(se.cau  || []),
+    prescriptions:JSON.stringify(se.presc|| [])
+  }, "return=minimal");
+
+  // 6. tq_slots — ★ slots가 있을 때만 저장 (없으면 기존 데이터 유지)
+  if (ss && ss["slot1"]) {
+    await fetch(`${sb.url}/rest/v1/tq_slots?result_id=eq.${rid}`, {
+      method: "DELETE",
+      headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
+    });
+    const slotRows = [1,2,3,4].map(n => ({
+      result_id: rid,
+      slot_num:  n,
+      content:   ss["slot"+n] || ""
+    }));
+    await dbPost("tq_slots", slotRows, "return=minimal");
+  }
+  // ss가 비어있음 = 권장훈련만 변경된 저장 → tq_slots 기존 데이터 그대로 유지
+
+  return rid;
+}
+
 // ══════════════════════════════════════════
 // 메인 핸들러
 // ══════════════════════════════════════════
@@ -753,6 +913,14 @@ JSON만 출력하세요.`, 5500);
       let raw = out.text.trim().replace(/^```(?:json)?\s*/,"").replace(/\s*```$/,"");
       const s=raw.indexOf("{"),e_=raw.lastIndexOf("}");
       if(s>=0&&e_>s)raw=raw.slice(s,e_+1);
+      // 생성 직후 서버에서 바로 저장 — 학원이 생성 중에 창을 닫아도 다음엔 저장본을 불러옴 (2026-10-29)
+      //   브라우저도 받은 뒤 한 번 더 저장(같은 행을 덮어씀)하므로, 여기서 실패해도 화면 흐름은 그대로
+      if (!body.compare_model) {
+        try {
+          const sl = JSON.parse(raw);
+          if (sl && sl.slot1 && inp.name) await saveResult(inp, eng, sl, token);
+        } catch (e) { console.error("[generate] 서버 저장 실패(무시):", e); }
+      }
       // 비교 요청이면 모델·토큰 사용량을 함께 돌려줌 (화면용 응답은 그대로)
       if (body.compare_model) {
         return new Response(JSON.stringify({ model, usage: out.usage, stop: out.stop, raw }), { headers: { ...CORS, "Content-Type":"application/json" } });
@@ -762,164 +930,12 @@ JSON만 출력하세요.`, 5500);
 
     // ── 판독 결과 저장 (요소별 테이블) ──
     if (action === "save") {
-      const sb = getSupabase();
-      if (!sb.ok) return new Response(JSON.stringify({error:"DB 설정 미완료"}),{status:500,headers:CORS});
-
+      if (!getSupabase().ok) return new Response(JSON.stringify({error:"DB 설정 미완료"}),{status:500,headers:CORS});
       const { inp: si, eng: se, slots: ss } = body;
       if (!si || !se) {
         return new Response(JSON.stringify({error:"저장 데이터 없음"}),{status:400,headers:CORS});
       }
-
-      // 체크리스트 정규화/파생값(acc/hab_score/eff_score) 보강은 이미 body 파싱 직후에 처리됨.
-      // habRows/effRows 저장을 위해 boolean[] 형태만 다시 계산.
-      const habChecks = normalizeChecksToBooleans(si.reading_habit_checks, HAB_LIST);
-      const effChecks = normalizeChecksToBooleans(si.reading_effect_checks, EFF_LIST);
-
-      const today = si.reg_date || new Date().toISOString().slice(0,10);
-
-      const dbPost = async (table: string, data: any, prefer="return=representation") => {
-        const r = await fetch(`${sb.url}/rest/v1/${table}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": sb.key,
-            "Authorization": `Bearer ${sb.key}`,
-            "Prefer": `resolution=merge-duplicates,${prefer}`
-          },
-          body: JSON.stringify(data)
-        });
-        if (!r.ok) throw new Error(`${table} 저장 실패: ` + await r.text());
-        return prefer.includes("representation") ? await r.json() : null;
-      };
-
-      // 1. tq_results — 활성(archived_at IS NULL) 기존 행 조회 후 있으면 UPDATE, 없으면 INSERT
-      // archived(soft-deleted) 행은 무시 → 손상 후 재전송 시 archived는 그대로 두고 새 행을 만듦
-      const nameEnc  = encodeURIComponent(si.name || "");
-      const gradeEnc = encodeURIComponent(String(si.user_school_grade || ""));
-      const existRes = await fetch(
-        `${sb.url}/rest/v1/tq_results?name=eq.${nameEnc}&user_school_grade=eq.${gradeEnc}&reg_date=eq.${today}&reading_score=eq.${Number(si.reading_score)||0}&archived_at=is.null&limit=1`,
-        { headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` } }
-      );
-      const existRows = await existRes.json();
-      let rid: string;
-      if (existRows && existRows.length > 0) {
-        rid = existRows[0].id;
-        await fetch(`${sb.url}/rest/v1/tq_results?id=eq.${rid}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": sb.key,
-            "Authorization": `Bearer ${sb.key}`,
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify({ user_section: si.user_section || "", academy_token: token, updated_at: new Date().toISOString() })
-        });
-      } else {
-        const insertRes = await fetch(`${sb.url}/rest/v1/tq_results`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": sb.key,
-            "Authorization": `Bearer ${sb.key}`,
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify({
-            name:               si.name || "",
-            user_school_grade:  String(si.user_school_grade || ""),
-            user_section:       si.user_section || "",
-            reg_date:           today,
-            reading_score:      Number(si.reading_score) || 0,
-            academy_token:      token,
-            updated_at:         new Date().toISOString()
-          })
-        });
-        if (!insertRes.ok) throw new Error("tq_results 삽입 실패: " + await insertRes.text());
-        const inserted = await insertRes.json();
-        rid = inserted[0]?.id;
-        if (!rid) throw new Error("result_id 획득 실패");
-      }
-
-      // 2. tq_scores
-      await fetch(`${sb.url}/rest/v1/tq_scores?result_id=eq.${rid}`, {
-        method: "DELETE",
-        headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
-      });
-      await dbPost("tq_scores", {
-        result_id:        rid,
-        acc:              si.acc,
-        fact_score:       si.fact_score,
-        structure_score:  si.structure_score,
-        voca_score:       si.voca_score,
-        wm_score:         si.wm_score,
-        inference_score:  si.inference_score,
-        hab_score:        si.hab_score,
-        eff_score:        si.eff_score,
-        reading_score:    si.reading_score,
-        kor_score:        si.kor_score,
-        eng_score:        si.eng_score,
-        math_score:       si.math_score
-      }, "return=minimal");
-
-      // 3. tq_habits — 정규화된 habChecks(boolean 배열) 사용
-      await fetch(`${sb.url}/rest/v1/tq_habits?result_id=eq.${rid}`, {
-        method: "DELETE",
-        headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
-      });
-      const habRows = HAB_LIST.map((item, i) => ({
-        result_id:  rid,
-        item_order: i,
-        item_name:  item,
-        checked:    habChecks[i]
-      }));
-      await dbPost("tq_habits", habRows, "return=minimal");
-
-      // 4. tq_eff_checks — 정규화된 effChecks(boolean 배열) 사용
-      await fetch(`${sb.url}/rest/v1/tq_eff_checks?result_id=eq.${rid}`, {
-        method: "DELETE",
-        headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
-      });
-      const effRows = EFF_LIST.map((item, i) => ({
-        result_id:  rid,
-        item_order: i,
-        item_name:  item,
-        checked:    effChecks[i]
-      }));
-      await dbPost("tq_eff_checks", effRows, "return=minimal");
-
-      // 5. tq_engine
-      await fetch(`${sb.url}/rest/v1/tq_engine?result_id=eq.${rid}`, {
-        method: "DELETE",
-        headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
-      });
-      await dbPost("tq_engine", {
-        result_id:    rid,
-        base_type:    se.bt,     sub_type:  se.st,
-        urgency:      se.urg,    tone:      se.tone,
-        flag_c:       se.flagC,  flag_o:    se.flagO,
-        flag_molip:   se.flagMolip||false, flag_molip_required: se.flagMolipRequired||false,
-        flag_teukmok: se.flagTeukmok||false,
-        inv_spd:      se.invSpd, gap:       se.gap,
-        spd_grade:    se.spdGrade,
-        def_factors:  JSON.stringify(se.def  || []),
-        causal_paths: JSON.stringify(se.cau  || []),
-        prescriptions:JSON.stringify(se.presc|| [])
-      }, "return=minimal");
-
-      // 6. tq_slots — ★ slots가 있을 때만 저장 (없으면 기존 데이터 유지)
-      if (ss && ss["slot1"]) {
-        await fetch(`${sb.url}/rest/v1/tq_slots?result_id=eq.${rid}`, {
-          method: "DELETE",
-          headers: { "apikey": sb.key, "Authorization": `Bearer ${sb.key}` }
-        });
-        const slotRows = [1,2,3,4].map(n => ({
-          result_id: rid,
-          slot_num:  n,
-          content:   ss["slot"+n] || ""
-        }));
-        await dbPost("tq_slots", slotRows, "return=minimal");
-      }
-      // ss가 비어있음 = 권장훈련만 변경된 저장 → tq_slots 기존 데이터 그대로 유지
-
+      const rid = await saveResult(si, se, ss, token);
       return new Response(JSON.stringify({ ok: true, id: rid }), { headers: CORS });
     }
 
