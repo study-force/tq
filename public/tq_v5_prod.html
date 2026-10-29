@@ -825,7 +825,7 @@ function saveTqResult(inp, eng, slots) {
 }
 
 // ── 판독 결과 조회 — 외부연동 진입 시 기존 결과 로드 ──
-function loadTqResult(name, grade, spd, onFound) {
+function loadTqResult(name, grade, spd, onFound, onMiss) {
   fetch(TQ_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-academy-token": TQ_API_TOKEN },
@@ -838,9 +838,10 @@ function loadTqResult(name, grade, spd, onFound) {
       onFound(d);
     } else {
       console.log("[TQ] 기존 판독 결과 없음");
+      if (onMiss) onMiss();
     }
   })
-  .catch(function(e){ console.warn("[TQ] 조회 오류:", e); });
+  .catch(function(e){ console.warn("[TQ] 조회 오류:", e); if (onMiss) onMiss(); });
 }
 window.loadTqResult = loadTqResult;
 
@@ -5085,7 +5086,7 @@ function injectTqDataAndRun(d) {
   if (_skipLoad) window.__TQ_REANALYZING = false;
 
   // 기존 판독 결과 조회 → 있으면 복원, 없으면 엔진 실행
-  if (!_skipLoad && d.name && d.reading_score && d.reg_date) {
+  if (!_skipLoad && d.name && d.reading_score) {
     var _loaded = false;  // 로드 완료 플래그
     loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
       _loaded = true;
@@ -5219,14 +5220,18 @@ function injectTqDataAndRun(d) {
         if(saved.reg_date || saved.test_date) var _tDate = (saved.created_at || '').slice(0,10);
 if(_tDate) showSavedResultToast(_tDate);
       }, 300);
-    });
-    // 3초 후에도 로드 안 됐으면 → 새로 엔진 실행 (로드 성공 시 절대 실행 안 됨)
-    setTimeout(function() {
-      if (!_loaded && !window.__TQ_SLOTS) {
-        var btnA = document.getElementById('btnA');
-        if (btnA) btnA.click();
-      }
-    }, 3000);
+    }, function() { _runFresh(); });
+    // 저장된 결과가 없다는 답을 받은 뒤에만 새로 엔진 실행 (2026-10-29)
+    //   전엔 3초 고정 — 서버가 늦게 답하면 저장된 결과가 있어도 새로 생성(비용)했음
+    //   응답이 아예 없을 때만 15초 뒤 새로 실행
+    var _fresh = false;
+    function _runFresh() {
+      if (_fresh || _loaded || window.__TQ_SLOTS) return;
+      _fresh = true;
+      var btnA = document.getElementById('btnA');
+      if (btnA) btnA.click();
+    }
+    setTimeout(_runFresh, 15000);
   } else {
     setTimeout(function() {
       window.__inp = d;
@@ -5316,48 +5321,9 @@ document.addEventListener('DOMContentLoaded', function() {
           '초등':'초등','중등':'중등','고등':'고등','N수생':'고등','일반':'일반'};
         if (d.user_section) d.user_section = _lvNorm[d.user_section] || d.user_section;
 
-        // 기존 판독 결과 조회 — 있으면 자동 로드
-        if (d.name && d.reading_score) {
-          loadTqResult(d.name, d.user_school_grade, d.reading_score, function(saved) {
-            // 기존 결과 발견 → 엔진 결과와 슬롯 복원 후 결과 페이지 표시
-            window.__inp  = d;
-            window.__eng  = saved.eng;
-            if (window.__eng && d.reg_date) window.__eng.date = d.reg_date.slice(0,10);
-            window.__nm   = d.name;
-            window.__TQ_SLOTS = saved.slots;
-            window.__TQ_SAVED_ID = saved.id;
-            // 판독 페이지로 이동
-            if (typeof runAnalysisDirect === 'function') {
-              runAnalysisDirect(d);
-            } else {
-              var btnA = document.getElementById('btnA');
-              if (btnA) btnA.click();
-            }
-            setTimeout(function() {
-              // 슬롯 복원 후 리포트 렌더
-              window.__TQ_SLOTS = saved.slots;
-              // Lazy Regen: 오버플로 감지 시 렌더 건너뜀 (injectTqDataAndRun이 재생성 처리)
-              var _ovf = false;
-              if (window.__TQ_SLOTS) {
-                ['slot1','slot2','slot3','slot4'].forEach(function(k){
-                  var _c = window.__TQ_SLOTS[k];
-                  if (_c && typeof _c === 'string' && _c.length > 520) _ovf = true;
-                });
-              }
-              if (_ovf) { window.__TQ_SLOTS = null; }
-              else if (!window.__reportRendered) {
-                // eng.date 보완 (load 경로)
-                if (window.__eng && window.__inp && window.__inp.reg_date) {
-                  window.__eng.date = window.__inp.reg_date.slice(0,10);
-                }
-                try { renderReportTab(); window.__reportRendered = true; } catch(e){}
-              }
-              // 저장된 결과 알림
-              if(saved.reg_date || saved.test_date) var _tDate = (saved.created_at || '').slice(0,10);
-if(_tDate) showSavedResultToast(_tDate);
-            }, 1500);
-          });
-        }
+        // 기존 결과 조회·복원은 injectTqDataAndRun 안에서 한 번만 (2026-10-29)
+        //   전엔 여기서도 조회해 찾으면 ①분석 버튼을 눌렀는데, 그게 판독문 자동 생성까지 불러
+        //   이미 판독한 학생을 열 때마다 Claude로 다시 생성·덮어쓰던 원인
         injectTqDataAndRun(d);
       } catch(err) {
         console.warn('tqdata 파싱 실패:', err);
