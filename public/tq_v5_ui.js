@@ -1149,17 +1149,21 @@ function injectTqDataAndRun(d) {
 
   if(window.updateAccuracy) window.updateAccuracy();
 
-  // 독해습관 체크리스트 (tqdata: hab_checks / SAMPLES: habChecks)
-  var hArr = Array.isArray(d.reading_habit_checks) ? d.reading_habit_checks.map(function(v){return !!v;}) : [];
-  if (Array.isArray(hArr)) {
-    hArr.forEach(function(v, i) {
+  // 독해습관 체크리스트 — KT tqdata는 hab_checks, 내부 SAMPLES/load는 reading_habit_checks
+  var _habSrc = Array.isArray(d.hab_checks) ? d.hab_checks
+              : Array.isArray(d.reading_habit_checks) ? d.reading_habit_checks
+              : null;
+  if (_habSrc) {
+    _habSrc.forEach(function(v, i) {
       var el = document.getElementById('h'+i); if(el) el.checked = !!v;
     });
   }
-  // 독해효율성 체크리스트 (tqdata: eff_checks / SAMPLES: effChecks)
-  var eArr = Array.isArray(d.reading_effect_checks) ? d.reading_effect_checks.map(function(v){return !!v;}) : [];
-  if (Array.isArray(eArr)) {
-    eArr.forEach(function(v, i) {
+  // 독해효율성 체크리스트 — KT tqdata는 eff_checks, 내부 SAMPLES/load는 reading_effect_checks
+  var _effSrc = Array.isArray(d.eff_checks) ? d.eff_checks
+              : Array.isArray(d.reading_effect_checks) ? d.reading_effect_checks
+              : null;
+  if (_effSrc) {
+    _effSrc.forEach(function(v, i) {
       var el = document.getElementById('e'+i); if(el) el.checked = !!v;
     });
   }
