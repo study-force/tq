@@ -22,7 +22,7 @@ const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 // ── Claude 호출 ──
 //   운영 모델은 TQ_MODEL. Sonnet 5.5 전환 전 비교용으로 body.compare_model(아래 목록만)을 받으면 그 모델로 생성 (2026-10-29)
 //   Sonnet 5.5: 생각하기 끔(between_tools) = 지금(4.6)과 같은 방식·비용 / 같은 글이 토큰 약 30% 더 → max_tokens 여유
-const TQ_MODEL = "claude-sonnet-4-6";
+const TQ_MODEL = "claude-sonnet-5-5";   // 2026-10-29 4.6→5.5 (비교: 비용 약 30%↓·생성 시간 절반, 문서/TQ_모델비교_4.6vs5.5_20261029.html)
 const COMPARE_MODELS = ["claude-sonnet-4-6", "claude-sonnet-5-5"];
 async function callClaude(model: string, system: string, user: string, maxTokens: number) {
   const is55 = model === "claude-sonnet-5-5";
